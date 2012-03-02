@@ -1,0 +1,825 @@
+diff -rau yorick-cvs.virgin/CVS/Entries yorick-cvs/CVS/Entries
+--- yorick-cvs.virgin/CVS/Entries	2010-07-20 14:13:07.000000000 -0400
++++ yorick-cvs/CVS/Entries	2010-07-20 14:18:33.000000000 -0400
+@@ -5,11 +5,34 @@
+ /Makepkg/1.3/Thu Feb 25 03:53:28 2010//
+ /ONEWS/1.1.1.1/Sun Sep 18 22:03:39 2005//
+ /README/1.3/Thu Feb  2 03:19:02 2006//
+-/TODO/1.1.1.1/Sun Sep 18 22:03:38 2005//
+ /VERSION/1.12/Sat Jul  3 19:42:31 2010//
+ /configure/1.1.1.1/Sun Sep 18 22:03:38 2005//
+ /install.rel/1.1.1.1/Sun Sep 18 22:03:39 2005//
+ /instally.sh/1.1.1.1/Sun Sep 18 22:03:40 2005//
+ /yorapi.sh/1.3/Thu Feb  2 09:17:06 2006//
+ /ysite.sh/1.4/Sun Feb 28 21:52:28 2010//
+-D
++D/debian////
++D/distribs////
++D/doc////
++D/drat////
++D/emacs////
++D/extend////
++D/extendf////
++D/fft////
++D/g////
++D/gist////
++D/hex////
++D/i////
++D/i-start////
++D/i0////
++D/icons////
++D/math////
++D/matrix////
++D/mpy////
++D/opengl////
++D/play////
++D/regexp////
++D/tau////
++D/win////
++D/yorick////
++/TODO/1.2/Tue Jul 20 18:18:01 2010//
+Only in yorick-cvs.virgin/CVS: Entries.Log
+diff -rau yorick-cvs.virgin/gist/gist.c yorick-cvs/gist/gist.c
+--- yorick-cvs.virgin/gist/gist.c	2005-09-18 18:04:31.000000000 -0400
++++ yorick-cvs/gist/gist.c	2010-07-22 16:16:57.000000000 -0400
+@@ -37,7 +37,7 @@
+   { FG_COLOR, M_ASTERISK, 1.0 },                /* marker attributes */
+   { FG_COLOR, F_SOLID },                          /* fill attributes */
+   { FG_COLOR, 0, 0.0156,
+-    TX_RIGHT, TH_NORMAL, TV_NORMAL, 0 },          /* text attributes */
++    TX_RIGHT, TH_NORMAL, TV_NORMAL, 0, 0 },       /* text attributes */
+   { 0, 0, 0, 0.16, 0.14, 0,
+     0.13, 0.11375, 1.0, 1.0 },          /* decorated line attributes */
+   { 0, 0.125 },                                 /* vector attributes */
+@@ -328,6 +328,7 @@
+   /* Swap in text attributes appropriate for markers */
+   gistA.t.color= gistA.m.color;
+   gistA.t.font= MARKER_FONT;
++  gistA.t.xftfont= 0;
+   gistA.t.height= gistA.m.size * DEFAULT_MARKER_SIZE;
+   gistA.t.orient= TX_RIGHT;
+   gistA.t.alignH= TH_CENTER;
+diff -rau yorick-cvs.virgin/gist/gist.h yorick-cvs/gist/gist.h
+--- yorick-cvs.virgin/gist/gist.h	2009-10-19 01:37:51.000000000 -0300
++++ yorick-cvs/gist/gist.h	2010-07-22 16:01:29.000000000 -0400
+@@ -259,7 +259,8 @@
+ 
+   /* GKS is missing a text opacity flag.  */
+   int opaque;
+-
++  char *xftfont;       /* xft text font name */
++  
+ /* A font is a type face optionally ORed with T_BOLD and/or T_ITALIC. */
+ /* Available point sizes (for X) are 8, 10, 12, 14, 18, and 24 */
+ #define T_BOLD 1
+diff -rau yorick-cvs.virgin/gist/hlevel.c yorick-cvs/gist/hlevel.c
+--- yorick-cvs.virgin/gist/hlevel.c	2007-12-28 17:20:18.000000000 -0300
++++ yorick-cvs/gist/hlevel.c	2010-07-22 16:13:12.000000000 -0400
+@@ -285,7 +285,7 @@
+ static GpMarkerAttribs mDefault= { FG_COLOR, 0, 1.0 };
+ static GpFillAttribs fDefault= { FG_COLOR, F_SOLID };
+ static GpTextAttribs tDefault= { FG_COLOR, 0, 0.0156,
+-                                   TX_RIGHT, TH_NORMAL, TV_NORMAL };
++                                   TX_RIGHT, TH_NORMAL, TV_NORMAL, 0 };
+ static GaLineAttribs dlDefault= { 0, 0, 0, 0.16, 0.14, 0,
+                                     0.13, 0.11375, 1.0, 1.0 };
+ static GaVectAttribs vectDefault= { 0, 0.125 };
+diff -rau yorick-cvs.virgin/gist/xbasic.c yorick-cvs/gist/xbasic.c
+--- yorick-cvs.virgin/gist/xbasic.c	2010-01-10 02:02:23.000000000 -0300
++++ yorick-cvs/gist/xbasic.c	2010-07-23 15:02:20.000000000 -0400
+@@ -191,7 +191,8 @@
+ 
+   /* call p_font before any calls to TextWidth
+    * - may improve efficiency of p_txwidth, p_txheight */
+-  p_font(current_win, gistA.t.font, current_fsize, gistA.t.orient);
++  p_font(current_win, gistA.t.font, current_fsize,
++         gistA.t.orient, gistA.t.xftfont);
+ 
+   /* Set nLines, maxWidth, nChars, prevWidth */
+   firstTextLine = 1;
+@@ -279,8 +280,8 @@
+   *ix= dx + ix0;
+   *iy= dy + iy0;
+ 
+-  if (nChunk) p_font(current_win,
+-                     gistA.t.font, current_fsize, gistA.t.orient);
++  if (nChunk) p_font(current_win, gistA.t.font, current_fsize,
++                     gistA.t.orient, gistA.t.xftfont);
+   return nChunk;
+ }
+ 
+@@ -332,7 +333,8 @@
+     if (current_state&1) yadj+= dy_super;
+     else if (current_state&2) yadj-= dy_sub;
+     if (nChunk && (current_state&4))
+-      p_font(current_win, gistA.t.font, current_fsize, gistA.t.orient);
++      p_font(current_win, gistA.t.font, current_fsize,
++             gistA.t.orient, gistA.t.xftfont);
+     current_state= 0;
+ 
+   } else {
+@@ -358,11 +360,13 @@
+           c= txt[nChunk];
+           if ((nChunk+1<nChars && c=='!') || c=='^' || c=='_') break;
+         }
+-        p_font(current_win, gistA.t.font, current_fsize, gistA.t.orient);
++        p_font(current_win, gistA.t.font, current_fsize,
++               gistA.t.orient, gistA.t.xftfont);
+         current_state&= 3;
+       } else {
+         /* chunk is single symbol char */
+-        p_font(current_win, current_fsym, current_fsize, gistA.t.orient);
++        p_font(current_win, current_fsym, current_fsize,
++               gistA.t.orient, gistA.t.xftfont);
+         current_state|= 4;
+       }
+ 
+@@ -372,7 +376,8 @@
+         if ((nChunk+1<nChars && c=='!') || c=='^' || c=='_') break;
+       }
+       if (nChunk)
+-        p_font(current_win, gistA.t.font, current_fsize, gistA.t.orient);
++        p_font(current_win, gistA.t.font, current_fsize,
++               gistA.t.orient, gistA.t.xftfont);
+       if (c1=='^') {
+         if (current_state&1) {
+           yadj+= dy_super;  /* return from super to normal */
+@@ -809,7 +814,9 @@
+   /* erase background if string is opaque */
+   if (gistA.t.opaque) {
+     p_color(w, P_BG);
+-    p_rect(w, xbox[0], ybox[0], xbox[1], ybox[1], 0);
++    /* when using xft, the opaque is managed by textout */
++    if (gistA.t.xftfont==NULL) /* FIXME_XFT: is that null or 0 or ""? check */
++      p_rect(w, xbox[0], ybox[0], xbox[1], ybox[1], 0);
+   }
+   p_color(w, gistA.t.color);
+ 
+@@ -817,7 +824,7 @@
+     if (len>0) {
+       if (len==1 && (current_state&4) && text[0]==']') txt = caret;
+       else txt = text;
+-      p_text(w, ix, iy, txt, len);
++      p_text(w, ix, iy, txt, len, gistA.t.opaque);
+     }
+     len = GxJustifyNext(&text, &ix, &iy);
+   } while (len>=0);
+diff -rau yorick-cvs.virgin/gist/xfancy.c yorick-cvs/gist/xfancy.c
+--- yorick-cvs.virgin/gist/xfancy.c	2008-10-28 01:02:30.000000000 -0300
++++ yorick-cvs/gist/xfancy.c	2010-07-22 16:27:03.000000000 -0400
+@@ -328,8 +328,8 @@
+     p_rect(w, 0, 0, fxe->widthButton, fxe->xe.topMargin-1, 0);
+     if (fxe->buttonState) HighlightButton(fxe);
+     else p_color(w, fg);
+-    p_font(w, P_GUI_FONT, 15, 0);
+-    p_text(w, 3, fxe->baseline, "System", 6);
++    p_font(w, P_GUI_FONT, 15, 0, "");
++    p_text(w, 3, fxe->baseline, "System", 6, 0);
+   }
+ }
+ 
+@@ -431,8 +431,8 @@
+     p_color(w, P_BG);
+     p_rect(w, fxe->widthButton+1, 0, fxe->xe.wtop, fxe->xe.topMargin-2, 0);
+     p_color(w, P_FG);
+-    p_font(w, P_GUI_FONT, 15, 0);
+-    p_text(w, fxe->widthButton+4, fxe->baseline, msg, len);
++    p_font(w, P_GUI_FONT, 15, 0, "");
++    p_text(w, fxe->widthButton+4, fxe->baseline, msg, len, 0);
+   }
+ }
+ 
+diff -rau yorick-cvs.virgin/i0/graph.i yorick-cvs/i0/graph.i
+--- yorick-cvs.virgin/i0/graph.i	2010-04-18 06:33:38.000000000 -0400
++++ yorick-cvs/i0/graph.i	2010-07-23 14:58:51.000000000 -0400
+@@ -867,13 +867,13 @@
+      symbol font (it is a perpendicular sign, whereas ] is just ]).
+ 
+      The following keywords are legal (each has a separate help entry):
+-   KEYWORDS: legend, hide
+-             color, font, height, opaque, orient, justify
++   KEYWORDS: legend, hide,
++             color, font, height, opaque, orient, justify, xftfont
+    SEE ALSO: plt1, plg, plm, plc, plv, plf, pli, plt, pldj, plfp, pledit
+              limits, range, fma, hcp, pltitle
+  */
+ 
+-func plt1(text, x, y, tosys=, color=,font=,height=,opaque=,orient=,justify=)
++func plt1(text, x, y, tosys=, color=,font=,height=,opaque=,orient=,justify=,xftfont=)
+ /* DOCUMENT plt1, text, x, y
+      same as plt, but TEXT, X, and Y may be arrays to plot multiple
+      strings.  The tosys= keyword works as for plt.
+@@ -888,7 +888,7 @@
+   n= numberof(n);
+   for (i=1 ; i<=n ; ++i)
+     plt,text(i),x(i),y(i),tosys=tosys,color=color,font=font,height=height,
+-      opaque=opaque,orient=orient,justify=justify;
++      opaque=opaque,orient=orient,justify=justify,xftfont=xftfont;
+ }
+ 
+ func pltitle(title)
+@@ -901,7 +901,8 @@
+ {
+   port= viewport();
+   plt, title, port(zcen:1:2)(1), port(4)+0.02,
+-    font=pltitle_font, justify="CB", height=pltitle_height;
++    font=pltitle_font, justify="CB", height=pltitle_height,
++    xftfont=(use_xft?pltitle_xftfont:[]);
+ }
+ 
+ func xytitles(xtitle, ytitle, adjust)
+@@ -923,14 +924,17 @@
+   port= viewport();
+   if (xtitle && strlen(xtitle))
+     plt, xtitle, port(zcen:1:2)(1), port(3)-0.050+adjust(2),
+-      font=pltitle_font, justify="CT", height=pltitle_height;
++      font=pltitle_font, justify="CT", height=pltitle_height,
++      xftfont=(use_xft?pltitle_xftfont:[]);
+   if (ytitle && strlen(ytitle))
+     plt, ytitle, port(1)-0.050+adjust(1), port(zcen:3:4)(1),
+-      font=pltitle_font, justify="CB", height=pltitle_height, orient=1;
++      font=pltitle_font, justify="CB", height=pltitle_height, orient=1,
++      xftfont=(use_xft?pltitle_xftfont:[]);
+ }
+ 
+ pltitle_height= 18;
+ pltitle_font= "helvetica";
++pltitle_xftfont= "Sans";
+ 
+ /*--------------------------------------------------------------------------*/
+ /* Plot limits and log/linear scaling */
+@@ -1253,7 +1257,7 @@
+    SEE ALSO: type, width, color, marks, marker, rays
+  */
+ 
+-local font, height, opaque, orient, justify;
++local font, xftfont, height, opaque, orient, justify;
+ /* DOCUMENT font=     plotting keyword
+          or height=   plotting keyword
+          or opaque=   plotting keyword
+@@ -1272,6 +1276,18 @@
+      8 is Helvetica, 12 is Symbol, 16 is New Century Schoolbook, and
+      you add 1 to get boldface and/or 2 to get italic (or oblique).
+ 
++     If you have built yorick with Xft support, then the fonts will be
++     rendered antialiased. Setting the regular font keyword will
++     render the same fonts (courier, times, etc...) antialiased. You
++     can specify other type of fonts (Xft fonts) using the keyword
++     xftfont to plt. Xft fonts syntax is
++     "<family>-<size>:<name>=<value>...", as in "Sans-14", or
++     "times,charter-12:bold" (times prefered, charter accepted, 12
++     points, bold face. For more information, look at
++     http://keithp.com/~keithp/render/Xft.tutorial. You can set the
++     default font for plot titles and axis captions with
++     pltitle_xftfont.
++     
+      The height is the font size in points; 14.0 is the default.
+      X windows only has 8, 10, 12, 14, 18, and 24 point fonts, so
+      don't stray from these sizes if you want what you see on the
+diff -rau yorick-cvs.virgin/opengl/test3d.c yorick-cvs/opengl/test3d.c
+--- yorick-cvs.virgin/opengl/test3d.c	2005-09-18 18:06:23.000000000 -0400
++++ yorick-cvs/opengl/test3d.c	2010-07-21 15:53:12.000000000 -0400
+@@ -221,7 +221,7 @@
+     p_pen(w, 1, P_SOLID);
+     seg_draw(w, 0,29, 300,29);
+     p_font(w, P_COURIER | P_BOLD, 14, 0);
+-    p_text(w, 20,20, "2D plotting area above line", 27);
++    p_text(w, 20,20, "2D plotting area above line", 27, 0);
+   } else if (gl==glw1) {
+     p_glcurrent(gl);
+     check_err("on_expose entry");  /* may get error before p_glcurrent */
+diff -rau yorick-cvs.virgin/play/play.h yorick-cvs/play/play.h
+--- yorick-cvs.virgin/play/play.h	2010-04-08 06:53:49.000000000 -0400
++++ yorick-cvs/play/play.h	2010-07-22 16:26:00.000000000 -0400
+@@ -119,7 +119,7 @@
+ 
+ /* screen graphics property setting functions */
+ PLUG_API void p_color(p_win *w, p_col_t color);
+-PLUG_API void p_font(p_win *w, int font, int pixsize, int orient);
++PLUG_API void p_font(p_win *w, int font, int pixsize, int orient, char *xftfont);
+ PLUG_API void p_pen(p_win *w, int width, int type);
+ 
+ /* set point list for p_dots, p_lines, p_fill, p_segments (pairs in list)
+@@ -133,7 +133,7 @@
+ PLUG_API void p_d_map(p_win *w, double xt[], double yt[], int set);
+ 
+ /* screen graphics drawing functions */
+-PLUG_API void p_text(p_win *w, int x0, int y0, const char *text, int n);
++PLUG_API void p_text(p_win *w, int x0, int y0, const char *text, int n, int opaque);
+ PLUG_API void p_rect(p_win *w, int x0, int y0, int x1, int y1, int border);
+ PLUG_API void p_ellipse(p_win *w, int x0, int y0, int x1, int y1, int border);
+ PLUG_API void p_dots(p_win *w);
+diff -rau yorick-cvs.virgin/play/README yorick-cvs/play/README
+--- yorick-cvs.virgin/play/README	2007-03-19 03:31:30.000000000 -0400
++++ yorick-cvs/play/README	2010-07-22 16:22:17.000000000 -0400
+@@ -561,7 +561,7 @@
+ -------graphical output functions
+ 
+ /* screen graphics drawing functions */
+-extern void p_text(p_win *w, int x0, int y0, const char *text, int n);
++extern void p_text(p_win *w, int x0, int y0, const char *text, int n, int opaque);
+   draw first n characters of text at (x0,y0) in current font and color
+   (x0,y0) is the point on the baseline at the beginning of the first
+     character
+@@ -615,7 +615,7 @@
+      P_SOLID      0     P_DOT        2     P_DASHDOTDOT 4
+      P_DASH       1     P_DASHDOT    3     P_SQUARE     8
+ 
+-extern void p_font(p_win *w, int font, int pixsize, int orient);
++extern void p_font(p_win *w, int font, int pixsize, int orient, char *xftfont);
+   set the current font
+   this must be called not only when the font changes, but also
+     after any graphics call to any other window has been made
+diff -rau yorick-cvs.virgin/play/win/getdc.c yorick-cvs/play/win/getdc.c
+--- yorick-cvs.virgin/play/win/getdc.c	2005-09-18 18:05:35.000000000 -0400
++++ yorick-cvs/play/win/getdc.c	2010-07-21 09:57:32.000000000 -0400
+@@ -19,7 +19,7 @@
+ static void w_font(p_scr *s, HDC dc, int font, int pixsize, int orient);
+ 
+ void
+-p_font(p_win *w, int font, int pixsize, int orient)
++p_font(p_win *w, int font, int pixsize, int orient, char *xftfont)
+ {
+   wp_font(w, font, pixsize, orient);
+ }
+diff -rau yorick-cvs.virgin/play/win/ptext.c yorick-cvs/play/win/ptext.c
+--- yorick-cvs.virgin/play/win/ptext.c	2005-09-18 18:05:36.000000000 -0400
++++ yorick-cvs/play/win/ptext.c	2010-07-21 15:56:31.000000000 -0400
+@@ -12,7 +12,7 @@
+ #include "pstdlib.h"
+ 
+ void
+-p_text(p_win *w, int x0, int y0, const char *text, int n)
++p_text(p_win *w, int x0, int y0, const char *text, int n, int opaque)
+ {
+   HDC dc = w_getdc(w, 1);
+   if (dc) {
+diff -rau yorick-cvs.virgin/play/x11/connect.c yorick-cvs/play/x11/connect.c
+--- yorick-cvs.virgin/play/x11/connect.c	2005-09-18 18:05:34.000000000 -0400
++++ yorick-cvs/play/x11/connect.c	2010-07-23 15:04:53.000000000 -0400
+@@ -79,6 +79,11 @@
+   }
+   x_parse_fonts(xdpy);  /* see fonts.c */
+ 
++#ifdef HAVE_XFT
++  for (i=0 ; i<N_FONT_CACHE ; i++) {
++    xftc[i].pixsize = 0;
++  }
++#endif
+   /* find default font */
+ 
+   if (x_xfont) {
+@@ -222,6 +227,7 @@
+         xdpy->cached[i].f = 0;
+         XFreeFont(dpy, font);
+       }
++      /* FIXME_XFT: deal with xftfont free() here ?*/
+       for (i=0 ; i<=P_NONE ; i++) {
+         cur = xdpy->cursors[i];
+         xdpy->cursors[i] = None;
+diff -rau yorick-cvs.virgin/play/x11/playwin.h yorick-cvs/play/x11/playwin.h
+--- yorick-cvs.virgin/play/x11/playwin.h	2005-09-18 18:05:34.000000000 -0400
++++ yorick-cvs/play/x11/playwin.h	2010-07-23 15:05:50.000000000 -0400
+@@ -11,7 +11,20 @@
+ #include "play.h"
+ #include "phash.h"
+ #include <X11/Xlib.h>
+-
++#ifdef HAVE_XFT
++#include <X11/Xft/Xft.h>
++#define N_XFTFONT_CACHE 20
++
++struct xftcache {
++  XftFont *font;        /* xftfont cache */
++  Display *dpy;         /* display these font are for */
++  int     pixsize;      /* xft font pixsize cache */
++  char    *name;        /* xft font name cache */ 
++  int     angle;        /* xft font angle cache */
++  int     height;       /* ascent + descent */
++};
++struct xftcache xftc[N_XFTFONT_CACHE];
++#endif
+ #define N_FONT_CACHE 6
+ 
+ /* the Display struct may be shared among several root windows,
+@@ -36,6 +49,15 @@
+   XFontStruct *font;    /* default font to use on this server */
+   int unload_font;      /* non-0 if font must be unloaded */
+ 
++#ifdef HAVE_XFT
++  XftFont *xftfont;
++  int use_xft;
++  /* FIXME_XFT: this string cause a memleak and possibly worse */
++  char *xft_fontname;
++  int xft_angle;
++  int xft_height;       /* ascent + descent */
++#endif
++
+   struct {
+     XFontStruct *f;
+     int font, pixsize, next;
+Only in yorick-cvs/play/x11: pwin.c.orig
+diff -rau yorick-cvs.virgin/play/x11/textout.c yorick-cvs/play/x11/textout.c
+--- yorick-cvs.virgin/play/x11/textout.c	2005-09-18 18:05:33.000000000 -0400
++++ yorick-cvs/play/x11/textout.c	2010-07-23 15:11:56.000000000 -0400
+@@ -15,27 +15,90 @@
+ 
+ #include <string.h>
+ 
++#ifdef HAVE_XFT
++#define PI 3.14159265358979323846
++#define XFT_DEBUG 0
++extern double cos(double);
++extern double sin(double);
++void p_xftfont(x_display *xdpy, int pixsize, int orient, char *xftfont);
++void p_xfttext(p_win *w, int x0, int y0, const char *text, int n, int opaque);
++char *p_font2xftfont(int font);
++#endif
++
++
+ int
+ p_txheight(p_scr *s, int font, int pixsize, int *baseline)
+ {
++#ifdef HAVE_XFT
++  x_display *xdpy = s->xdpy;
++
++  if (xdpy->use_xft==1) {
++    /* Unfortunately, the baseline can only be computed accurately   */
++    /* with the unrotated font *and* the text. We don't have those 2 */
++    /* available simultaneously, unless we also store the unrotated  */
++    /* xftfont, which I don't want to do. This is an approximation   */
++    if (baseline) *baseline = pixsize;
++
++    /* If xft_angle is not 0 or 180, the ascent and descent reported   */
++    /* in xftfont structure are 0 (understandably). This is why it was */
++    /* necessary to compute the height on the unrotated font in p_font */
++    return xdpy->xft_height;
++  }
++#endif
+   XFontStruct *f = x_font(s->xdpy, font, pixsize);
+   if (baseline) *baseline = f->ascent;
+   return f->ascent + f->descent;  /* hopefully close to pixsize */
++
+ }
+ 
+ int
+ p_txwidth(p_scr *s, const char *text, int n, int font, int pixsize)
+ {
++#ifdef HAVE_XFT
++  x_display *xdpy = s->xdpy;
++  double ang = (double) xdpy->xft_angle;
++
++  if (xdpy->use_xft==1) {
++    XGlyphInfo extents;
++    Display *dpy = xdpy->dpy;
++    XftFont *xftfont = xdpy->xftfont;
++    int len = strlen(text);
++    if (n<=0 || n>len) n = len;
++    XftTextExtents8( dpy, xftfont, (XftChar8 *)text, n, &extents );
++
++    ang = ang * PI / 180.;
++    /* Unrotate the extents to deliver GxJustifyText what it expects */
++    /* I could also run XftTextExtents8 on an unrotated xftfont, but */
++    /* it would add an unnecessary overhead and storage              */
++    int xOffur;
++    xOffur = (int) (cos(ang) * extents.xOff - sin(ang) * extents.yOff);
++    return xOffur;
++  }
++#endif
++
+   XFontStruct *f = x_font(s->xdpy, font, pixsize);
+   int len = strlen(text);
+   if (n<=0 || n>len) n = len;
+   return XTextWidth(f, (char *)text, n);
+ }
+ 
++
+ void
+-p_font(p_win *w, int font, int pixsize, int orient)
++p_font(p_win *w, int font, int pixsize, int orient, char *xftfont)
+ {
+   p_scr *s = w->s;
++#ifdef HAVE_XFT
++  x_display *xdpy = s->xdpy;
++  
++  /* intercept request for xft font here */
++  if (!xftfont || xftfont=="") xftfont=p_font2xftfont(font);
++  if (xftfont && strlen(xftfont)) {
++    p_xftfont(xdpy, pixsize, orient, xftfont);
++    xdpy->use_xft = 1;
++    return;
++  }
++  xdpy->use_xft = 0;
++#endif
+ 
+   if (s->rotgc || s->tmp || s->image || s->pixmap!=None) x_rotzap(s);
+ 
+@@ -56,8 +119,110 @@
+   }
+ }
+ 
++
++#ifdef HAVE_XFT
+ void
+-p_text(p_win *w, int x0, int y0, const char *text, int n)
++p_xftfont(x_display *xdpy, int pixsize, int orient, char *xftfont)
++{
++  /* xft font: all the font matching/opening/cache is done in here  */
++  Display *dpy = xdpy->dpy;
++  int ang, i, j;
++
++  /* Use orient < 0 as positive angle for xft */
++  if (orient>=0) ang = orient * 90;
++  else ang = -1 * orient;
++
++  xdpy->xft_angle = ang;
++
++  /* is the xft font in cache? */
++  for (i=0;i<N_XFTFONT_CACHE;i++) {
++    if (xftc[i].pixsize && XFT_DEBUG) {
++      printf("cache[%d]: name=\"%s\", pixs=%d, ang=%d\n",
++             i,xftc[i].name,xftc[i].pixsize,xftc[i].angle);
++    }
++    if (xftc[i].pixsize && xftc[i].pixsize == pixsize  &&
++        xftc[i].angle == ang && xftc[i].dpy == dpy &&
++        strcmp(xftc[i].name,xftfont) == 0 ) {
++      if (XFT_DEBUG) printf("Found a match for \"%s\" in cache\n",xftfont);
++      xdpy->xftfont = xftc[i].font;
++      xdpy->xft_height = xftc[i].height;
++      return;
++    }
++  }
++  if (XFT_DEBUG) printf("\"%s\" not found in cache, generating\n",xftfont);
++
++  /* Open pattern  */
++  XftPattern  *xft_pat = XftNameParse(xftfont);
++
++  /* Add pixel size and possible rotation */
++  XftPatternAddDouble (xft_pat, XFT_PIXEL_SIZE, (double)pixsize);
++
++  /* fisrt we need to get the ascent and descent of the unrotated font */
++
++  /* don't need to free the 2 following variables (checked), no memleak */
++  XftPattern *match_pat;  /* the best available match on the system */
++  XftResult match_result; /* the result of our matching attempt */
++
++   /* query the system to find a match for this font */
++  match_pat = XftFontMatch(dpy, DefaultScreen(dpy), xft_pat, &match_result);
++
++   /* open the matched font */
++  xdpy->xftfont = XftFontOpenPattern(dpy, match_pat);
++
++  /* store the height = ascent + descent for future use */
++  xdpy->xft_height = xdpy->xftfont->ascent + xdpy->xftfont->descent;
++
++  /* now we can go ahead for a possible rotation */
++
++  if (ang!=0) {
++    XftMatrix   m;
++    XftMatrixInit(&m);
++    XftMatrixRotate(&m,cos(PI*(double)ang/180.),sin(PI*(double)ang/180.));
++    XftPatternAddMatrix (xft_pat, XFT_MATRIX,&m);
++
++     /* query the system to find a match for this font */
++    match_pat = XftFontMatch(dpy, DefaultScreen(dpy), xft_pat, &match_result);
++
++     /* open the matched font */
++    xdpy->xftfont = XftFontOpenPattern(dpy, match_pat);
++  }
++
++   /* Tidy up the resources we allocated */
++  XftPatternDestroy(xft_pat);
++
++  /* Store in cache. I use pixsize as a used/not used marker. */
++  /* Look for free slot */
++  i=0;
++  while (i<N_XFTFONT_CACHE && xftc[i].pixsize) i++;
++
++  if (i==N_XFTFONT_CACHE) {
++    /* Cache is full, empying */
++    if (XFT_DEBUG) printf("Font cache out of space, clearing the cache\n");
++    /* I choose to clear the whole cache instead of removing only the */
++    /* most recent like the regular font cache. Not a big deal. */
++    for (j=0;j<N_XFTFONT_CACHE;j++) {
++      p_free(xftc[j].name);
++      xftc[j].pixsize = 0;
++      XftFontClose(xftc[j].dpy, xftc[j].font);
++    }
++  } else {
++    /* Store font in cache */
++    if (XFT_DEBUG) printf("Storing \"%s\" in cache[%d]\n",xftfont,i);
++    xftc[i].font = xdpy->xftfont;
++    xftc[i].dpy = dpy;
++    xftc[i].name = p_malloc(strlen(xftfont)+1);
++    strcpy(xftc[i].name,xftfont);
++    xftc[i].angle = ang;
++    xftc[i].pixsize = pixsize;
++    xftc[i].height = xdpy->xft_height;
++  }
++}
++#endif
++
++
++
++void
++p_text(p_win *w, int x0, int y0, const char *text, int n, int opaque)
+ {
+   p_scr *s = w->s;
+   x_display *xdpy = s->xdpy;
+@@ -67,6 +232,13 @@
+   Drawable d = w->d;
+   int i;
+ 
++#ifdef HAVE_XFT
++  if (xdpy->use_xft) {
++    p_xfttext(w, x0, y0, text, n, opaque);
++    return;
++  }
++#endif
++
+   if (s->rotgc || s->tmp || s->image || s->pixmap!=None) x_rotzap(s);
+ 
+   if (n<=0) n = 16350;
+@@ -157,3 +329,99 @@
+   }
+   if (p_signalling) p_abort();
+ }
++
++
++#ifdef HAVE_XFT
++void
++p_xfttext(p_win *w, int x0, int y0, const char *text, int n, int opaque)
++{
++  p_scr *s = w->s;
++  x_display *xdpy = s->xdpy;
++  Display *dpy = xdpy->dpy;
++  Drawable d = w->d;
++  XftFont *xftfont = xdpy->xftfont;
++  XGlyphInfo extents;
++  XftDraw *xftdraw;
++  XRenderColor xrcolor;
++  XftColor xftcolor, hlcolor;
++  int i;
++
++
++
++  XftTextExtents8( dpy, xftfont, (XftChar8 *)text, strlen(text), &extents );
++
++  /* Xft draw context */
++  xftdraw = XftDrawCreate( dpy, d, DefaultVisual(dpy,DefaultScreen(dpy)),
++                           DefaultColormap( dpy, DefaultScreen(dpy) ) );
++
++  /* Colors: this really should not be here, but in colors.c, but I'm lazy */
++  /* Xft text color */
++  p_col_t col = x_getpixel(w,s->gc_color);
++  xrcolor.red   = (col&0xff0000)>>8;
++  xrcolor.green = (col&0x00ff00)>>0;
++  xrcolor.blue  = (col&0x0000ff)<<8; /* 0xff maps to 0xff00 */
++  xrcolor.alpha = 0xffff;
++
++  XftColorAllocValue( dpy, DefaultVisual(dpy,DefaultScreen(dpy)),
++                      DefaultColormap( dpy, DefaultScreen(dpy) ),
++                      &xrcolor, &xftcolor );
++
++  /* Xft highlight color */
++  if (opaque) {
++    col = x_getpixel(w,XFT_DEBUG? 251 : P_BG);
++    xrcolor.red   = (col&0xff0000)>>8;
++    xrcolor.green = (col&0x00ff00)>>0;
++    xrcolor.blue  = (col&0x0000ff)<<8; /* 0xff maps to 0xff00 */
++    xrcolor.alpha = 0xafff;
++
++    XftColorAllocValue( dpy, DefaultVisual(dpy,DefaultScreen(dpy)),
++                        DefaultColormap(dpy,DefaultScreen(dpy)),
++                        &xrcolor, &hlcolor );
++
++    XftDrawRect( xftdraw, &hlcolor, x0-extents.x, y0-extents.y,
++                 extents.width, extents.height);
++  }
++  if (n<=0) n = 16350;
++  for (i=0 ; i<n ; i++) if (!text[i]) break;
++  n = i;
++
++  /* Finally, draw the text: */
++  XftDrawString8( xftdraw, &xftcolor, xftfont, x0, y0, (XftChar8 *)text, n );
++
++  // Tidy up the resources we allocated
++  XftColorFree ( dpy, DefaultVisual(dpy,DefaultScreen(dpy)),
++                 DefaultColormap(dpy,DefaultScreen(dpy)),&hlcolor);
++  XftColorFree ( dpy, DefaultVisual(dpy,DefaultScreen(dpy)),
++                 DefaultColormap(dpy,DefaultScreen(dpy)),&xftcolor);
++  XftDrawDestroy( xftdraw );
++}
++
++char *
++p_font2xftfont(int font)
++{
++  char *xftfonts[20] =
++    {"Courier",
++     "Courier:weight=255",
++     "Courier:slant=1",
++     "Courier:weight=255:slant=1",
++     "Times",
++     "Times:weight=255",
++     "Times:slant=1",
++     "Times:weight=255:slant=1",
++     "Helvetica",
++     "Helvetica:weight=255",
++     "Helvetica:slant=1",
++     "Helvetica:weight=255:slant=1",
++     "Symbol",
++     "Symbol:weight=255",
++     "Symbol:slant=1",
++     "Symbol:weight=255:slant=1",
++     "New Century Schoolbook",
++     "New Century Schoolbook:weight=255",
++     "New Century Schoolbook:slant=1",
++     "New Century Schoolbook:weight=255:slant=1"};
++  if (font<0 || font>19) return "";
++  return xftfonts[font];
++}
++
++#endif
+diff -rau yorick-cvs.virgin/TODO yorick-cvs/TODO
+--- yorick-cvs.virgin/TODO	2005-09-18 18:03:38.000000000 -0400
++++ yorick-cvs/TODO	2010-07-20 14:18:01.000000000 -0400
+@@ -25,7 +25,7 @@
+ (4) Investigate sort algorithm -- can performance for big numerical
+     sorts be improved by actually moving the data during the sort?
+ 
+-(5) Work on new binary file model.
++(5) Work on new binary file model. 
+     (a) Directories?  (dictionaries?)
+     (b) Interpreted close hooks?  Other hooks?
+         -- should there be a destroy hook for any interpreted variable?
+diff -rau yorick-cvs.virgin/yorick/graph.c yorick-cvs/yorick/graph.c
+--- yorick-cvs.virgin/yorick/graph.c	2010-04-13 07:34:30.000000000 -0400
++++ yorick-cvs/yorick/graph.c	2010-07-23 15:13:58.000000000 -0400
+@@ -60,6 +60,7 @@
+                            long ix, long ijx, long *nbndy);
+ 
+ extern BuiltIn Y_plg, Y_plm, Y_plc, Y_plv, Y_plf, Y_pli, Y_plt, Y_pldj;
++
+ extern BuiltIn Y_plmesh, Y_bytscl, Y_plfp;
+ 
+ extern BuiltIn Y_limits, Y_logxy, Y_zoom_factor, Y_unzoom;
+@@ -1486,11 +1487,12 @@
+   Drop(nArgs+convertedZ);
+ }
+ 
++
+ #undef N_KEYWORDS
+-#define N_KEYWORDS 9
++#define N_KEYWORDS 10
+ static char *pltKeys[N_KEYWORDS+1]= {
+-  "legend", "hide",
+-  "color", "font", "height", "orient", "justify", "opaque", "tosys", 0 };
++  "legend", "hide", "color", "font", "height", "orient",
++  "justify", "opaque", "tosys", "xftfont", 0 };
+ 
+ void Y_plt(int nArgs)
+ {
+@@ -1532,6 +1534,12 @@
+     GetJustify(keySymbols[6]);
+   if (YNotNil(keySymbols[7]))
+     gistA.t.opaque= (YGetInteger(keySymbols[7])!=0);
++  if (YNotNil(keySymbols[9])) {
++    /* This generate a small memleak! But I don't know where/when */
++    /* to free it! FIXME_XFT */
++    gistA.t.xftfont = p_malloc(strlen(YGetString(keySymbols[9]))+1);
++    strcpy(gistA.t.xftfont,YGetString(keySymbols[9]));
++  }  
+ 
+   if (!gistA.t.orient) {
+     gistA.t.orient= TX_RIGHT;
+@@ -1539,9 +1547,10 @@
+     if (gistA.t.orient==1) gistA.t.orient= TX_UP;
+     else if (gistA.t.orient==2) gistA.t.orient= TX_LEFT;
+     else if (gistA.t.orient==3) gistA.t.orient= TX_DOWN;
+-    else {
++    else if (gistA.t.orient>3) {
+       gistA.t.orient= TX_RIGHT;
+-      YError("orient= keyword must be 0, 1, 2, or 3");
++      /* YError("orient= keyword must be 0, 1, 2, or 3"); */
++      /* orient < 0 allowed for xft angle */
+     }
+   }
+ 
+@@ -1557,6 +1566,8 @@
+   Drop(nArgs);
+ }
+ 
++
++
+ #undef N_KEYWORDS
+ #define N_KEYWORDS 5
+ static char *pldjKeys[N_KEYWORDS+1]= {
+@@ -2135,7 +2146,7 @@
+       else
+         YError("failed to create drawing -- Gist work.gs style sheet missing");
+     }
+-
++    
+     /* make this window current */
+     GhSetPlotter(n);
+ 
