@@ -207,7 +207,7 @@ def plc ( z, y=None, x=None, ireg=None, levs=None, mesh=None, **keywords ):
       The Y, X, and IREG arguments may all be omitted to default to the
       mesh set by the most recent plmesh call.
       The LEVS keyword is a list of the values of Z at which you want
-      contour curves.  The default is eight contours spanning the
+      contour curves.  The default is eight contours _spanning the
       range of Z.
       The following keywords are legal (each has a separate help entry):
 

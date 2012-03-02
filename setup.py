@@ -57,13 +57,11 @@ def getbuildopt(gistpath,config,config_path):
   extra_compile_args = ['-DGISTPATH="\\"%s\\""' % gistpath]
   extra_compile_args.append('-DPYGIST_VERSION="\\"%s\\""' % config.version)
 
-  #extra_compile_args = ['-DGISTPATH="\\"' + gistpath + '\\""' ]
-  #extra_compile_args
   extra_compile_args.append("-DSTAND_ALONE") # for yorick/play/any/numfmt.c
   extra_compile_args.append("-O2")
   extra_compile_args.append('-DYLAPACK_NOALIAS')
   extra_compile_args.append('-DYCBLAS_NOALIAS')
-  # TODO: patch apply only for bdist_rpm 
+  # TODO: patch only works for bdist_rpm
   extra_compile_args.append("-DHAVE_XFT")
 
   library_dirs = [os.path.join(local_path,x) for x in ['.','yorick']]
@@ -96,25 +94,21 @@ def getbuildopt(gistpath,config,config_path):
   return include_dirs, library_dirs, libraries, extra_compile_args
 
 from distutils.command.config import config
-#from distutils.dist import Distribution
 import os
 
 class yorick_configure(config):
   def __init__(self, local_path, config_path):
+    #from distutils.dist import Distribution
     #super(yorick_configure,self).__init__(self,Distribution())
     self.config_path = config_path
-    print '@@@ yorick_configure.__init__',local_path,config_path
 
   def run (self):
-    print '@@@ yorick_configure.run'
     os.chdir('yorick')
     os.system('gmake clean config')
     os.chdir('..')
     os.system('cp yorick/Make.cfg '+self.config_path)
 
 def configuration(parent_package='',top_path=None):
-  print '@@@@@@@@@@@@@@@ configuration',parent_package,top_path
-
   from numpy.distutils.misc_util import Configuration
   
   config = Configuration(
@@ -124,12 +118,11 @@ def configuration(parent_package='',top_path=None):
     package_path='gist',
     version='dev',
     description='gist for python.',
-    long_description='A python plugin for gist.',
+    long_description='Python plugin for gist, the yorick graphic environment.',
     url='https://github.com/mdcb/python-gist',
     author='Matthieu Bec',
     author_email='mdcb808@gmail.com',
     license='GPLv3',
-    #user_options = ['prep-script=allyourbases']
     )
 
 
@@ -143,7 +136,6 @@ def configuration(parent_package='',top_path=None):
   gistdata_path = gistdata_path.replace("\\",r"\\\\")
 
   def get_playsource(extension,build_dir):
-    print '@@@@@@@@@@@@@@@ get_playsource',extension,build_dir
     playsource = unixsource + x11source + anysource
     sources = [os.path.join(config.local_path,f) for f in playsource]
     config_path = os.path.join(build_dir,'confgist')
@@ -151,7 +143,6 @@ def configuration(parent_package='',top_path=None):
     conf = yorick_configure(config.local_path,config_path)
     #   This is repeating code, but I'm not sure how to avoid it
     #   As this gets run before overall setup does.
-    
     # Generate Make.cfg and config.h:
     conf.run()
 

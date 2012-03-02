@@ -2,11 +2,10 @@
 # Author: Travis Oliphant
 # Copyright: SciPy
 
-#__all__ = ['whoami', 'create_dir', 'is_writable', 'reverse_dict', '_find_and_set', 'ispointtype', '_parse_type_arg', 'clear_global_linetype', 'append_global_linetype', '_minsqueeze' ]
-#__all__ = ['_add_color', '_chng_font', '_remove_ticks', 'imagesc_cb', '', '', '', '', '', '' ]
-#__all__ = ['write_palette', 'list_palettes', 'change_palette', 'matview', 'imagesc', 'movie', 'setdpi', 'figure', 'full_page', 'subplot' ]
+#__all__ = ['_whoami', '_create_dir', '_is_writable', '_reverse_dict', '_find_and_set', '_ispointtype', '_parse_type_arg', '_clear_global_linetype', '_append_global_linetype', '_minsqueeze', '_add_color', '_chng_font', '_remove_ticks', 'imagesc_cb' ]
 
-__all__ = ['histogram', 'textcolor', 'barplot', 'hold', 'errorbars', 'legend', 'arrow', 'plot', 'matplot', 'addbox', 'xlabel', 'ylabel', 'title', 'title3', 'stem', 'makeleg', 'twoplane', 'surf', 'mysurf', 'expand_limits', 'axes', 'bode', 'addtext' ]
+
+__all__ = ['histogram', 'textcolor', 'barplot', 'hold', 'errorbars', 'legend', 'arrow', 'plot', 'matplot', 'addbox', 'xlabel', 'ylabel', 'title', 'title3', 'stem', 'makeleg', 'twoplane', 'surf', 'mysurf', 'expand_limits', 'axes', 'bode', 'addtext', 'write_palette', 'list_palettes', 'change_palette', 'matview', 'imagesc', 'movie', 'setdpi', 'figure', 'full_page', 'subplot' ]
 
 
 
@@ -37,11 +36,11 @@ import sys
 
 # functions copied from weave.catalog
 
-def whoami():
+def _whoami():
     """return a string identifying the user."""
     return os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
 
-def create_dir(p):
+def _create_dir(p):
     """ Create a directory and any necessary intermediate directories."""
     if not os.path.exists(p):
         try:
@@ -50,12 +49,12 @@ def create_dir(p):
             # perhaps one or more intermediate path components don't exist
             # try to create them
             base,dir = os.path.split(p)
-            create_dir(base)
+            _create_dir(base)
             # don't enclose this one in try/except - we want the user to
             # get failure info
             os.mkdir(p)
 
-def is_writable(dir):
+def _is_writable(dir):
     dummy = os.path.join(dir, "dummy")
     try:
         open(dummy, 'w')
@@ -70,12 +69,12 @@ def _getdir(name='gist'):
     try:
         path = os.path.join(os.environ['HOME'],'.' + name)
     except KeyError:
-        path = os.path.join(tempfile.gettempdir(),"%s"%whoami(),
+        path = os.path.join(tempfile.gettempdir(),"%s"%_whoami(),
                             name)
     if not os.path.exists(path):
-        create_dir(path)
+        _create_dir(path)
         os.chmod(path,0700)
-    if not is_writable(path):
+    if not _is_writable(path):
         print "warning: default directory is not write accessible."
         print "default:", path
     return path
@@ -117,7 +116,7 @@ def textcolor(color=None):
         _textcolor = color
     return _textcolor
 
-def reverse_dict(dict):
+def _reverse_dict(dict):
     newdict = {}
     for key in dict.keys():
         newdict[dict[key]] = key
@@ -130,10 +129,10 @@ _colors = {'k':'black','r':'red','B':'blue','m':'magenta','g':'green','y':'yello
 _markers = { '+':'\2','.':'\1','*':'\3','o':'\4','x':'\5'}
 _current_style='work.gs'
 
-_rtypes = reverse_dict(_types)
+_rtypes = _reverse_dict(_types)
 _rtypes['none'] = ''
-_rcolors = reverse_dict(_colors)
-_rmarkers = reverse_dict(_markers)
+_rcolors = _reverse_dict(_colors)
+_rmarkers = _reverse_dict(_markers)
 
 def _find_and_set(dict, str, default):
     import string
@@ -324,7 +323,7 @@ def legend(text,linetypes=None,lleft=None,color=None,tfont='helvetica',fontsize=
     gist.plsys(savesys)
     return
 
-def ispointtype(linetype):
+def _ispointtype(linetype):
     if len(linetype) > 2:
         return 0
     if (len(linetype) == 1):
@@ -369,7 +368,7 @@ def ispointtype(linetype):
 ##    if linetypes is None:
 ##        linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
 ##    for k in range(len(text)):
-##        if ispointtype(linetypes[k]):
+##        if _ispointtype(linetypes[k]):
 ##            pt = len(legarr)/2
 ##            plot([legarr[pt]],[ypos*legy[pt]],linetypes[k], hold=1)
 ##        else:
@@ -462,11 +461,11 @@ def _parse_type_arg(thearg,nowplotting):
         return ('solid',_colors[_corder[indx]],'Z',0)
 
 _GLOBAL_LINE_TYPES=[]
-def clear_global_linetype():
+def _clear_global_linetype():
     for k in range(len(_GLOBAL_LINE_TYPES)):
         _GLOBAL_LINE_TYPES.pop()
 
-def append_global_linetype(arg):
+def _append_global_linetype(arg):
     _GLOBAL_LINE_TYPES.append(arg)
 
 def _minsqueeze(arr,min=1):
@@ -530,7 +529,7 @@ def plot(x,*args,**keywds):
     y = args[0]
     argpos = 1
     nowplotting = 0
-    clear_global_linetype()
+    _clear_global_linetype()
     while 1:
         try:
             thearg = args[argpos]
@@ -539,13 +538,13 @@ def plot(x,*args,**keywds):
         thetype,thecolor,themarker,tomark = _parse_type_arg(thearg,nowplotting)
         if themarker == 'Z':  # args[argpos] was data or non-existent.
             pass
-            append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
+            _append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
         else:                 # args[argpos] was a string
             argpos = argpos + 1
             if tomark:
-                append_global_linetype(_rtypes[thetype]+_rcolors[thecolor]+_rmarkers[themarker])
+                _append_global_linetype(_rtypes[thetype]+_rcolors[thecolor]+_rmarkers[themarker])
             else:
-                append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
+                _append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
         if numpy.iscomplexobj(x) or numpy.iscomplexobj(y):
             print "Warning: complex data provided, using only real part."
             x = numpy.real(x)
@@ -592,13 +591,13 @@ def matplot(x,y=None,axis=-1):
     sliceobj = [slice(None)]*2
     if not _hold and gist.plsys() < 2:
         gist.fma()
-    clear_global_linetype()
+    _clear_global_linetype()
     for k in range(y.shape[otheraxis]):
         thiscolor = _colors[_corder[k % len(_corder)]]
         sliceobj[otheraxis] = k
         ysl = where(numpy.isfinite(y[sliceobj]),y[sliceobj],0)
         gist.plg(ysl,x,type='solid',color=thiscolor,marks=0)
-        append_global_linetype(_rcolors[thiscolor]+'-')
+        _append_global_linetype(_rcolors[thiscolor]+'-')
 
 
 def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
@@ -641,7 +640,8 @@ def write_palette(tofile,pal):
 
 def list_palettes():
     import os, glob
-    direc = os.environ['GISTPATH']
+    try: direc = os.environ['GISTPATH']
+    except: direc = gist.GISTPATH
     files = glob.glob1(direc,"*.gp")
     lengths = map(len,files)
     maxlen = numpy.amax(lengths)

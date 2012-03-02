@@ -56,22 +56,20 @@
 """
 
 __all__ = ['winkill', 'pltitle', 'ylimits', 'moush', 'eps', 'xytitles', 'plmk', 'plmk_default', 'plfc', 'plh' ]
-# __all__.append('_spanz')
-# __all__.append('spann')
+# __all__.append(['_spanz', '_spann'])
 
 
 from numpy import *
-import sys, os	# To be sure expand_path has posixpath and we have sys.path
+import sys, os
 from gistC import *
 import gistfuncs
 #from mesh import * # still experimental, undebugged
-from pydoc import help
 from shapetest import *
 import types
 
 # Parameters used by pltitle and xytitles
 pltitle_height= 18;
-pltitle_font= "helvetica";
+pltitle_font= 'helvetica';
 
 # Parameters used by plmk and plmk_default
 _plmk_count = 0
@@ -299,16 +297,14 @@ def plmk_default(color=None, msize=None, width=None):
    if not (color or width or msize):
       _plmk_msize = _plmk_color = _plmk_width = None
 
-#from arrayfns import *
-
 #  ---------------------------------------------------------------------
 
-def spann (zmin, zmax, n = 8, fudge = 0, force = 0) :
+def _spann (zmin, zmax, n = 8, fudge = 0, force = 0) :
    """
-   spann (zmin, zmax, n = 8, fudge = 0, force = 0)
+   _spann (zmin, zmax, n = 8, fudge = 0, force = 0)
       return no more than N equally spaced "nice" numbers between
       ZMIN and ZMAX.
-      Note that in general spann may not supply the number of
+      Note that in general _spann may not supply the number of
       values that you asked for. To force it to do so, set
       keyword FORCE to nonzero.
       SEE ALSO: span, spanl, plc, plfc
@@ -372,7 +368,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       contours desired, or a list of the values of Z at which you want
       contour curves.  These curves divide the mesh into len(CONTOURS+1)
       regions, each of which is filled with a solid color.  If CONTOURS is
-      None or not given, 8 "nice" equally spaced level values spanning the
+      None or not given, 8 "nice" equally spaced level values _spanning the
       range of Z are selected.
 
       If you specify CONTOURS, you may also specify COLORS, an array of
@@ -385,19 +381,19 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       are determined.  SCALE may be "lin", "log", or "normal"
       specifying linearly, logarithmically, or normally spaced
       contours. Note that unlike Yorick's plfc, this routine does
-      not use spann to compute its contours. Neither, apparently,
+      not use _spann to compute its contours. Neither, apparently,
       does plc, which uses a third algorithm which matches neither
-      the one we use nor the one spann uses. So if you plot filled
+      the one we use nor the one _spann uses. So if you plot filled
       contours and then plot contour lines, the contours will in
       general not coincide exactly.
 
-      Note that you may use spann to calculate your contour levels
+      Note that you may use _spann to calculate your contour levels
       if you wish.
 
       The following keywords are legal (each has a separate help entry):
     KEYWORDS: triangle, region
     SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
-              color_bar, spann, contour, limits, logxy, range, fma, hcp
+              color_bar, _spann, contour, limits, logxy, range, fma, hcp
    """
    # 1. Get contour colors
 
@@ -408,7 +404,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       vc [0] = vcmin
       vc [n + 1] = vcmax
       if scale == "lin" or scale == None :
-          #    This stuff is in lieu of the spann stuff in Yorick.
+          #    This stuff is in lieu of the _spann stuff in Yorick.
           vc [1:n + 1] = vcmin + arange (1, n + 1) * \
              (vcmax - vcmin) / (n + 1)
       elif scale == "log" :
@@ -490,7 +486,7 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
       The following keywords are legal (each has a separate help entry):
     KEYWORDS: width, hide, color, height
     SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
-              color_bar, spann, contour, limits, logxy, range, fma, hcp
+              color_bar, _spann, contour, limits, logxy, range, fma, hcp
    """
 
    color_dict = { 'bg':-1, 'fg':-2, 'black':-3, 'white':-4, 'red':-5,
