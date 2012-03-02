@@ -1,0 +1,6 @@
+%setup -n %{name}-%{unmangled_version}
+
+(cd yorick && patch -p1 < ../patch/xft.patch)
+(cd yorick && patch -p1 < ../patch/yorick-cvs-pwin-border.patch)
+
+

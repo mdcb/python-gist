@@ -1,6 +1,7 @@
-include NOTES.developer HISTORY MANIFEST.in VERSION README setup.py config_pygist.py RELEASE release.msg ChangeLog
+include MANIFEST.in README setup.py
 recursive-include gist *
 recursive-include yorick *
 recursive-include plugin *
+recursive-include patch *
 # fixme - should rely on Make.cfg
 exclude yorick/play/unix/config.h

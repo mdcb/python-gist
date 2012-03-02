@@ -19,6 +19,7 @@
 from gist import *
 from shapetest import *
 from yorick import *
+from numpy import *
 
 def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    bracket_time = array ([2., 2.], float32 ), lims = None, timing = 0) :

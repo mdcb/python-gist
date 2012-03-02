@@ -2,6 +2,14 @@
 # Author: Travis Oliphant
 # Copyright: SciPy
 
+#__all__ = ['whoami', 'create_dir', 'is_writable', 'reverse_dict', '_find_and_set', 'ispointtype', '_parse_type_arg', 'clear_global_linetype', 'append_global_linetype', '_minsqueeze' ]
+#__all__ = ['_add_color', '_chng_font', '_remove_ticks', 'imagesc_cb', '', '', '', '', '', '' ]
+#__all__ = ['write_palette', 'list_palettes', 'change_palette', 'matview', 'imagesc', 'movie', 'setdpi', 'figure', 'full_page', 'subplot' ]
+
+__all__ = ['histogram', 'textcolor', 'barplot', 'hold', 'errorbars', 'legend', 'arrow', 'plot', 'matplot', 'addbox', 'xlabel', 'ylabel', 'title', 'title3', 'stem', 'makeleg', 'twoplane', 'surf', 'mysurf', 'expand_limits', 'axes', 'bode', 'addtext' ]
+
+
+
 import gist
 import pl3d, plwf
 import numpy
@@ -11,9 +19,9 @@ import types
 import write_style
 points = 0.0013000
 inches = 72.27*points
-from __init__ import maxwidth as _maxwidth
-from __init__ import maxheight as _maxheight
 
+_maxwidth=1600
+_maxheight=900
 _dpi = 75
 _hold = 0
 _maxcolors=256
@@ -58,7 +66,7 @@ def is_writable(dir):
 
 # end functions copied from weave.catalog
 
-def _getdir(name='pygist'):
+def _getdir(name='gist'):
     try:
         path = os.path.join(os.environ['HOME'],'.' + name)
     except KeyError:

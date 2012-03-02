@@ -1,44 +1,3 @@
-diff -rau yorick-cvs.virgin/CVS/Entries yorick-cvs/CVS/Entries
---- yorick-cvs.virgin/CVS/Entries	2010-07-20 14:13:07.000000000 -0400
-+++ yorick-cvs/CVS/Entries	2010-07-20 14:18:33.000000000 -0400
-@@ -5,11 +5,34 @@
- /Makepkg/1.3/Thu Feb 25 03:53:28 2010//
- /ONEWS/1.1.1.1/Sun Sep 18 22:03:39 2005//
- /README/1.3/Thu Feb  2 03:19:02 2006//
--/TODO/1.1.1.1/Sun Sep 18 22:03:38 2005//
- /VERSION/1.12/Sat Jul  3 19:42:31 2010//
- /configure/1.1.1.1/Sun Sep 18 22:03:38 2005//
- /install.rel/1.1.1.1/Sun Sep 18 22:03:39 2005//
- /instally.sh/1.1.1.1/Sun Sep 18 22:03:40 2005//
- /yorapi.sh/1.3/Thu Feb  2 09:17:06 2006//
- /ysite.sh/1.4/Sun Feb 28 21:52:28 2010//
--D
-+D/debian////
-+D/distribs////
-+D/doc////
-+D/drat////
-+D/emacs////
-+D/extend////
-+D/extendf////
-+D/fft////
-+D/g////
-+D/gist////
-+D/hex////
-+D/i////
-+D/i-start////
-+D/i0////
-+D/icons////
-+D/math////
-+D/matrix////
-+D/mpy////
-+D/opengl////
-+D/play////
-+D/regexp////
-+D/tau////
-+D/win////
-+D/yorick////
-+/TODO/1.2/Tue Jul 20 18:18:01 2010//
-Only in yorick-cvs.virgin/CVS: Entries.Log
 diff -rau yorick-cvs.virgin/gist/gist.c yorick-cvs/gist/gist.c
 --- yorick-cvs.virgin/gist/gist.c	2005-09-18 18:04:31.000000000 -0400
 +++ yorick-cvs/gist/gist.c	2010-07-22 16:16:57.000000000 -0400
@@ -740,18 +699,6 @@ diff -rau yorick-cvs.virgin/play/x11/textout.c yorick-cvs/play/x11/textout.c
 +}
 +
 +#endif
-diff -rau yorick-cvs.virgin/TODO yorick-cvs/TODO
---- yorick-cvs.virgin/TODO	2005-09-18 18:03:38.000000000 -0400
-+++ yorick-cvs/TODO	2010-07-20 14:18:01.000000000 -0400
-@@ -25,7 +25,7 @@
- (4) Investigate sort algorithm -- can performance for big numerical
-     sorts be improved by actually moving the data during the sort?
- 
--(5) Work on new binary file model.
-+(5) Work on new binary file model. 
-     (a) Directories?  (dictionaries?)
-     (b) Interpreted close hooks?  Other hooks?
-         -- should there be a destroy hook for any interpreted variable?
 diff -rau yorick-cvs.virgin/yorick/graph.c yorick-cvs/yorick/graph.c
 --- yorick-cvs.virgin/yorick/graph.c	2010-04-13 07:34:30.000000000 -0400
 +++ yorick-cvs/yorick/graph.c	2010-07-23 15:13:58.000000000 -0400

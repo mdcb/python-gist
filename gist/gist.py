@@ -55,7 +55,10 @@
      should be double quotes.
 """
 
-__version__ = "1.5.29"
+__all__ = ['winkill', 'pltitle', 'ylimits', 'moush', 'eps', 'xytitles', 'plmk', 'plmk_default', 'plfc', 'plh' ]
+# __all__.append('_spanz')
+# __all__.append('spann')
+
 
 from numpy import *
 import sys, os	# To be sure expand_path has posixpath and we have sys.path

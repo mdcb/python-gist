@@ -36,7 +36,7 @@ the xplt namespace.
 
 See
 
-  http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/pygist_html/pygist.html
+  http://bonsai.ims.u-tokyo.ac.jp/~mdehoon/software/python/gist_html/gist.html
 
 for more information on the gist package and it's commands.
 """

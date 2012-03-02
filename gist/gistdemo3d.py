@@ -5,7 +5,7 @@
 #
 #  NAME:     gistdemo3d.py
 #
-#  PURPOSE:  Demonstrate 3D functions in pygist.
+#  PURPOSE:  Demonstrate 3D functions in gist.
 #
 #  CHANGES:
 #  12/06/03 mdh Change demo5_n from an array of floats to an array of ints
