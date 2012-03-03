@@ -1,6 +1,6 @@
 INSTALL
 
-git clone https://github.com/mdcb/python-gist
+git clone git@github.com:mdcb/python-gist.git
 cd python-gist
 git clone https://github.com/dhmunro/yorick.git
 python setup.py bdist_rpm
