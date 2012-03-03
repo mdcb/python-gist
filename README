@@ -1,1 +1,9 @@
-should have a README.
+INSTALL
+
+git clone https://github.com/mdcb/python-gist
+cd python-gist
+git clone https://github.com/dhmunro/yorick.git
+python setup.py bdist_rpm
+sudo yum install -y dist/python-gist-*.`uname -m`.rpm
+
+
