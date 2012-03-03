@@ -2,10 +2,12 @@
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
+import numpy
+from gistC import *
+import gistfuncs
 from shapetest import *
 from yorick import *
-from numpy import *
-import gistfuncs
+
 
 #  PL3D.PY
 #  Viewing transforms and other aids for 3D plotting.
@@ -93,20 +95,20 @@ def rot3 (xa = 0., ya = 0., za = 0.) :
     SEE ALSO: orient3, mov3, aim3, setz3, undo3, save3, restore3, light3
     """
 
-    x = array ([1.,0.,0.], float32)
-    y = array ([0.,1.,0.], float32)
-    z = array ([0.,0.,1.], float32)
+    x = numpy.array ([1.,0.,0.], numpy.float32)
+    y = numpy.array ([0.,1.,0.], numpy.float32)
+    z = numpy.array ([0.,0.,1.], numpy.float32)
     [x, y] = rot3_ (za, x, y)
     [z, x] = rot3_ (ya, z, x)
     [y, z] = rot3_ (xa, y, z)
     # n. b. matrixMultiply has the unfortunate effect of destroying
     # the matrix that calls it.
-    gr3 = array (getrot3_ (), copy = 1)
-    setrot3_ (transpose (dot (transpose (gr3), array ( [x, y, z]))))
+    gr3 = numpy.array (getrot3_ (), copy = 1)
+    setrot3_ (numpy.transpose (dot (numpy.transpose (gr3), numpy.array ( [x, y, z]))))
 
 def rot3_ (a, x, y) :
-    ca = cos (a)
-    sa = sin (a)
+    ca = numpy.cos (a)
+    sa = numpy.sin (a)
     return [multiply (ca, x) + multiply (sa, y), multiply (-sa, x) + multiply (ca, y)]
 
 def mov3 ( xa = 0., ya = 0., za = 0. ) :
@@ -118,7 +120,7 @@ def mov3 ( xa = 0., ya = 0., za = 0. ) :
     SEE ALSO: rot3, orient3, setz3, undo3, save3, restore3, light3
     """
 
-    gr = dot (transpose (gr), transpose (xa))
+    gr = dot (numpy.transpose (gr), numpy.transpose (xa))
     setorg3_ ( getorg3_ () - gr)
 
 def aim3 ( xa = 0., ya = 0., za = 0. ) :
@@ -180,12 +182,12 @@ def orient3 ( ** kw ) :
     try :
         dummy = _orient3_theta
     except :
-        _orient3_theta = pi / 6.
+        _orient3_theta = numpy.pi / 6.
 
     try :
         dummy = _orient3_phi
     except :
-        _orient3_phi = - pi / 4.
+        _orient3_phi = - numpy.pi / 4.
 
     if kw.has_key ("phi") and kw ["phi"] == None :
         kw ["phi"] = _orient3_phi
@@ -195,8 +197,8 @@ def orient3 ( ** kw ) :
         phi = _orient3_phi
         theta = _orient3_theta
     elif not kw.has_key ("phi") or not kw.has_key ("theta") :
-        gr3 = array (getrot3_ (), copy = 1)
-        z = dot (transpose (gr3), array ( [0., 0., 1.]))
+        gr3 = numpy.array (getrot3_ (), copy = 1)
+        z = dot (numpy.transpose (gr3), numpy.array ( [0., 0., 1.]))
         if abs (z [0]) > 1.e-6 :
             # object z-axis not aligned with viewer y-axis
             if not kw.has_key ("theta") :
@@ -210,22 +212,22 @@ def orient3 ( ** kw ) :
             if (abs (z [1]) < 1.e-6) :
                 theta = _orient3_theta
             else :
-                theta = arctan2 (z [2], z [1])
+                theta = numpy.arctan2 (z [2], z [1])
         else :
             theta = kw ["theta"]
-            y = array ( [0., z [2], -z [1]])
-            x = dot (transpose (gr3), array ( [1., 0., 0.]))
-            phi = arctan2 (sum (y * x,axis=0), x [0])
+            y = numpy.array ( [0., z [2], -z [1]])
+            x = dot (numpy.transpose (gr3), numpy.array ( [1., 0., 0.]))
+            phi = numpy.arctan2 (sum (y * x,axis=0), x [0])
     else :
         phi = kw ["phi"]
         theta = kw ["theta"]
 
-    x = array ( [1., 0., 0.],  float32)
-    y = array ( [0., 1., 0.],  float32)
-    z = array ( [0., 0., 1.],  float32)
+    x = numpy.array ( [1., 0., 0.],  numpy.float32)
+    y = numpy.array ( [0., 1., 0.],  numpy.float32)
+    z = numpy.array ( [0., 0., 1.],  numpy.float32)
     [y, z] = rot3_ (theta, y, z)
     [z, x] = rot3_ (phi, z, x)
-    setrot3_ (array ( [x, -z, y],  float32))
+    setrot3_ (numpy.array ( [x, -z, y],  numpy.float32))
 
 import copy
 
@@ -339,7 +341,7 @@ def light3 ( * kw, ** kwds ) :
         spower = _draw3_list [_draw3_nv + 3]
     if kwds.has_key ("sdir") and kwds ["sdir"] != None :
         sdir = kwds ["sdir"]
-        dims = shape (sdir)
+        dims = numpy.shape (sdir)
         if dims == 0 or len (dims) == 2 and dims [1] != 3 :
             raise _LightingError, \
                "lighting direction must be 3 vector or ns-by-3 array."
@@ -380,12 +382,12 @@ def get3_light (xyz, * nxyz) :
       """
 
     global _draw3_list, _draw3_nv
-    list = _draw3_list [_draw3_nv:]
-    ambient = list [0]
-    diffuse = list [1]
-    specular = list [2]
-    spower = list [3]
-    sdir = list [4]
+    lst = _draw3_lst [_draw3_nv:]
+    ambient = lst [0]
+    diffuse = lst [1]
+    specular = lst [2]
+    spower = lst [3]
+    sdir = lst [4]
 
     if len (nxyz) == 0 :
         normal = get3_normal (xyz)
@@ -394,13 +396,13 @@ def get3_light (xyz, * nxyz) :
 
     zc = getzc3_ ( )
     if ( not zc ) :
-        view = array ( [0., 0., 1.],  float32)
+        view = numpy.array ( [0., 0., 1.],  numpy.float32)
     elif len (nxyz) == 0 :
-        view = array ( [0., 0., zc],  float32) - get3_centroid (xyz)
+        view = numpy.array ( [0., 0., zc],  numpy.float32) - get3_centroid (xyz)
     else :
-        view = array ( [0., 0., zc],  float32) - get3_centroid (xyz, nxyz [0])
+        view = numpy.array ( [0., 0., zc],  numpy.float32) - get3_centroid (xyz, nxyz [0])
         m1 = \
-           sqrt ( sum (view * view,axis=0))
+           numpy.sqrt ( sum (view * view,axis=0))
         if m1 == 0. : m1 = 1.
         view = view / m1
 
@@ -408,20 +410,20 @@ def get3_light (xyz, * nxyz) :
        normal [2, ...] * view [2]
     light = ambient + diffuse * abs (nv)
     if specular != 0. :
-        sv = transpose (transpose (sdir) / sqrt (sum (transpose (sdir*sdir),axis=0)))
+        sv = numpy.transpose (numpy.transpose (sdir) / numpy.sqrt (sum (numpy.transpose (sdir*sdir),axis=0)))
         sv = dot (sv, view)
-        if len (shape (sdir)) == 1 :
-            sn = sum(array([sdir[0]*normal[0],sdir[1]*normal[1],
+        if len (numpy.shape (sdir)) == 1 :
+            sn = sum(numpy.array([sdir[0]*normal[0],sdir[1]*normal[1],
                             sdir[2]*normal[2]]),axis=0)
             ####### I left out the specular_hook stuff.
             m1 = maximum (sn * nv -0.5 * sv + 0.5, 1.e-30)
             m1 = m1 ** spower
             light = light + (specular * m1)
-        elif len (shape (sdir)) >= 2 :
+        elif len (numpy.shape (sdir)) >= 2 :
             # multiple light sources
-            nsrc = len (shape (sdir))
+            nsrc = len (numpy.shape (sdir))
             for i in range (nsrc) :
-                sn = sum(array([sdir[i,0]*normal[0],sdir[i,1]*normal[1],
+                sn = sum(numpy.array([sdir[i,0]*normal[0],sdir[i,1]*normal[1],
                             sdir[i,2]*normal[2]]),axis=0)
                 m1 = maximum (sn * nv -0.5 * sv [i] + 0.5, 1.e-30) ** spower [i]
                 light = light + specular * m1
@@ -459,7 +461,7 @@ def get3_normal (xyz, *nxyz) :
     else :
         # with polygon list, more elaborate calculation required
         # (1) frst subscripts the first vertex of each polygon
-        frst = cumsum (nxyz [0],axis=0) - nxyz [0]
+        frst = numpy.cumsum (nxyz [0],axis=0) - nxyz [0]
 
         # form normal by getting two approximate diameters
         # (reduces to above medians for quads)
@@ -477,7 +479,7 @@ def get3_normal (xyz, *nxyz) :
 
     # poly normal is cross product of two medians (or diameters)
     # normal = m1; I had to reverse the sign.
-    if len (shape (xyz)) == 3 :
+    if len (numpy.shape (xyz)) == 3 :
         n1 = m1 [2, :] * m2 [1, :] - \
                                m1 [1, :] * m2 [2, :]
         n2 = m1 [0, :] * m2 [2, :] - \
@@ -491,9 +493,9 @@ def get3_normal (xyz, *nxyz) :
                                m1 [:, 2] * m2 [:, 0]
         n3 = m1 [:, 1] * m2 [:, 0] - \
                                m1 [:, 0] * m2 [:, 1]
-    m1 = sqrt (n1 ** 2 + n2 **2 + n3 **2)
+    m1 = numpy.sqrt (n1 ** 2 + n2 **2 + n3 **2)
     m1 = m1 + equal (m1, 0.0)
-    normal = array([n1 / m1, n2 / m1, n3 / m1])
+    normal = numpy.array([n1 / m1, n2 / m1, n3 / m1])
 
     return normal
 
@@ -516,22 +518,23 @@ def get3_centroid (xyz, * nxyz) :
 
       SEE ALSO: get3_normal, get3_light
     """
+    
 
     if len (nxyz) == 0 :
         # if no polygon list is given, assume xyz is 2D mesh
         centroid = zcen_ (zcen_ (xyz, 1), 0)
     else :
         # with polygon list, more elaborate calculation required
-        last = cumsum (nxyz [0],axis=0)
-        list = gistfuncs.histogram (1 + last) [0:-1]
-        list = cumsum (list,axis=0)
+        last = numpy.cumsum (nxyz [0],axis=0)
+        lst = numpy.bincount (1 + last) [0:-1]
+        lst = numpy.cumsum (lst,axis=0)
         k = len (nxyz [0])
-        l = shape (xyz) [0]
-        centroid = zeros ( (k, 3))
-        centroid [0:k, 0] = gistfuncs.histogram (list, xyz [0:l,0])
-        centroid [0:k, 1] = gistfuncs.histogram (list, xyz [0:l,1])
-        centroid [0:k, 2] = gistfuncs.histogram (list, xyz [0:l,2])
-        fnxyz = array (nxyz [0], float32 )
+        l = numpy.shape (xyz) [0]
+        centroid = numpy.zeros ( (k, 3))
+        centroid [0:k, 0] = numpy.bincount (lst, xyz [0:l,0])
+        centroid [0:k, 1] = numpy.bincount (lst, xyz [0:l,1])
+        centroid [0:k, 2] = numpy.bincount (lst, xyz [0:l,2])
+        fnxyz = numpy.array (nxyz [0], numpy.float32 )
         centroid = centroid / fnxyz
     return centroid
 
@@ -561,33 +564,33 @@ def get3_xy (xyz, *flg) :
     """
 
     # rotate and translate to viewer's coordinate system
-    shp = shape (xyz)
+    shp = numpy.shape (xyz)
     if len (shp) == 3:
         # 2d mesh case is much more complex than in Yorick
         (k, l) = shp [1:3]
         go3_ = getorg3_ ()
         # Unwind xyz
-        xx = ravel (xyz [0])
-        yy = ravel (xyz [1])
-        zz = ravel (xyz [2])
-        tmpxyz = array ( [xx, yy, zz])
-        gr3 = array (getrot3_ (), copy = 1)
-        tmpxyz = dot (transpose (gr3),
-           tmpxyz - array ( [ [go3_ [0]], [go3_ [1]], [go3_ [2]]]))
-##    xx = transpose (reshape (ravel (tmpxyz [0]), (k,l)))
-##    yy = transpose (reshape (ravel (tmpxyz [1]), (k,l)))
-##    zz = transpose (reshape (ravel (tmpxyz [2]), (k,l)))
-        xx = (reshape (ravel (tmpxyz [0]), (k,l)))
-        yy = (reshape (ravel (tmpxyz [1]), (k,l)))
-        zz = (reshape (ravel (tmpxyz [2]), (k,l)))
-        tmpxyz = array ( [xx, yy, zz])
+        xx = numpy.ravel (xyz [0])
+        yy = numpy.ravel (xyz [1])
+        zz = numpy.ravel (xyz [2])
+        tmpxyz = numpy.array ( [xx, yy, zz])
+        gr3 = numpy.array (getrot3_ (), copy = 1)
+        tmpxyz = dot (numpy.transpose (gr3),
+           tmpxyz - numpy.array ( [ [go3_ [0]], [go3_ [1]], [go3_ [2]]]))
+##    xx = numpy.transpose (numpy.reshape (ravel (tmpxyz [0]), (k,l)))
+##    yy = numpy.transpose (numpy.reshape (ravel (tmpxyz [1]), (k,l)))
+##    zz = numpy.transpose (numpy.reshape (ravel (tmpxyz [2]), (k,l)))
+        xx = (numpy.reshape (ravel (tmpxyz [0]), (k,l)))
+        yy = (numpy.reshape (ravel (tmpxyz [1]), (k,l)))
+        zz = (numpy.reshape (ravel (tmpxyz [2]), (k,l)))
+        tmpxyz = numpy.array ( [xx, yy, zz])
     elif len (shp) == 2:
         go3_ = getorg3_ ()
-        lm = array (getrot3_ (), copy = 1)
-        rm = (xyz - array ( [ go3_ [0], go3_ [1], go3_ [2]]))
+        lm = numpy.array (getrot3_ (), copy = 1)
+        rm = (xyz - numpy.array ( [ go3_ [0], go3_ [1], go3_ [2]]))
         tmpxyz = dot (rm, lm)
     else:
-        raise _Get3Error, "xyz has a bad shape: " + `shp`
+        raise _Get3Error, "xyz has a bad numpy.shape: " + `shp`
 
     # do optional perspective projection
     zc = getzc3_ ()
@@ -829,18 +832,18 @@ def sort3d (z, npolys) :
     # first compute z, the z-centroid of every poly
     # get a list the same length as x, y, or z which is 1 for each
     # vertex of poly 1, 2 for each vertex of poly2, etc.
-    # the goal is to make nlist with gistfuncs.histogram(nlist)==npolys
-    nlist = gistfuncs.histogram(cumsum (npolys,axis=0))[0:-1]
-    nlist = cumsum (nlist,axis=0)
+    # the goal is to make nlist with bincount(nlist)==npolys
+    nlist = numpy.bincount(numpy.cumsum (npolys,axis=0))[0:-1]
+    nlist = numpy.cumsum (nlist,axis=0)
     # now sum the vertex values and divide by the number of vertices
-    z = gistfuncs.histogram (nlist, z) / npolys
+    z = numpy.bincount (nlist, z) / npolys
 
     # sort the polygons from smallest z to largest z
-    list = gistfuncs.index_sort (z)
+    lst = gistfuncs.index_sort (z)
     # next, find the list which sorts the polygon vertices
     # first, find a list vlist such that sort(vlist) is above list
-    vlist = zeros (len (list), int32)
-    gistfuncs.array_set (vlist, list, arange (len (list), dtype = int32))
+    vlist = numpy.zeros (len (lst), numpy.int32)
+    gistfuncs.array_set (vlist, lst, numpy.arange (len (lst), dtype = numpy.int32))
     # then reset the nlist values to that pre-sorted order, so that
     # sort(nlist) will be the required vertex sorting list
     nlist = take(vlist, nlist, 0)
@@ -855,11 +858,11 @@ def sort3d (z, npolys) :
     #  necessary)
     n1max = max (npolys)    # this must never be so large that
                             # numberof(npolys)*nmax > 2e9
-    nmax = n1max * ones (len (nlist), int32)
+    nmax = n1max * numpy.ones (len (nlist), numpy.int32)
     vlist = gistfuncs.index_sort (nmax * nlist +
-       arange (len (nlist), dtype = int32) % n1max)
+       numpy.arange (len (nlist), dtype = numpy.int32) % n1max)
     #         primary sort key ^            secondary key  ^
-    return [list, vlist]
+    return [lst, vlist]
 
 _square = 1 # Global variable which tells whether to force equal axes
 _xfactor = 1.
@@ -899,20 +902,20 @@ def draw3 (called_as_idler = 0, lims = None) :
         # the _draw3 flag alerts the functions that these are the draw
         # calls rather than the interactive setup calls
         set_draw3_ (1)
-        list = _draw3_list [_draw3_n:]
+        lst = _draw3_list [_draw3_n:]
         no_lims = lims == None
         first = 1
         # ZCM Feb. 1997: Because Gist command 'limits' seems to
         # misbehave and be timing dependent, I have added the kludge
         # below, which seems to make things work.
-        while list != [] :
-            fnc = list [0]
+        while lst != [] :
+            fnc = lst [0]
             if no_lims :
                 if (first) :
-                    lims = fnc (list [1])
+                    lims = fnc (lst [1])
                     first = 0
                 else :
-                    fv = fnc (list [1])
+                    fv = fnc (lst [1])
                     if fv != None and lims != None :
                         lims = [min (fv [0], lims [0]),
                                 max (fv [1], lims [1]),
@@ -921,8 +924,8 @@ def draw3 (called_as_idler = 0, lims = None) :
                     elif fv != None :
                         lims = fv
             else :
-                fnc (list [1])
-            list = list [2:]
+                fnc (lst [1])
+            lst = lst [2:]
         if _gnomon :
             _gnomon_draw ( )
         _draw3_changes = None
@@ -933,7 +936,7 @@ def draw3 (called_as_idler = 0, lims = None) :
 try :
     dummy = _draw3_view
 except :
-    _draw3_view = [array ([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), [0., 0., 0.], None]
+    _draw3_view = [numpy.array ([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), [0., 0., 0.], None]
 _draw3_nv = len (_draw3_view)
 
 try :
@@ -968,7 +971,7 @@ except :
 try :
     dummy = _light3_sdir
 except :
-    _light3_sdir = array ( [1.0, 0.5, 1.0]) / sqrt(2.25)
+    _light3_sdir = numpy.array ( [1.0, 0.5, 1.0]) / numpy.sqrt(2.25)
 
 _light3_list = [_light3_ambient, _light3_diffuse, _light3_specular,
                 _light3_spower, _light3_sdir]
@@ -1041,17 +1044,17 @@ def gnomon (* on, ** kw) :
 
 def _gnomon_draw ( ) :
     global chr
-    o = array ( [0., 0., 0.],  float32)
-    x1 = array ( [1., 0., 0.],  float32)
-    y1 = array ( [0., 1., 0.],  float32)
-    z1 = array ( [0., 0., 1.],  float32)
-    xyz1 = array (getrot3_ ( ), copy = 1)
-    xyz2 = array([[o,x1],[o,y1],[o,z1]])
-    s1 = shape ( xyz1 )
-    s2 = shape ( xyz2 )
-    xyz = zeros ( (s2 [1], s2 [0], s1 [1] ), float32)
-    xyz [0, :, :] = dot (transpose (xyz1), xyz2 [:, 0, :])
-    xyz [1, :, :] = dot (transpose (xyz1), xyz2 [:, 1, :])
+    o = numpy.array ( [0., 0., 0.],  numpy.float32)
+    x1 = numpy.array ( [1., 0., 0.],  numpy.float32)
+    y1 = numpy.array ( [0., 1., 0.],  numpy.float32)
+    z1 = numpy.array ( [0., 0., 1.],  numpy.float32)
+    xyz1 = numpy.array (getrot3_ ( ), copy = 1)
+    xyz2 = numpy.array([[o,x1],[o,y1],[o,z1]])
+    s1 = numpy.shape ( xyz1 )
+    s2 = numpy.shape ( xyz2 )
+    xyz = numpy.zeros ( (s2 [1], s2 [0], s1 [1] ), numpy.float32)
+    xyz [0, :, :] = dot (numpy.transpose (xyz1), xyz2 [:, 0, :])
+    xyz [1, :, :] = dot (numpy.transpose (xyz1), xyz2 [:, 1, :])
     xyz = .0013 * _gnomon_scale * xyz
     x1 = xyz [0:2, 0, 0:3]
     y1 = xyz [0:2, 1, 0:3]
@@ -1068,14 +1071,14 @@ def _gnomon_draw ( ) :
     plsys (savesys)
 
     # Compute point size of labels (1/3 of axis length)
-    pts = [8, 10, 12, 14, 18, 24] [gistfuncs.digitize (_gnomon_scale / 3.0,
-          array ([9, 11, 13, 16, 21], int32))]
+    pts = [8, 10, 12, 14, 18, 24] [numpy.digitize (_gnomon_scale / 3.0,
+          numpy.array ([9, 11, 13, 16, 21], numpy.int32))]
 
     if _gnomon_scale < 21.0 :
         x1 = x1 * 21. / _gnomon_scale
         y1 = y1 * 21. / _gnomon_scale
     # label positions: first find shortest axis
-    xy = sqrt (x1 * x1 + y1 * y1)
+    xy = numpy.sqrt (x1 * x1 + y1 * y1)
     xysum = add.reduce (xy)
     i = argmin (xy,axis=-1)          # mnx (xy)
     jk = [ [1, 2], [2, 0], [0, 1]] [i]
@@ -1084,7 +1087,7 @@ def _gnomon_draw ( ) :
     if xy [i] < 1.e-7 * xysum : # guarantee not exactly zero
         x1 [i] = -1.e-6 * (x1 [j] + x1 [k] )
         y1 [i] = -1.e-6 * (y1 [j] + y1 [k] )
-        xy [i] = sqrt (x1 [i] * x1 [i] + y1 [i] * y1 [i])
+        xy [i] = numpy.sqrt (x1 [i] * x1 [i] + y1 [i] * y1 [i])
     xyi = xy [i]
     # next find axis nearest to shortest
     if abs (x1 [j] * y1 [i] - y1 [j] * x1 [i]) * xy [k] > \
@@ -1095,7 +1098,7 @@ def _gnomon_draw ( ) :
     # furthest axis first--move perpendicular to nearest axis
     xk = - y1 [j]
     yk = x1 [j]
-    xy = sqrt (xk * xk + yk * yk)
+    xy = numpy.sqrt (xk * xk + yk * yk)
     xk = xk / xy
     yk = yk / xy
     if (xk * x1 [k] + yk * y1 [k] < 0.0 ) :
@@ -1104,7 +1107,7 @@ def _gnomon_draw ( ) :
     # nearer axis next--move perpendicular to furthest axis
     xj = - y1 [k]
     yj = x1 [k]
-    xy = sqrt (xj * xj + yj * yj)
+    xy = numpy.sqrt (xj * xj + yj * yj)
     xj = xj / xy
     yj = yj / xy
     if (xj * x1[j] + yj * y1 [j] < 0.0 ) :
@@ -1113,7 +1116,7 @@ def _gnomon_draw ( ) :
     # shortest axis last -- move perpendicular to nearer
     xi = - y1 [j]
     yi = x1 [j]
-    xy = sqrt (xi * xi + yi * yi)
+    xy = numpy.sqrt (xi * xi + yi * yi)
     xi = xi / xy
     yi = yi / xy
     if (xi *x1 [i] + yi * y1 [i] < 0.0) :
@@ -1128,11 +1131,11 @@ def _gnomon_draw ( ) :
         yi = sign_ (xi * xk + yi * yk)
         xi = jk * xj + yi * xk
         yi = jk * yj + yi * yk
-        jk = sqrt (xi * xi + yi * yi)
+        jk = numpy.sqrt (xi * xi + yi * yi)
         xi = xi / jk
         yi = yi / jk
-    x = zeros (3, float32)
-    y = zeros (3, float32)
+    x = numpy.zeros (3, numpy.float32)
+    y = numpy.zeros (3, numpy.float32)
     x [i] = xi
     x [j] = xj
     x [k] = xk
@@ -1170,7 +1173,7 @@ def gnomon_text_ (chr, x, y, pts, invert) :
     if invert :
         savesys = plsys (0)
 	print 'savesys',savesys
-        plg (array ( [y, y]), array ( [x, x]), type = 1, width = 2.2 * pts,
+        plg (numpy.array ( [y, y]), numpy.array ( [x, x]), type = 1, width = 2.2 * pts,
              color = col, marks = 0, legend = "")
         plsys (savesys)
         col = "bg"
@@ -1181,9 +1184,9 @@ from movie import *
 
 g_nframes = 30
 
-def spin3 (nframes = 30, axis = array ([-1, 1, 0],  float32), tlimit = 60.,
-   dtmin = 0.0, bracket_time = array ([2., 2.],  float32), lims = None,
-   timing = 0, angle = 2. * pi) :
+def spin3 (nframes = 30, axis = numpy.array ([-1, 1, 0],  numpy.float32), tlimit = 60.,
+   dtmin = 0.0, bracket_time = numpy.array ([2., 2.],  numpy.float32), lims = None,
+   timing = 0, angle = 2. * numpy.pi) :
 
     """
     spin3 ( ) or spin3 (nframes) os spin3 (nframes, axis)
@@ -1209,10 +1212,10 @@ def spin3 (nframes = 30, axis = array ([-1, 1, 0],  float32), tlimit = 60.,
     global _g_nframes
     _g_nframes = nframes
     _dtheta = angle / (nframes - 1)
-    _theta = arccos (axis [2] / sqrt (axis [0] * axis [0] + axis [1] * axis [1] +
+    _theta = numpy.arccos (axis [2] / numpy.sqrt (axis [0] * axis [0] + axis [1] * axis [1] +
                     axis [2] * axis [2]))
     inc = axis [0] == axis [1] == 0
-    _phi = arctan2 (axis [1], axis [0] + inc)
+    _phi = numpy.arctan2 (axis [1], axis [0] + inc)
     orig = save3 ( )
     movie (_spin3, tlimit, dtmin, bracket_time, lims, timing = 0)
     restore3 (orig)
@@ -1226,6 +1229,6 @@ def _spin3 (i) :
     rot3 (ya = -_theta, za = _dtheta)
     rot3 (ya = _theta, za = _phi)
     lims = draw3 ( )
-    # fixme, gistC does not cast float64 to float
+    # fixme, gistC does not cast numpy.float64 to float
     limits (float(lims [0]), float(lims [1]), float(lims [2]), float(lims [3]))
     return 1

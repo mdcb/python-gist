@@ -3,7 +3,7 @@
 # I've felt the need for such a test for a long time;
 # this tells you whether an item is a scalar or not.
 
-from numpy import ndarray
+import numpy
 
 def is_scalar (x) :
     if type (x) == str : return 1
@@ -16,7 +16,7 @@ def is_scalar (x) :
 # This routine should be able to tell you the size of any object:
 def no_of_dims (x) :
     if x == None : return 0
-    if isinstance(x, ndarray) : return len (x.shape)
+    if isinstance(x, numpy.ndarray) : return len (x.shape)
     if isinstance(x, (list, tuple)) : return 1
     # I don't know if there are any other possibilities.
     for i in range (10) :

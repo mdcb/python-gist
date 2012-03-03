@@ -1,38 +1,44 @@
 #!/usr/bin/env python
 
+patch_work_dir = './build'  # TODO - hide global
+
 import os
 import sys
-import numpy.distutils.system_info
 import distutils
 import glob
+#import shutil
+from distutils.core import setup, Extension
+from distutils.core import Distribution, Command
+from distutils.command.build import build
+from distutils import log
+import numpy.distutils.system_info # pkg_config
 
 x11_info = numpy.distutils.system_info.get_info('x11')
 xft_info = numpy.distutils.system_info.get_info('xft')
 
 gistsource = glob.glob('yorick/gist/*.c')
-gistsource.append('plugin/plug-hlevel.c')
 gistsource.pop(gistsource.index('yorick/gist/browser.c'))
 gistsource.pop(gistsource.index('yorick/gist/bench.c'))
 gistsource.pop(gistsource.index('yorick/gist/cgmin.c'))
 
 unixsource = [
-  "yorick/play/unix/dir.c",
-  "yorick/play/unix/files.c",
-  "yorick/play/unix/fpuset.c",
-  "yorick/play/unix/handler.c",
-  "yorick/play/unix/pathnm.c",
-  #"yorick/play/unix/pmain.c",
-  "yorick/play/unix/slinks.c",
-  "yorick/play/unix/stdinit.c",
-  "yorick/play/unix/timeu.c",
-  "yorick/play/unix/timew.c",
-  "yorick/play/unix/udl.c",
-  "yorick/play/unix/uevent.c",
-  "yorick/play/unix/ugetc.c",
-  "yorick/play/unix/uinbg.c",
-  "yorick/play/unix/umain.c",
-  "yorick/play/unix/usernm.c",
-  "yorick/play/unix/uspawn.c",
+  'yorick/play/unix/dir.c',
+  'yorick/play/unix/files.c',
+  'yorick/play/unix/fpuset.c',
+  'yorick/play/unix/handler.c',
+  'yorick/play/unix/pathnm.c',
+  #'yorick/play/unix/pmain.c',
+  'yorick/play/unix/slinks.c',
+  'yorick/play/unix/stdinit.c',
+  'yorick/play/unix/timeu.c',
+  'yorick/play/unix/timew.c',
+  'yorick/play/unix/udl.c',
+  'yorick/play/unix/uevent.c',
+  'yorick/play/unix/ugetc.c',
+  'yorick/play/unix/uinbg.c',
+  'yorick/play/unix/umain.c',
+  'yorick/play/unix/usernm.c',
+  'yorick/play/unix/uspawn.c',
   ]
 
 x11source = glob.glob('yorick/play/x11/*.c')
@@ -51,124 +57,179 @@ anysource.extend(glob.glob('yorick/regexp/*.c'))
 anysource.extend(glob.glob('yorick/matrix/*.c'))
 anysource.extend(glob.glob('yorick/fft/*.c'))
 
-def getbuildopt(gistpath,config,config_path):
-  local_path=config.local_path
+define_macros=[]
+extra_compile_args=[]
 
-  extra_compile_args = ['-DGISTPATH="\\"%s\\""' % gistpath]
-  extra_compile_args.append('-DPYGIST_VERSION="\\"%s\\""' % config.version)
+# version
+version=file('yorick/play/yversion.h').readline()
+version=version.strip().split(' ')[-1]
+version=version.strip('"')
 
-  extra_compile_args.append("-DSTAND_ALONE") # for yorick/play/any/numfmt.c
-  extra_compile_args.append("-O2")
-  extra_compile_args.append('-DYLAPACK_NOALIAS')
-  extra_compile_args.append('-DYCBLAS_NOALIAS')
-  # TODO: patch only works for bdist_rpm
-  extra_compile_args.append("-DHAVE_XFT")
+# GISTPATH to *.g[sp]
+gistdata_path = os.path.join(distutils.sysconfig.get_python_lib(1),'gist/gistdata') # 'gist' is pkg.name
+gistdata_path = gistdata_path.replace('\\',r'\\\\')
 
-  library_dirs = [os.path.join(local_path,x) for x in ['.','yorick']]
-  library_dirs.extend(x11_info.get('library_dirs',[]))
+define_macros.append(('GISTPATH', '\\"%s\\"' % gistdata_path ))
+define_macros.append(('PYGIST_VERSION',  '\\"%s\\"' % version))
+define_macros.append(('STAND_ALONE',     None                )) # for yorick/play/any/numfmt.c
+define_macros.append(('YLAPACK_NOALIAS', None                ))
+define_macros.append(('YCBLAS_NOALIAS',  None                ))
 
-  dirs = [ 'plugin','yorick/gist', 'yorick/play', 'yorick/play/unix', 'yorick/regexp',
-           'yorick/matrix', 'yorick/yorick' ]
-  include_dirs = [os.path.join(local_path,x) for x in dirs]
-  include_dirs.extend(x11_info.get('include_dirs',[]))
-  include_dirs.extend(xft_info.get('include_dirs'))
+gist_data=glob.glob('gistdata/*.g[sp]')
+gist_data.extend(glob.glob('yorick/g/*.g[sp]'))
+data_files = [(gistdata_path, gist_data),]
 
-  libraries = x11_info.get('libraries',['X11'])
-  libraries.extend(xft_info.get('libraries'))
+extra_compile_args.append('-O2')
 
-  for line in file(os.path.join(config_path,"Make.cfg")):
-    if line.startswith('#'): continue
-    key,val=line.strip().split('=')
-    if val != '':
-      if key == 'MATHLIB':
-        libraries.append(val.lstrip('-l'))
-      elif key == 'NO_EXP10':
-        extra_compile_args.append(val)
-      elif key == 'XINC':
-        include_dirs.append(val.lstrip('-I'))
-      elif key == 'XLIB':
-        libraries.append(val.lstrip('-L'))
-      elif key == 'D_FPUSET':
-        extra_compile_args.append(val)
 
-  return include_dirs, library_dirs, libraries, extra_compile_args
+library_dirs = x11_info.get('library_dirs',[])
 
-from distutils.command.config import config
-import os
+dirs = [ 'yorick/gist', 'yorick/play', 'yorick/play/unix', 'yorick/regexp', 'yorick/matrix', 'yorick/yorick' ]
+include_dirs = [os.path.join(patch_work_dir,x) for x in dirs]
+include_dirs.extend(['plugin'])
+include_dirs.extend(x11_info.get('include_dirs',[]))
+include_dirs.extend(xft_info.get('include_dirs'))
 
-class yorick_configure(config):
-  def __init__(self, local_path, config_path):
-    #from distutils.dist import Distribution
-    #super(yorick_configure,self).__init__(self,Distribution())
-    self.config_path = config_path
+libraries = x11_info.get('libraries',['X11'])
+libraries.extend(xft_info.get('libraries'))
 
-  def run (self):
-    os.chdir('yorick')
-    os.system('gmake clean config')
-    os.chdir('..')
-    os.system('cp yorick/Make.cfg '+self.config_path)
+# sources
+sources = unixsource + x11source + anysource + gistsource
+sources = [ os.path.join(patch_work_dir,f) for f in sources]
+sources.append('plugin/plug-hlevel.c')
+sources.append('plugin/gistCmodule.c')
 
-def configuration(parent_package='',top_path=None):
-  from numpy.distutils.misc_util import Configuration
+class patch_cmd(Command):
+  description = 'apply patches prior to build'
   
-  config = Configuration(
-    package_name='gist',
-    parent_name=parent_package,
-    top_path=top_path,
-    package_path='gist',
-    version='dev',
-    description='gist for python.',
-    long_description='Python plugin for gist, the yorick graphic environment.',
-    url='https://github.com/mdcb/python-gist',
-    author='Matthieu Bec',
-    author_email='mdcb808@gmail.com',
-    license='GPLv3',
-    )
-
-
+  #user_options = [('name=', 'n', 'option name abreviated by n'),]
   
-  v=file(os.path.join(config.local_path,'yorick/play/yversion.h')).readline()
-  v=v.strip().split(' ')[-1]
-  v=v.strip('"')
-  config.version=v
+  boolean_options = ['xft_patch','zeroborder_patch']
+  #negative_opt = {'no-patch-bool-flag': 'patch-bool-flag'}
 
-  gistdata_path = os.path.join(distutils.sysconfig.get_python_lib(1),config.path_in_package,"gistdata")
-  gistdata_path = gistdata_path.replace("\\",r"\\\\")
+  def initialize_options(self):
+    self.xft_patch = True
+    self.zeroborder_patch = True
 
-  def get_playsource(extension,build_dir):
-    playsource = unixsource + x11source + anysource
-    sources = [os.path.join(config.local_path,f) for f in playsource]
-    config_path = os.path.join(build_dir,'confgist')
-    distutils.dir_util.mkpath(config_path)
-    conf = yorick_configure(config.local_path,config_path)
-    #   This is repeating code, but I'm not sure how to avoid it
-    #   As this gets run before overall setup does.
-    # Generate Make.cfg and config.h:
-    conf.run()
+  def finalize_options(self):
+    pass
 
-    inc,lib,ll,cc = getbuildopt(gistdata_path,config,config_path)
+  def run(self):
+    log.info('preparing patch tree copy')
+    if not os.path.isdir(patch_work_dir): self.mkpath(patch_work_dir)
+    patchdir=os.path.join(patch_work_dir,'yorick')
+    #if os.path.isdir(patchdir): shutil.rmtree(patchdir)
+    self.mkpath(patchdir)
+    self.copy_tree('yorick', patchdir)
+    log.info('applying patches')
+    if self.xft_patch:
+      os.system('cd %s && patch -p1 < ../../patch/xft.patch' % patchdir)
+      for ext in self.distribution.ext_modules:
+        ext.define_macros.append(('HAVE_XFT', None))
+    if self.zeroborder_patch: os.system('cd %s && patch -p1 < ../../patch/yorick-cvs-pwin-border.patch' % patchdir)
 
-    extension.include_dirs.extend(inc)
-    extension.library_dirs.extend(lib)
-    extension.libraries.extend(ll)
-    extension.extra_compile_args.extend(cc)
-    return sources
+class mkconfig_cmd(Command):
+  description = 'configure yorick prior to build'
+ 
+  def initialize_options(self):
+    pass
 
-  gistC = os.path.join(config.local_path,'./plugin/gistCmodule.c')
-  sources = [os.path.join(config.local_path,f) for f in gistsource]
-  sources = [gistC] + sources + [get_playsource]
+  def finalize_options(self):
+    pass
 
-  config.add_extension('gistC',sources,depends = ['yorick','.'])
-  config.add_extension('gistfuncs',[os.path.join(config.local_path,'./plugin/gistfuncsmodule.c')])
+  def run(self):
+    log.info('making config')
+    os.system('cd %s; gmake clean config;' % patch_work_dir)
+    log.info('parse config')
+    libraries=[]
+    define_macros=[]
+    #include_dirs=[]
+    for line in file(os.path.join(patch_work_dir,'yorick/Make.cfg')):
+      if line.startswith('#'): continue
+      key,val=line.strip().split('=')
+      if val != '':
+        if key == 'MATHLIB':
+          libraries.append(val.lstrip('-l'))
+        elif key == 'NO_EXP10':
+          define_macros.append((val.lstrip('-D'), None))
+        elif key == 'D_FPUSET':
+          define_macros.append((val.lstrip('-D'), None))
+        #elif key == 'XINC':
+        #  include_dirs.append(val.lstrip('-I'))
+        #elif key == 'XLIB':
+        #  libraries.append(val.lstrip('-L'))
+    # update our build_ext(s)
+    for ext in self.distribution.ext_modules:
+      ext.libraries.extend(libraries)
+      ext.define_macros.extend(define_macros)
+      #ext.include_dirs.extend(include_dirs)
+
+class gist_build(build):
+  description = 'build python gist.'
   
-  config.add_subpackage('',subpackage_path='gist')
+  def __init__(self, dist):
+    build.__init__(self, dist)
 
-  gist_data = [os.path.join('gistdata',f) for f in ('*.gs','*.gp')]
-  gist_data.extend([os.path.join('yorick' ,'g',f) for f in ('*.gs','*.gp')])
-  config.add_data_files (('gistdata',gist_data))
+  def has_patches(self):
+    # TODO return self.distribution.has_patches()
+    return True
+  
+  sub_commands = [
+      ('patch',     has_patches      ),
+      ('mkconfig',  lambda self:True ),
+    ]
 
-  return config
+  sub_commands.extend(build.sub_commands)
+  
+class Gist_dist(Distribution):
+  def __init__ (self, attrs=None):
+    #super(Gist_dist,self).__init__(attrs)
+    Distribution.__init__(self, attrs)
+    self.cmdclass = {
+      'build':          gist_build,    # override
+      'patch':          patch_cmd,
+      'mkconfig':       mkconfig_cmd,
+    }
 
-if __name__ == '__main__':
-  from numpy.distutils.core import setup
-  setup(name='python-',configuration=configuration)
+long_description='''The Python Gist Scientific Graphics Package is a module for production of general scientific graphics. Gist is the graphic frontend for Yorick, written by David H. Munro of Lawrence Livermore National Laboratory. The library is small, portable, efficient, and full-featured. It produces x-vs-y plots with ``good'' tick marks and tick labels, 2-D quadrilateral mesh plots with contours, vector fields, or pseudocolor maps on such meshes, and a selection of 3-D plots.'''
+
+setup(
+  name='python-gist',
+  distclass=Gist_dist,
+  version=version,
+  description='gist for python.',
+  long_description=long_description,
+  author='Matthieu Bec',
+  author_email='mdcb808@gmail.com',
+  url='https://github.com/mdcb/python-gist',
+  license='GPLv3',
+  ext_modules=[
+     Extension(
+        name='gist.gistC',
+        sources=sources,
+        include_dirs=include_dirs,
+        #undef_macros=undef_macros,
+        define_macros=define_macros,
+        library_dirs=library_dirs,
+        libraries=libraries,
+        #runtime_library_dirs = ['xxx','yyy'],
+        extra_compile_args = extra_compile_args,
+        ),
+     Extension(
+        name='gist.gistfuncs',
+        sources=['plugin/gistfuncsmodule.c'],
+        include_dirs=include_dirs,
+        #undef_macros=undef_macros,
+        define_macros=define_macros,
+        library_dirs=library_dirs,
+        libraries=libraries,
+        #runtime_library_dirs = ['xxx','yyy'],
+        extra_compile_args = extra_compile_args,
+        ),
+     ],
+  packages = ['gist'],
+  package_dir = {'gist': 'gist'},
+  install_path = 'gist',
+  data_files=data_files,
+  )
+

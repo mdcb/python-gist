@@ -1,0 +1,119 @@
+CHANGES:
+07/03/12 mdcb 2.2.01x-3
+- build from vanilla yorick clone on github.
+- fix namespace pollution due to imported foreign modules.
+- add module constant 'version' aligned with yorick version.
+- add module constant 'GISTPATH'
+- include Xft patch from F. Rigaut
+- include zero border width patch
+- distfile build and setup overhaul, patch option (see setup.cfg)
+- fix misc. memory initialization issue
+- deprecate gistfuncts provided by numpy
+- features (not so new)
+    xid() .......... returns the window's xid for X11 reparenting
+    keybd_focus() .. grab focus for screenshot
+04/22/10 mdcb Upgraded to Yorick 2.1.06x
+05/28/06 mdh Fixed the DrwText routine in gist/ps.c to deal correctly with
+strings of zero length. This bug caused crashes when plt("") was called and
+a hardcopy was made. The event loop was changed for Windows, Cygwin, and
+Mac OS X; the event loop now works the same on Windows, Cygwin, Mac OS X, and
+Unix/X11.  Some smaller fixes (memory leaks) on Mac OS X.
+11/11/05 dpg/mdh Fix a memory leak in setkw_string. Replaced tabs by spaces
+in gistCmodule.c.
+07/30/05 dpg/mdh Replace int's with long's where needed in src/gistCmodule.c
+for 64-bits linux. Modify setup.py to set the library search path to
+/usr/lib64 for 64-bits linux. Change the order in which different options
+are tried in the find_poll function in setup.py for gist to compile correctly
+on Mac OS X 10.4. The new setup.py was also tried on Windows, Linux, Cygwin,
+and older versions of Mac OS X; no problems were found.
+11/16/04 llc Fix GxPointClick; replace ifdef on this w/ MOUSE_CLICK.
+mouse function was not working because of this.
+11/09/04 mdh The Py_InitModule4 needs to be called even if the module
+has already been initialized.  Move the initialized test. 
+11/08/04 mdh Added a couple of changes for Mac OSX.
+11/04/04 dpg Changed TRY macro to return a MemoryError only if an 
+exception has not already been raised (in which case, it
+returns NULL). Also, fixed casting warning in contour's TRY 
+with PyTuple_GetSlice, changing 0 to (PyOject*) NULL.
+11/03/04 dpg Discovered that beginning with Numeric 23.4, which has
+stricter type checking (problems converting longs to ints),
+PyArray_INT had to be changed to PyArray_LONG. (else there
+were problems in plc, ...).
+04/22/03 llc Fix bug in PLF.
+04/08/03 llc Remove include of limits.h and unused defines;
+Replace DISPLAY_ENGINE with GpFXEngine, DISPLAY_MOUSE with
+GxPointClick, and DISPLAY_ZOOM_FACTOR with gxZoomFactor, and
+remove use NO_XLIB, and NO_MOUSE. 
+04/07/03 mdh Implement justify option for plt (align).
+Add functions as those in style.i in yorick to allow
+allow users to change style properties interactively:
+get_text_attributes, get_legend, get_line_attributes,
+get_axis_style, get_tick_style, get_system, 
+get_systems_list, get_style, ... similarly for set*.
+03/25/03 dpg Provide a way to change CGM file size via pldefault.
+03/12/03 llc Remove version and help comments; add to gist.py.
+02/25/03 llc Fix mouse command so data is returned.
+02/20/03 llc Correct mouse return; see MouseCallBack.
+02/13/03 llc Disable initial pygist printout upon import (except 
+when DEBUG flag is on).
+02/13/03 dpg Add plremove implementation. 
+Correct bug in pli (iMax anad JMax were reversed).
+01/17/03 llc Remove remaining warnings with gcc 2.96 by:
+- Reduce to one dummy for file
+- Remove dumpFreeList, Add1 cumsum, equal, greater, 
+greater_equal, less, logical_and, not_equal, 
+WeightedHist if not INCLUDE_EXTRA_GISTCODE.
+01/13/03 mdh Add back on omitted bug fix for Windows (wait_for_expose).
+12/27/02 mdh Windows/Cygwin adjustments (e.g. pyg_on_idle calls for
+Windows); fix formats for pointers.
+12/04/02 dhm more fixes to get pygist working under windows, _tkinter
+Macros for proper printing to stdout and stderr.
+Add pyg_unhook, pyg_idler, pyg_pending, and pyg_register.
+11/26/02 llc Add documentation on plg markers.
+11/25/02 dhm Rework of play resulted in change to PyOS_InputHook and
+other improvements (multi-line strings).
+11/24/02 dhm fix event/exception handling interface
+11/19/02 llc Use gist interface provided by Dave Munro for PyOS_InputHook.
+Remove old solutions now that play/unix has changed.
+11/15/02 mhd Add u_enterloop for third approach to interfacing Python
+to gist.  Save the last approach as USE_U_WAITER.
+11/13/02 llc Add back option to switch between two interfaces to Python.
+(using define USE_RL_GETC)
+11/11/02 llc Add Numeric to arrayobject.h include, so it is found
+automatically when the Python include directory is searched.
+(suggestion from MDH)
+11/08/02 llc Use the PyFPE_START_PROTECT and PyFPE_END_PROTECT 
+macros defined in the standard Python include pyfpe.h.
+Add a dummy argument to PyFPE_END_PROTECT.
+11/07/02 llc Clean up some compiler warnings:
+Get rid of SETERR macro; used just once.
+Correct format for writes of longs in debug_array, PrintColor.
+Add explict casts to ERRSS where required.
+Remove unused variables.
+Cast u_waiter properly, and note possible issue.
+11/01/02 mdh Replace rl_getc_function with PyOS_InputHook.
+09/04/02 llc Deep copy string returned from PyString_AsString
+in setkw_string.
+12/17/01 llc Add documentation lines to slice2.
+12/06/01 llc Remove fix for E_TEXT type entries in legend; these
+are legitimate.
+12/03/01 llc Discovered that new setting of zc in plf causes 
+unaligned accesses on DEC Alpha; go back to earlier
+form setting temporary zc1.
+With this change, test suite runs to completion.
+11/29/01 llc Set rgb for triples.
+bytscl: Change len to long.
+11/16/01 llc Update to 1.5's legend handling. 
+11/12/01 llc Unpack color triples.
+Colors changed from int to unsigned long (1.4 to 1.5).
+Check for negative colors.
+11/08/01 dhm Turn on idle function to do graphics tasks.
+11/05/01 llc Move all of the function documentation from gist.help
+to doc strings for each PyObject, so it can be accessed 
+with pydoc.
+11/03/01 llc Started from version with changes from Dave Munro:
+turn on rl_getc_function, and add readline.h include. 
+Must use with version of python built with readline.
+
+Modified in December, 1997 to coexist with the readline library used
+in Python's interpreter. William Magro, Cornell Theory Center.

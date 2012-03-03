@@ -12,9 +12,10 @@
 #  $Id: plwf.py 655 2007-09-07 20:17:39Z mbec $
 #
 
-from types import *
-from pl3d import *
+import numpy
+from gistC import bytscl # TODO: numpy
 import gistfuncs
+from pl3d import *
 
 def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
    ecolor =  None, ewidth = None, cull = None, scale = None, cmax = None,
@@ -80,14 +81,14 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
 
       # rotate (x,y,0) into on-screen orientation to determine order
       # just use four corners for this
-      nx = shape (x)
+      nx = numpy.shape (x)
       ny = nx [1]
       nx = nx [0]
-      xx = array([[x [0, 0], x[nx - 1, 0]],
+      xx = numpy.array([[x [0, 0], x[nx - 1, 0]],
                   [x [0, ny - 1] , x[nx - 1, ny - 1]]])
-      yy = array([[y [0, 0], y[nx - 1, 0]],
+      yy = numpy.array([[y [0, 0], y[nx - 1, 0]],
                   [y [0, ny - 1] , y[nx - 1, ny - 1]]])
-      xyzc = array ( [ xx , yy, array ( [ [0., 0.], [0., 0.]])])
+      xyzc = numpy.array ( [ xx , yy, numpy.array ( [ [0., 0.], [0., 0.]])])
       xyzc = get3_xy(xyzc, 1)
 
       # compute mean i-edge and j-edge vector z-components
@@ -109,10 +110,10 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
          tmp = iedge
          iedge = jedge
          jedge = tmp
-         x = transpose (array (xyz1 [0]))
-         y = transpose (array (xyz1 [1]))
+         x = numpy.transpose (numpy.array (xyz1 [0]))
+         y = numpy.transpose (numpy.array (xyz1 [1]))
          if fill != None :
-            fill = transpose (fill)
+            fill = numpy.transpose (fill)
       else :
          x = xyz1 [0]
          y = xyz1 [1]
@@ -158,7 +159,7 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
          else:
             k = fill.shape [0]
             l = fill.shape [1]
-            fill = reshape ( bytscl (ravel (fill)), (k, l))
+            fill = numpy.reshape ( bytscl (numpy.ravel (fill)), (k, l))
       if cull == 0 : #transparent mesh
          if ecolor != None :
             if ireg != None: plm (y, x, ireg, color = ecolor)
@@ -232,11 +233,11 @@ def lightwf (cmax) :
 
    _draw3_list = get_draw3_list_ ()
    _draw3_n = get_draw3_n_ ()
-   list = _draw3_list [_draw3_n:]
-   if list [0] != plwf :
+   _list = _draw3_list [_draw3_n:]
+   if _list [0] != plwf :
       raise _LightwfError, "current 3D display list is not a plwf"
-   list [1] [7] = cmax
-   undo3_set_ (lightwf, list)
+   _list [1] [7] = cmax
+   undo3_set_ (lightwf, _list)
 
 
 _Xyz_wfError = "Xyz_wfError"
@@ -270,16 +271,16 @@ def xyz_wf (z, y, x, scale = 1.0) :
       vertices of cell number i.
    """
 
-   if len (shape (z)) < 2 :
+   if len (numpy.shape (z)) < 2 :
       raise _Xyz_wfError, "impossible dimensions for z array"
-   nx = shape (z) [0]
-   ny = shape (z) [1]
+   nx = numpy.shape (z) [0]
+   ny = numpy.shape (z) [1]
    if y == None or x == None :
       if x != None or y != None :
          raise _Xyz_wfError, "either give y,x both or neither"
       x = gistfuncs.span (0, ny - 1, ny, nx)
-      y = transpose (gistfuncs.span (0, nx - 1, nx, ny))
-   elif shape (x) != shape (z) or shape (y) != shape (z) :
+      y = numpy.transpose (gistfuncs.span (0, nx - 1, nx, ny))
+   elif numpy.shape (x) != numpy.shape (z) or numpy.shape (y) != numpy.shape (z) :
       raise _Xyz_wfError, "x, y, and z must all have same dimensions"
    xyscl = max (maxelt_ (x) - minelt_ (x),
                 maxelt_ (y) - minelt_ (y))
@@ -292,5 +293,5 @@ def xyz_wf (z, y, x, scale = 1.0) :
    xbar = avg_ (x)
    ybar = avg_ (y)
    zbar = avg_ (z)
-   xyz = array ( [x - xbar, y - ybar, z - zbar], float32)
+   xyz = numpy.array ( [x - xbar, y - ybar, z - zbar], numpy.float32)
    return (xyz)

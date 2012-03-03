@@ -1,4 +1,3 @@
-import types
 points = 0.0013000
 inches = 72.27*points
 def_linewidth = 0.5*points
@@ -136,10 +135,10 @@ defsys = {'legend':0,
           }
 
 def getsys(color=-2,frame=1,labelsize=14, font='helvetica', ticks='solid', hticpos='left right', vticpos='below above'):
-    if type(color) != types.IntType:
+    if type(color) != int:
         color = colors[color]
     labels = labelsize * points
-    fontlist = string.split(string.lower(font))
+    fontlist = font.lower().split()
     found = 0
     for k in range(len(fontlist)):
         if fontlist[k] in fontnames:
@@ -161,12 +160,12 @@ def getsys(color=-2,frame=1,labelsize=14, font='helvetica', ticks='solid', hticp
         vflags = 0
     else:
         hflags = vflags = 0x030
-        for pos in string.split(hticpos):
+        for pos in hticpos.split():
             try:
                 hflags = hflags + _ticks[pos]
             except KeyError:
                 pass
-        for pos in string.split(vticpos):
+        for pos in vticpos.split():
             try:
                 vflags = vflags + _ticks[pos]
             except KeyError:
@@ -244,17 +243,15 @@ def getsys(color=-2,frame=1,labelsize=14, font='helvetica', ticks='solid', hticp
               }
     return newsys
 
-import string, types
-
 def sys2string(system,level=0):
     retstr=""
     spaces = 4*level
     for key in system.keys():
         keytype = type(system[key])
-        if keytype is types.DictType:
+        if keytype is dict:
             retstr = retstr+"%s%s={\n%s" % (' '*spaces,key,sys2string(system[key],level+1))
-        elif keytype is types.ListType:
-            retstr = retstr+"%s%s={%s},\n" % (' '*spaces,key,string.join(map(str,system[key]),','))
+        elif keytype is list:
+            retstr = retstr+"%s%s={%s},\n" % (' '*spaces,key,','.join(map(str,system[key])))
         else:
             retstr = retstr+"%s%s=%s,\n" % (' '*spaces,key,system[key])
     return retstr[:-2]+"\n%s},\n" % (' '*spaces)
@@ -262,11 +259,11 @@ def sys2string(system,level=0):
 def style2string(systemslist, landscape=0):
     retstr = "landscape = %d\n" % landscape
     num = 1
-    if type(systemslist) is types.ListType:
+    if type(systemslist) is list:
         num = len(systemslist)
-        if type(systemslist[0]) is not types.DictType:
+        if type(systemslist[0]) is not dict:
             raise TypeError, "dict2string: first argument should be a dicitonary or a list"
-    elif type(systemslist) is not types.DictType:
+    elif type(systemslist) is not dict:
         raise TypeError, "dict2string: first argument should be a dictionary or a list"
     else:
         systemslist = [systemslist]

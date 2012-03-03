@@ -93,7 +93,6 @@
 #include "pyfpe.h"
 
 #include "numpy/arrayobject.h"
-#define IMPORT_ARRAY
 
 #include <stdio.h>
 #include <math.h>
@@ -350,9 +349,6 @@ static int mem_list_length = 0;
 static int addToFreeList(ArrayObject * x, int n);
 static void freeArray(ArrayObject * a, int n);
 static void removeFromFreeList(ArrayObject * x, int n);
-#ifdef INCLUDE_EXTRA_GISTCODE
-static void dumpFreeList(int n);
-#endif
 
 static ArrayObject *allocateArray(int size, char tc, int nlist)
 {
@@ -497,24 +493,6 @@ static void clearFreeList(int n)
 	freeListLen[n] = 0;
 	return;
 }
-
-#ifdef INCLUDE_EXTRA_GISTCODE
-static void dumpFreeList(int n)
-{
-	/* Useful for debugging ??? */
-	int i;
-	TO_STDOUT("-----------start-%d-----------\n", n);
-	flush_stdout();
-	for (i = 0; i < freeListLen[n]; i++) {
-		TO_STDOUT("entry %p points to %c data (%d) at %p.\n",
-			  freeList[n][i], freeList[n][i]->typecode,
-			  freeList[n][i]->size, freeList[n][i]->data);
-		flush_stdout();
-	}
-	TO_STDOUT("----------finish-------------\n");
-	flush_stdout();
-}
-#endif
 
 static int addToFreeList(ArrayObject * x, int n)
 {
@@ -860,36 +838,8 @@ static char gist_module_documentation[] =
 /*           Auxiliary routines used by the slice2 suite                 */
 /*#######################################################################*/
 
-#ifdef INCLUDE_EXTRA_GISTCODE
-static ArrayObject *Add1(ArrayObject * i, int freei, int n)
-{
-	/* add 1 to an integer array i and return the value */
-	ArrayObject *res;
-	int *isrc, *itar;
-	if (i == (ArrayObject *) NULL)
-		return (ArrayObject *) NULL;
-	if (freei >= 0 && freei == n) {
-		/* We don't need i any more and it's in the right list, so *
-		 * just increment it.                                      */
-		for (isrc = (int *)(i->data);
-		     isrc < (int *)(i->data) + i->size; isrc++)
-			(*isrc)++;
-		return i;
-	} else {
-		TRY(res = allocateArray(i->size, 'i', n),
-		    (ArrayObject *) PyErr_NoMemory());
-		for (isrc = (int *)(i->data), itar = (int *)(res->data);
-		     isrc < (int *)(i->data) + i->size; isrc++, itar++)
-			*itar = (*isrc) + 1;
-		if (freei >= 0)
-			freeArray(i, freei);
-		return res;
-	}
-}
-#endif
-
-static ArrayObject *concatenate(ArrayObject * x, ArrayObject * y,
-				int freex, int freey, int n)
+static ArrayObject *_concatenate(ArrayObject * x, ArrayObject * y,
+				 int freex, int freey, int n)
 {
 	/* concatenates array objects x and y and returns the result */
 	/* returns NULL if memory error or if both objects are NULL. */
@@ -951,146 +901,9 @@ static ArrayObject *concatenate(ArrayObject * x, ArrayObject * y,
 	return result;
 }
 
-#ifdef INCLUDE_EXTRA_GISTCODE
+/* needed - statically */
 
-static ArrayObject *cumsum(ArrayObject * i, int freei, int n)
-{
-	/* compute the cumulative sum of an integer array object */
-	ArrayObject *res;
-	int *src, *tar, pre;
-	if (i == (ArrayObject *) NULL)
-		return (ArrayObject *) NULL;
-	src = (int *)(i->data);
-	TRY(res = allocateArray(i->size, 'i', n),
-	    (ArrayObject *) PyErr_NoMemory());
-	for (src = (int *)(i->data), tar = (int *)(res->data), pre = 0;
-	     src < (int *)(i->data) + i->size; src++, tar++) {
-		*tar += *src + pre;
-		pre = *tar;
-	}
-	if (freei >= 0)
-		freeArray(i, freei);
-	return res;
-}
-
-static ArrayObject *equal(ArrayObject * i, ArrayObject * j,
-			  int freei, int freej, int n)
-{
-	/* Compare two integer arrays for equality, return an unsigned *
-	 * character array of results.                                 */
-	int *src1, *src2;
-	ArrayObject *res;
-	Uchar *tar;
-	if (i == (ArrayObject *) NULL || j == (ArrayObject *) NULL ||
-	    i->size != j->size)
-		return (ArrayObject *) NULL;
-	TRY(res = allocateArray(i->size, 'b', n),
-	    (ArrayObject *) PyErr_NoMemory());
-	for (src1 = (int *)(i->data), src2 = (int *)(j->data),
-	     tar = (Uchar *) (res->data);
-	     src1 < (int *)(i->data) + i->size; src1++, src2++, tar++)
-		*tar = (Uchar) (*src1 == *src2);
-	if (freej >= 0)
-		freeArray(j, freej);
-	if (freei >= 0)
-		freeArray(i, freei);
-	return res;
-}
-
-static ArrayObject *greater(ArrayObject * d, double v, int freed, int n)
-{
-	/* compare an array object of type 'd' with a double v; return an
-	 * array  of Uchar the same size with 1's where the compare succeeds. */
-	double *dr;
-	Uchar *c;
-	ArrayObject *res;
-	if (d == (ArrayObject *) NULL)
-		return (ArrayObject *) NULL;
-	TRY(res = allocateArray(d->size, 'b', n),
-	    (ArrayObject *) PyErr_NoMemory());
-	for (dr = (double *)(d->data), c = (Uchar *) (res->data);
-	     dr < (double *)(d->data) + d->size; dr++, c++)
-		*c = (Uchar) (*dr > v);
-	if (freed >= 0)
-		freeArray(d, freed);
-	return res;
-}
-
-static ArrayObject *greater_equal(ArrayObject * d, double v, int freed, int n)
-{
-	/* compare an array object of type 'd' with a double v; return an
-	 * array  of Uchar the same size with 1's where the compare succeeds. */
-	double *dr;
-	Uchar *c;
-	ArrayObject *res;
-	if (d == (ArrayObject *) NULL)
-		return (ArrayObject *) NULL;
-	TRY(res = allocateArray(d->size, 'b', n),
-	    (ArrayObject *) PyErr_NoMemory());
-	for (dr = (double *)(d->data), c = (Uchar *) (res->data);
-	     dr < (double *)(d->data) + d->size; dr++, c++)
-		*c = (Uchar) (*dr >= v);
-	if (freed >= 0)
-		freeArray(d, freed);
-	return res;
-}
-
-static ArrayObject *less(ArrayObject * i, ArrayObject * j,
-			 int freei, int freej, int n)
-{
-	int *src1, *src2;
-	ArrayObject *res;
-	Uchar *tar;
-	if (i == (ArrayObject *) NULL || j == (ArrayObject *) NULL ||
-	    i->size != j->size)
-		return (ArrayObject *) NULL;
-	TRY(res = allocateArray(i->size, 'b', n),
-	    (ArrayObject *) PyErr_NoMemory());
-	for (src1 = (int *)(i->data), src2 = (int *)(j->data),
-	     tar = (Uchar *) (res->data);
-	     src1 < (int *)(i->data) + i->size; src1++, src2++, tar++)
-		*tar = (Uchar) (*src1 < *src2);
-	if (freej >= 0)
-		freeArray(j, freej);
-	if (freei >= 0)
-		freeArray(i, freei);
-	return res;
-}
-
-static ArrayObject *logical_and(ArrayObject * a, ArrayObject * b,
-				int freea, int freeb, int n)
-{
-	/* Take the logical and of two Uchar arrays */
-	ArrayObject *res;
-	Uchar *src1, *src2, *tar;
-	if (a == (ArrayObject *) NULL || b == (ArrayObject *) NULL ||
-	    a->size != b->size || a->typecode != 'b' || b->typecode != 'b')
-		return (ArrayObject *) NULL;
-	src1 = (Uchar *) (a->data);
-	src2 = (Uchar *) (b->data);
-	if (freea == n) {	/* can use a as target */
-		tar = (Uchar *) (a->data);
-		freea = -1;
-	} else if (freeb == n) {	/* can use b as target */
-		tar = (Uchar *) (b->data);
-		freeb = -1;
-	} else {		/* need new result as target */
-		TRY(res = allocateArray(a->size, 'b', n),
-		    (ArrayObject *) PyErr_NoMemory());
-		tar = (Uchar *) (res->data);
-	}
-	/* We may be using res uninitialized here -- MDH */
-	for (; tar < (Uchar *) (res->data) + res->size; src1++, src2++, tar++)
-		*tar = *src1 && *src2;
-	if (freea >= 0)
-		freeArray(a, freea);
-	if (freeb >= 0)
-		freeArray(b, freea);
-	return (res);
-}
-#endif
-
-static ArrayObject *logical_not(ArrayObject * b, int freeb, int n)
+static ArrayObject *_logical_not(ArrayObject * b, int freeb, int n)
 {
 	/* Take the logical not of an int or Uchar array and return Uchar */
 	ArrayObject *res;
@@ -1137,26 +950,6 @@ static ArrayObject *logical_not(ArrayObject * b, int freeb, int n)
 		return res;
 	}
 }
-
-#ifdef INCLUDE_EXTRA_GISTCODE
-static ArrayObject *not_equal(ArrayObject * i, int j, int freei, int n)
-{
-	/* compare integer array against integer for not equal */
-	int *src;
-	ArrayObject *res;
-	Uchar *tar;
-	if (i == (ArrayObject *) NULL)
-		return (ArrayObject *) NULL;
-	TRY(res = allocateArray(i->size, 'b', n),
-	    (ArrayObject *) PyErr_NoMemory());
-	for (src = (int *)(i->data), tar = (Uchar *) (res->data);
-	     src < (int *)(i->data) + i->size; src++, tar++)
-		*tar = (Uchar) (*src != j);
-	if (freei >= 0)
-		freeArray(i, freei);
-	return res;
-}
-#endif
 
 static ArrayObject *SimpleHist(ArrayObject * i, int freei, int n)
 {
@@ -1267,40 +1060,6 @@ static ArrayObject *take(ArrayObject * a, ArrayObject * i, int nelts,
 		freeArray(i, freea);
 	return res;
 }
-
-#ifdef INCLUDE_EXTRA_GISTCODE
-static ArrayObject *WeightedHist(ArrayObject * i, ArrayObject * w,
-				 int freei, int freew, int n)
-{
-	/* weighted histogram: the kth entry of the result contains the     *
-	 * sum of all entries in w corresponding to entries in i containing *
-	 * the value k. (SimpleHist consists of all weights being 1.)       */
-	ArrayObject *res;
-	int *src, *tar;
-	Uchar *wgt;
-	int max;
-	if (i == (ArrayObject *) NULL || w == (ArrayObject *) NULL ||
-	    i->size > w->size)
-		return (ArrayObject *) NULL;
-	for (src = (int *)(i->data), max = *(src++);
-	     src < (int *)(i->data) + i->size; src++)
-		if (*src > max)
-			max = *src;
-		else if (*src < 0)
-			return (ArrayObject *) NULL;
-	TRY(res = allocateArray(max + 1, 'i', n),
-	    (ArrayObject *) PyErr_NoMemory());
-	for (src = (int *)(i->data), tar = (int *)(res->data),
-	     wgt = (Uchar *) (w->data);
-	     src < (int *)(i->data) + i->size; src++, wgt++)
-		tar[*src] += (int)(*wgt);
-	if (freew >= 0)
-		freeArray(w, freew);
-	if (freei >= 0)
-		freeArray(i, freei);
-	return res;
-}
-#endif
 
 /*           _slice2_part is a big helper routine for slice2              */
 
@@ -4878,7 +4637,9 @@ static PyObject *plfp(PyObject * self, PyObject * args, PyObject * kd)
 		GET_ARR(zap, zop, PyArray_DOUBLE, 1, PyObject *);
 		z = (double *)A_DATA(zap);
 	} else {
-		printf("hum no good z...\n");
+		return
+		    ERRSS
+		    ("expecting array np.uchar8 as first argument to plfp");
 	}
 
 	GET_ARR(yap, yop, PyArray_DOUBLE, 1, PyObject *);
@@ -6641,8 +6402,8 @@ if (GetTypeface (&s[n], &face)) font = type|face; else return 0
 		} else {
 #ifdef HAVE_XFT
 			strncpy(gistA.t.xftfont, s, 256);
-      /* FIXME ... */
-      font = 9;
+			/* FIXME ... */
+			font = 9;
 #else
 			return (long)ERRSS("unrecognized font keyword");
 #endif
@@ -7213,7 +6974,7 @@ static PyObject *slice2(PyObject * self, PyObject * args)
 				xyzc0d = (void *)NULL;
 			} else {
 				TRY(mask2 =
-				    logical_not(nkeep, SAVE, 0),
+				    _logical_not(nkeep, SAVE, 0),
 				    PyErr_NoMemory());
 				mask2d = (Uchar *) (mask2->data);
 				TRY(addToFreeList
@@ -7774,18 +7535,18 @@ static PyObject *slice2(PyObject * self, PyObject * args)
 			}
 		}
 		TRY(rnverts =
-		    concatenate(rnverts, rnvertc, FREE0, FREE0, 0),
+		    _concatenate(rnverts, rnvertc, FREE0, FREE0, 0),
 		    PyErr_NoMemory());
 		rnvertsd = (int *)rnverts->data;
 		if (avalues) {
 			if (rvaluec == (ArrayObject *) NULL)
 				TRY(rvalues =
-				    concatenate(rvalues, valuec, FREE0,
-						FREE0, 0), PyErr_NoMemory());
+				    _concatenate(rvalues, valuec, FREE0,
+						 FREE0, 0), PyErr_NoMemory());
 			else
 				TRY(rvalues =
-				    concatenate(rvalues, rvaluec, FREE0,
-						FREE0, 0), PyErr_NoMemory());
+				    _concatenate(rvalues, rvaluec, FREE0,
+						 FREE0, 0), PyErr_NoMemory());
 			if (atype == 'd')
 				rvaluesd = (double *)rvalues->data;
 			else
@@ -7795,7 +7556,7 @@ static PyObject *slice2(PyObject * self, PyObject * args)
 			rvalues = (ArrayObject *) Py_None;
 		}
 		TRY(rxyzverts =
-		    concatenate(rxyzverts, rxyzc, FREE0, FREE0, 0),
+		    _concatenate(rxyzverts, rxyzc, FREE0, FREE0, 0),
 		    PyErr_NoMemory());
 		rxyzvertsd = (double *)rxyzverts->data;
 		freeArray(last, 0);
@@ -7887,13 +7648,13 @@ static PyObject *slice2(PyObject * self, PyObject * args)
 			rxyzvertbd = (double *)rxyzvertb->data;
 		} else if (rnvertc != (ArrayObject *) NULL) {
 			TRY(rnvertb =
-			    concatenate(rnvertb, rnvertc, FREE0, FREE0,
-					0), PyErr_NoMemory());
+			    _concatenate(rnvertb, rnvertc, FREE0, FREE0,
+					 0), PyErr_NoMemory());
 			rnvertbd = (int *)rnvertb->data;
 			if (avalues) {
 				TRY(rvalueb =
-				    concatenate(rvalueb, rvaluec, FREE0,
-						FREE0, 0), PyErr_NoMemory());
+				    _concatenate(rvalueb, rvaluec, FREE0,
+						 FREE0, 0), PyErr_NoMemory());
 				if (atype == 'd')
 					rvaluebd = (double *)rvalueb->data;
 				else
@@ -7903,8 +7664,8 @@ static PyObject *slice2(PyObject * self, PyObject * args)
 				rvalueb = (ArrayObject *) Py_None;
 			}
 			TRY(rxyzvertb =
-			    concatenate(rxyzvertb, rxyzc, FREE0, FREE0,
-					0), PyErr_NoMemory());
+			    _concatenate(rxyzvertb, rxyzc, FREE0, FREE0,
+					 0), PyErr_NoMemory());
 			rxyzvertbd = (double *)rxyzvertb->data;
 		}
 		freeArray(prev, 0);
@@ -10157,25 +9918,25 @@ static PyObject *set_style(PyObject * self, PyObject * args)
 }
 
 static struct PyMethodDef gist_methods[] = {
-	{"animate", PYCF animate, 1, animate__doc__},
+	{"animate", PYCF animate, METH_VARARGS, animate__doc__},
 	{"bytscl", PYCFWK bytscl, KWFLG, bytscl__doc__},
 	{"contour", PYCFWK contour, KWFLG, contour__doc__},
-	{"current_window", PYCF current_window, 1,
+	{"current_window", PYCF current_window, METH_VARARGS,
 	 current_window__doc__},
-	{"fma", PYCF pyg_fma, 1, fma__doc__},
+	{"fma", PYCF pyg_fma, METH_VARARGS, fma__doc__},
 	{"gridxy", PYCFWK gridxy, KWFLG, gridxy__doc__},
-	{"hcp", PYCF hcp, 1, hcp__doc__},
+	{"hcp", PYCF hcp, METH_VARARGS, hcp__doc__},
 	{"hcp_file", PYCFWK hcp_file, KWFLG, hcp_file__doc__},
-	{"hcp_finish", PYCF hcp_finish, 1, hcp_finish__doc__},
-	{"hcpoff", PYCF hcpoff, 1, hcpoff__doc__},
-	{"hcpon", PYCF hcpon, 1, hcpon__doc__},
+	{"hcp_finish", PYCF hcp_finish, METH_VARARGS, hcp_finish__doc__},
+	{"hcpoff", PYCF hcpoff, METH_VARARGS, hcpoff__doc__},
+	{"hcpon", PYCF hcpon, METH_VARARGS, hcpon__doc__},
 	{"limits", PYCFWK limits, KWFLG, limits__doc__},
-	{"logxy", PYCF logxy, 1, logxy__doc__},
-	{"mesh_loc", PYCF mesh_loc, 1, mesh_loc__doc__},
-	{"mfit", PYCF mfit, 1, mfit__doc__},
-	{"mouse", PYCF mouse, 1, mouse__doc__},
+	{"logxy", PYCF logxy, METH_VARARGS, logxy__doc__},
+	{"mesh_loc", PYCF mesh_loc, METH_VARARGS, mesh_loc__doc__},
+	{"mfit", PYCF mfit, METH_VARARGS, mfit__doc__},
+	{"mouse", PYCF mouse, METH_VARARGS, mouse__doc__},
 	{"palette", PYCFWK palette, KWFLG, palette__doc__},
-	{"pause", PYCF pyg_pause, 1, pause__doc__},
+	{"pause", PYCF pyg_pause, METH_VARARGS, pause__doc__},
 	{"plc", PYCFWK plc, KWFLG, plc__doc__},
 	{"pldefault", PYCFWK pldefault, KWFLG, pldefault__doc__},
 	{"pldj", PYCFWK pldj, KWFLG, pldj__doc__},
@@ -10186,33 +9947,36 @@ static struct PyMethodDef gist_methods[] = {
 	{"pli", PYCFWK pli, KWFLG, pli__doc__},
 	{"plm", PYCFWK plm, KWFLG, plm__doc__},
 	{"plmesh", PYCFWK plmesh, KWFLG, plmesh__doc__},
-	{"plq", PYCF plq, 1, plq__doc__},
-	{"plremove", PYCF plremove, 1, plremove__doc__},
-	{"plsys", PYCF plsys, 1, plsys__doc__},
+	{"plq", PYCF plq, METH_VARARGS, plq__doc__},
+	{"plremove", PYCF plremove, METH_VARARGS, plremove__doc__},
+	{"plsys", PYCF plsys, METH_VARARGS, plsys__doc__},
 	{"plt", PYCFWK plt, KWFLG, plt__doc__},
 	{"plv", PYCFWK plv, KWFLG, plv__doc__},
-	{"redraw", PYCF redraw, 1, redraw__doc__},
-	{"slice2", PYCF slice2, 1, slice2__doc__},
-	{"unzoom", PYCF unzoom, 1, unzoom__doc__},
-	{"viewport", PYCF viewport, 1, viewport__doc__},
+	{"redraw", PYCF redraw, METH_VARARGS, redraw__doc__},
+	{"slice2", PYCF slice2, METH_VARARGS, slice2__doc__},
+	{"unzoom", PYCF unzoom, METH_VARARGS, unzoom__doc__},
+	{"viewport", PYCF viewport, METH_VARARGS, viewport__doc__},
 	{"window", PYCFWK window, KWFLG, window__doc__},
-	{"window_geometry", PYCF window_geometry, 1,
+	{"window_geometry", PYCF window_geometry, METH_VARARGS,
 	 window_geometry__doc__},
-	{"window_exists", PYCF window_exists, 1, window_exists__doc__},
-	{"window_list", PYCF window_list, 1, window_list__doc__},
-	{"window_select", PYCF window_select, 1, window_select__doc__},
-	{"zoom_factor", PYCF zoom_factor, 1, zoom_factor__doc__},
-	{"pyg_unhook", PYCF pyg_unhook, 1, pyg_unhook__doc__},
-	{"pyg_inputhook", PYCF pyg_inputhook, 1, pyg_inputhook__doc__},
-	{"pyg_inputunhook", PYCF pyg_inputunhook, 1,
+	{"window_exists", PYCF window_exists, METH_VARARGS,
+	 window_exists__doc__},
+	{"window_list", PYCF window_list, METH_VARARGS, window_list__doc__},
+	{"window_select", PYCF window_select, METH_VARARGS,
+	 window_select__doc__},
+	{"zoom_factor", PYCF zoom_factor, METH_VARARGS, zoom_factor__doc__},
+	{"pyg_unhook", PYCF pyg_unhook, METH_VARARGS, pyg_unhook__doc__},
+	{"pyg_inputhook", PYCF pyg_inputhook, METH_VARARGS,
+	 pyg_inputhook__doc__},
+	{"pyg_inputunhook", PYCF pyg_inputunhook, METH_VARARGS,
 	 pyg_inputunhook__doc__},
-	{"pyg_idler", PYCF pyg_idler, 1, pyg_idler__doc__},
-	{"pyg_pending", PYCF pyg_pending, 1, pyg_pending__doc__},
-	{"pyg_register", PYCF pyg_register, 1, pyg_register__doc__},
-	{"get_style", PYCF get_style, 1, get_style__doc__},
-	{"set_style", PYCF set_style, 1, set_style__doc__},
-	{"xid", PYCF xid, 1, xid__doc__},
-	{"keybd_focus", PYCF keybd_focus, 1, keybd_focus__doc__},
+	{"pyg_idler", PYCF pyg_idler, METH_VARARGS, pyg_idler__doc__},
+	{"pyg_pending", PYCF pyg_pending, METH_VARARGS, pyg_pending__doc__},
+	{"pyg_register", PYCF pyg_register, METH_VARARGS, pyg_register__doc__},
+	{"get_style", PYCF get_style, METH_VARARGS, get_style__doc__},
+	{"set_style", PYCF set_style, METH_VARARGS, set_style__doc__},
+	{"xid", PYCF xid, METH_VARARGS, xid__doc__},
+	{"keybd_focus", PYCF keybd_focus, METH_VARARGS, keybd_focus__doc__},
 	{0, 0}
 };
 
@@ -10224,10 +9988,17 @@ void initgistC(void)
 	PyObject *m, *d, *sys_path;
 	int i, n;
 
-	m = Py_InitModule4("gistC", gist_methods,
-			   gist_module_documentation,
-			   (PyObject *) 0, PYTHON_API_VERSION);
-	if (already_initialized)
+	/* initialize python */
+	Py_Initialize();
+
+	/* initialize numpy */
+	import_array();
+
+	if ((m = Py_InitModule3("gistC", gist_methods,
+				gist_module_documentation)) == NULL)
+		return;
+
+	if (already_initialized)	/* TODO futile */
 		return;
 
 	PyModule_AddStringConstant(m, "version", PYGIST_VERSION);
@@ -10244,9 +10015,6 @@ void initgistC(void)
 	if (PyErr_Occurred()) {
 		Py_FatalError("Cannot initialize module gist");
 	}
-#ifdef IMPORT_ARRAY
-	import_array();
-#endif
 
 	{
 		/* DHM: in principal, gist might use argv[0] to try to figure out

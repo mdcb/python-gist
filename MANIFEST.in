@@ -3,5 +3,5 @@ recursive-include gist *
 recursive-include yorick *
 recursive-include plugin *
 recursive-include patch *
-# fixme - should rely on Make.cfg
-exclude yorick/play/unix/config.h
+recursive-include gistdata *
+

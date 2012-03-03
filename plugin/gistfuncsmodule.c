@@ -2,7 +2,6 @@
  * All rights reserved.  See Legal.htm for full text and disclaimer. */
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#define IMPORT_ARRAY
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,8 +44,6 @@ static char *errstr = NULL;
 
 /* ----------------------------------------------------- */
 
-static char arr_histogram__doc__[] = "";
-
 static int mxx(int *i, int len)
 {
 	/* find the index of the maximum element of an integer array */
@@ -73,89 +70,25 @@ static int mnx(int *i, int len)
 	return mn;
 }
 
-static PyObject *arr_histogram(PyObject * self, PyObject * args)
-{
-	/* histogram accepts one or two arguments. The first is an array
-	 * of non-negative integers and the second, if present, is an
-	 * array of weights, which must be promotable to double.
-	 * Call these arguments list and weight. Both must be one-
-	 * dimensional. len (weight) >= max (list) + 1.
-	 * If weight is not present:
-	 *   histogram (list) [i] is the number of occurrences of i in list.
-	 * If weight is present:
-	 *   histogram (list, weight) [i] is the sum of all weight [j]
-	 * where list [j] == i.                                              */
-	/* self is not used */
-	PyObject *list = NULL, *weight = NULL;
-	PyArrayObject *lst, *wts, *ans;
-	int *numbers, *ians, len, mxi, mni, i;
-	npy_intp ans_size;
-	double *weights, *dans;
-
-	Py_Try(PyArg_ParseTuple(args, "O|O", &list, &weight));
-	GET_ARR(lst, list, PyArray_INT, 1);
-	len = A_SIZE(lst);
-	numbers = (int *)A_DATA(lst);
-	mxi = mxx(numbers, len);
-	mni = mnx(numbers, len);
-	if (numbers[mni] < 0) {
-		SETERR("First argument of histogram must be nonnegative.");
-		Py_DECREF(lst);
-		return NULL;
-	}
-	ans_size = numbers[mxi] + 1;
-	if (weight == NULL) {
-		Py_Try(ans =
-		       (PyArrayObject *) PyArray_SimpleNew(1, &ans_size,
-							   PyArray_INT));
-		ians = (int *)A_DATA(ans);
-		for (i = 0; i < len; i++)
-			ians[numbers[i]] += 1;
-		Py_DECREF(lst);
-	} else {
-		GET_ARR(wts, weight, PyArray_DOUBLE, 1);
-		weights = (double *)A_DATA(wts);
-		if (A_SIZE(wts) != len) {
-			SETERR
-			    ("histogram: length of weights does not match that of list.");
-			Py_DECREF(lst);
-			Py_DECREF(wts);
-			return NULL;
-		}
-		Py_Try(ans =
-		       (PyArrayObject *) PyArray_SimpleNew(1, &ans_size,
-							   PyArray_DOUBLE));
-		dans = (double *)A_DATA(ans);
-		for (i = 0; i < len; i++) {
-			dans[numbers[i]] += weights[i];
-		}
-		Py_DECREF(lst);
-		Py_DECREF(wts);
-	}
-
-	return PyArray_Return(ans);
-}
-
-static char arr_array_set__doc__[] = "";
+static char arr_array_set__doc__[] =
+    "array_set accepts three arguments. The first is an array of\n\
+numerics (Python characters, integers, or floats), and the\n\
+third is of the same type. The second is an array of integers\n\
+which are valid subscripts into the first. The third array\n\
+must be at least long enough to supply all the elements\n\
+called for by the subscript array. (It can also be a scalar,\n\
+in which case its value will be broadcast.) The result is that\n\
+elements of the third array are assigned in order to elements\n\
+of the first whose subscripts are elements of the second.\n\
+  arr_array_set (vals1, indices, vals2)\n\
+is equivalent to the Yorick assignment vals1 (indices) = vals2.\n\
+I have generalized this so that the source and target arrays\n\
+may be two dimensional; the second dimensions must match.\n\
+Then the array of subscripts is assumed to apply to the first\n\
+subscript only of the target. The target had better be contiguous.";
 
 static PyObject *arr_array_set(PyObject * self, PyObject * args)
 {
-	/* array_set accepts three arguments. The first is an array of
-	 * numerics (Python characters, integers, or floats), and the
-	 * third is of the same type. The second is an array of integers
-	 * which are valid subscripts into the first. The third array
-	 * must be at least long enough to supply all the elements
-	 * called for by the subscript array. (It can also be a scalar,
-	 * in which case its value will be broadcast.) The result is that
-	 * elements of the third array are assigned in order to elements
-	 * of the first whose subscripts are elements of the second.
-	 *   arr_array_set (vals1, indices, vals2)
-	 * is equivalent to the Yorick assignment vals1 (indices) = vals2.
-	 * I have generalized this so that the source and target arrays
-	 * may be two dimensional; the second dimensions must match.
-	 * Then the array of subscripts is assumed to apply to the first
-	 * subscript only of the target. The target had better be contiguous. */
-	/* self is not used */
 	PyObject *tararg, *subsarg, *srcarg;
 	PyArrayObject *tararr, *subsarr, *srcarr = NULL;
 	double *dtar, *dsrc, ds = 0.0;
@@ -468,7 +401,7 @@ static PyObject *arr_array_set(PyObject * self, PyObject * args)
 	return Py_None;
 }
 
-static void adjust(double *k, int *list, int i, int n)
+static void _adjust(double *k, int *list, int i, int n)
 {
 	/* adjust the binary tree k with root list [i] to satisfy the heap
 	 * property. The left and right subtrees of list [i], with roots
@@ -498,17 +431,17 @@ static void adjust(double *k, int *list, int i, int n)
 	list[lowj] = kj;
 }
 
-static char arr_index_sort__doc__[] = "";
+static char arr_index_sort__doc__[] =
+    "index_sort accepts one array of some numerical type and returns\n\
+an integer array of the same length whose entries are the\n\
+subscripts of the elements of the original array arranged\n\
+in increasing order. I chose to use heap sort because its\n\
+worst behavior is n*log(n), unlike quicksort, whose worst\n\
+behavior is n**2.";
 
 static PyObject *arr_index_sort(PyObject * self, PyObject * args)
 {
-	/* index_sort accepts one array of some numerical type and returns
-	 * an integer array of the same length whose entries are the
-	 * subscripts of the elements of the original array arranged
-	 * in increasing order. I chose to use heap sort because its
-	 * worst behavior is n*log(n), unlike quicksort, whose worst
-	 * behavior is n**2.                                         */
-	/* self is not used */
+
 	PyObject *list;
 	PyArrayObject *alist, *ilist;
 	double *data;
@@ -527,20 +460,20 @@ static PyObject *arr_index_sort(PyObject * self, PyObject * args)
 	data = (double *)A_DATA(alist);
 	/* now do heap sort on subscripts */
 	for (i = len / 2; i >= 0; i--) {
-		adjust(data, isubs, i, len);
+		_adjust(data, isubs, i, len);
 	}
 	for (i = len - 1; i >= 0; i--) {
 		itmp = isubs[i];
 		isubs[i] = isubs[0];
 		isubs[0] = itmp;
-		adjust(data, isubs, 0, i);
+		_adjust(data, isubs, 0, i);
 	}
 
 	Py_DECREF(alist);
 	return (PyObject *) ilist;
 }
 
-static int binary_search(double dval, double dlist[], int len)
+static int _binary_search(double dval, double dlist[], int len)
 {
 	/* binary_search accepts three arguments: a numeric value and
 	 * a numeric array and its length. It assumes that the array is sorted in
@@ -573,7 +506,7 @@ static int binary_search(double dval, double dlist[], int len)
 	return result;
 }
 
-static int binary_searchf(float dval, float dlist[], int len)
+static int _binary_searchf(float dval, float dlist[], int len)
 {
 	/* binary_search accepts three arguments: a numeric value and
 	 * a numeric array and its length. It assumes that the array is sorted in
@@ -646,7 +579,7 @@ static PyObject *arr_interpf(PyObject * self, PyObject * args)
 		slopes[i] = (dy[i + 1] - dy[i]) / (dx[i + 1] - dx[i]);
 	}
 	for (i = 0; i < lenz; i++) {
-		left = binary_searchf(dz[i], dx, leny);
+		left = _binary_searchf(dz[i], dx, leny);
 		if (left < 0)
 			dres[i] = dy[0];
 		else if (left >= leny - 1)
@@ -663,16 +596,15 @@ static PyObject *arr_interpf(PyObject * self, PyObject * args)
 }
 
 static char arr_interp__doc__[] =
-    "interp(y, x, z [,resulttypecode]) = y(z) interpolated by treating y(x) as piecewise fcn.";
+    "interp(y, x, z [,resulttypecode]) = y(z) interpolated by treating y(x)\n\
+as piecewise fcn.\n\
+whose value is y [0] for x < x [0] and y [len (y) -1] for x >\n\
+x [len (y) -1]. An array of floats the same length as z is\n\
+returned, whose values are ordinates for the corresponding z\n\
+abscissae interpolated into the piecewise linear function.";
 
 static PyObject *arr_interp(PyObject * self, PyObject * args)
 {
-	/* interp (y, x, z) treats (x, y) as a piecewise linear function
-	 * whose value is y [0] for x < x [0] and y [len (y) -1] for x >
-	 * x [len (y) -1]. An array of floats the same length as z is
-	 * returned, whose values are ordinates for the corresponding z
-	 * abscissae interpolated into the piecewise linear function.         */
-	/* self is not used */
 	PyObject *oy, *ox, *oz;
 	PyArrayObject *ay, *ax, *az, *_interp;
 	double *dy, *dx, *dz, *dres, *slopes;
@@ -717,7 +649,7 @@ static PyObject *arr_interp(PyObject * self, PyObject * args)
 		slopes[i] = (dy[i + 1] - dy[i]) / (dx[i + 1] - dx[i]);
 	}
 	for (i = 0; i < lenz; i++) {
-		left = binary_search(dz[i], dx, leny);
+		left = _binary_search(dz[i], dx, leny);
 		if (left < 0)
 			dres[i] = dy[0];
 		else if (left >= leny - 1)
@@ -733,57 +665,17 @@ static PyObject *arr_interp(PyObject * self, PyObject * args)
 	return PyArray_Return(_interp);
 }
 
-static int incr_slot_(float x, double *bins, int lbins)
-{
-	int i;
-	for (i = 0; i < lbins; i++)
-		if (x < bins[i])
-			return i;
-	return lbins;
-}
-
-static int decr_slot_(double x, double *bins, int lbins)
-{
-	int i;
-	for (i = lbins - 1; i >= 0; i--)
-		if (x < bins[i])
-			return i + 1;
-	return 0;
-}
-
-static int monotonic_(double *a, int lena)
-{
-	int i;
-	if (lena < 2) {
-		SETERR
-		    ("digitize: If a vector, second argument must have at least 2 elements.");
-		return 0;
-	}
-	if (a[0] <= a[1]) {	/* possibly monotonic increasing */
-		for (i = 1; i < lena - 1; i++)
-			if (a[i] > a[i + 1])
-				return 0;
-		return 1;
-	} else {		/* possibly monotonic decreasing */
-
-		for (i = 1; i < lena - 1; i++)
-			if (a[i] < a[i + 1])
-				return 0;
-		return -1;
-	}
-}
-
-static char arr_digitize__doc__[] = "";
+static char arr_zmin_zmax__doc__[] =
+    "zmin_zmax (z, ireg) returns a 2-tuple which consists\n\
+of the minimum and maximum values of z on the portion of the\n\
+mesh where ireg is not zero. z is a 2d array of Float and ireg\n\
+is an array of the same shape of Integer. By convention the first\n\
+row and column of ireg are zero, and the remaining entries are\n\
+used to determine which region each cell belongs to. A zero\n\
+entry says that this cell is excluded from the mesh.";
 
 static PyObject *arr_zmin_zmax(PyObject * self, PyObject * args)
 {
-	/* zmin_zmax (z, ireg) returns a 2-tuple which consists
-	   of the minimum and maximum values of z on the portion of the
-	   mesh where ireg is not zero. z is a 2d array of Float and ireg
-	   is an array of the same shape of Integer. By convention the first
-	   row and column of ireg are zero, and the remaining entries are
-	   used to determine which region each cell belongs to. A zero
-	   entry says that this cell is excluded from the mesh. */
 	PyObject *zobj, *iregobj;
 	PyArrayObject *zarr, *iregarr;
 	double *z, zmin = 0.0, zmax = 0.0;
@@ -838,134 +730,13 @@ static PyObject *arr_zmin_zmax(PyObject * self, PyObject * args)
 	return Py_BuildValue("dd", zmin, zmax);
 }
 
-static char arr_zmin_zmax__doc__[] = "";
-
-static PyObject *arr_digitize(PyObject * self, PyObject * args)
-{
-	/* digitize (x, bins) returns an array of python integers the same
-	   length of x (if x is a one-dimensional array), or just an integer
-	   (if x is a scalar). The values i returned are such that
-	   bins [i - 1] <= x < bins [i] if bins is monotonically increasing,
-	   or bins [i - 1] > x >= bins [i] if bins is monotonically decreasing.
-	   Beyond the bounds of bins, returns either i = 0 or i = len (bins)
-	   as appropriate.                                                      */
-	/* self is not used */
-	PyObject *ox, *obins;
-	PyArrayObject *ax = NULL, *abins = NULL, *aret;
-	double x = 0.0, bins = 0.0;	/* if either or both is a scalar */
-	double *dx = NULL, *dbins = NULL;	/* if either or both is a vector */
-	int lbins = 0;
-	npy_intp lx;		/* lengths, if vectors */
-	long *iret;
-	int m, i;
-	int x_is_scalar, bins_is_scalar;
-
-	Py_Try(PyArg_ParseTuple(args, "OO", &ox, &obins));
-	x_is_scalar = !isARRAY(ox);
-	bins_is_scalar = !isARRAY(obins);
-	if (!x_is_scalar) {
-		GET_ARR(ax, ox, PyArray_DOUBLE, 1);
-		if (A_NDIM(ax) > 1) {
-			SETERR
-			    ("digitize: first argument has too many dimensions.");
-			Py_DECREF(ax);
-			return NULL;
-		}
-		lx = A_SIZE(ax);
-		dx = (double *)A_DATA(ax);
-	} else {
-		if (PyInt_Check(ox))
-			x = (double)PyInt_AsLong(ox);
-		else if (PyFloat_Check(ox))
-			x = PyFloat_AS_DOUBLE((PyFloatObject *) ox);
-		else {
-			SETERR("digitize: bad type for first argument.");
-			return NULL;
-		}
-	}
-	if (!bins_is_scalar) {
-		GET_ARR(abins, obins, PyArray_DOUBLE, 1);
-		if (A_NDIM(abins) > 1) {
-			SETERR
-			    ("digitize: second argument has too many dimensions.");
-			Py_DECREF(abins);
-			Py_XDECREF(ax);
-			return NULL;
-		}
-		lbins = A_SIZE(abins);
-		dbins = (double *)A_DATA(abins);
-	} else {
-		if (PyInt_Check(obins))
-			bins = (double)PyInt_AsLong(obins);
-		else if (PyFloat_Check(obins))
-			bins = PyFloat_AS_DOUBLE((PyFloatObject *) obins);
-		else {
-			SETERR("digitize: bad type for second argument.");
-			return NULL;
-		}
-	}
-
-	if (bins_is_scalar)
-		if (x_is_scalar)
-			if (x < bins)
-				return PyInt_FromLong(0);
-			else
-				return PyInt_FromLong(1);
-		else {
-			aret =
-			    (PyArrayObject *) PyArray_SimpleNew(1, &lx,
-								PyArray_LONG);
-			iret = (long *)A_DATA(aret);
-			for (i = 0; i < lx; i++)
-				if (dx[i] >= bins)
-					iret[i] = (long)1;
-	} else {
-		m = monotonic_(dbins, lbins);
-		if (m == -1) {
-			if (x_is_scalar)
-				return
-				    PyInt_FromLong(decr_slot_
-						   ((float)x, dbins, lbins));
-			aret =
-			    (PyArrayObject *) PyArray_SimpleNew(1, &lx,
-								PyArray_LONG);
-			iret = (long *)A_DATA(aret);
-			for (i = 0; i < lx; i++)
-				iret[i] = (long)decr_slot_(dx[i], dbins, lbins);
-		} else if (m == 1) {
-			if (x_is_scalar)
-				return
-				    PyInt_FromLong(incr_slot_
-						   ((float)x, dbins, lbins));
-			aret =
-			    (PyArrayObject *) PyArray_SimpleNew(1, &lx,
-								PyArray_LONG);
-			iret = (long *)A_DATA(aret);
-			for (i = 0; i < lx; i++)
-				iret[i] =
-				    (long)incr_slot_((float)dx[i], dbins,
-						     lbins);
-		} else {
-			SETERR("digitize: Second argument must be monotonic.");
-			Py_XDECREF(ax);
-			Py_XDECREF(abins);
-			return NULL;
-		}
-	}
-
-	Py_XDECREF(ax);
-	Py_XDECREF(abins);
-	return PyArray_Return(aret);
-}
-
-static char arr_reverse__doc__[] = "";
+static char arr_reverse__doc__[] =
+    "reverse (x, n) returns a PyFloat Matrix the same size and shape as\n\
+x, but with the elements along the nth dimension reversed.\n\
+x must be two-dimensional.";
 
 static PyObject *arr_reverse(PyObject * self, PyObject * args)
 {
-	/* reverse (x, n) returns a PyFloat Matrix the same size and shape as
-	   x, but with the elements along the nth dimension reversed.
-	   x must be two-dimensional.                                   */
-	/* self is not used */
 	PyObject *ox;
 	int n;
 	PyArrayObject *ax, *ares;
@@ -1009,16 +780,14 @@ static PyObject *arr_reverse(PyObject * self, PyObject * args)
 	return PyArray_Return(ares);
 }
 
-static char arr_span__doc__[] = "";
+static char arr_span__doc__[] =
+    "span (lo, hi, num, d2 = 0) returns an array of num equally\n\
+spaced PyFloats starting with lo and ending with hi. if d2 is\n\
+not zero, it will return a two-dimensional array, each of the\n\
+d2 rows of which is the array of equally spaced numbers.";
 
 static PyObject *arr_span(PyObject * self, PyObject * args)
 {
-	/* span (lo, hi, num, d2 = 0) returns an array of num equally
-	   spaced PyFloats starting with lo and ending with hi. if d2 is
-	   not zero, it will return a two-dimensional array, each of the
-	   d2 rows of which is the array of equally spaced numbers. */
-	/* self is not used */
-
 	int d2 = 0;
 	npy_intp num;
 	npy_intp dims[2];
@@ -1029,9 +798,12 @@ static PyObject *arr_span(PyObject * self, PyObject * args)
 	Py_Try(PyArg_ParseTuple(args, "ddi|i", &lo, &hi, &num, &d2));
 	dims[1] = num;
 	dims[0] = d2;
+
 	Py_Try(arow =
 	       (PyArrayObject *) PyArray_SimpleNew(1, &num, PyArray_DOUBLE));
+
 	drow = (double *)A_DATA(arow);
+
 	for (i = 0; i < num; i++)
 		drow[i] = lo + ((double)i) * (hi - lo) / ((double)(num - 1));
 	if (d2 == 0)
@@ -1051,17 +823,15 @@ static PyObject *arr_span(PyObject * self, PyObject * args)
 	return PyArray_Return(ares);
 }
 
-static char arr_nz__doc__[] = "";
+static char arr_nz__doc__[] = "nz_ (x): x is an array of unsigned bytes. If x\n\
+ends with a bunch of zeros, this returns with the index of\n\
+the first zero element after the last nonzero element.\n\
+It returns the length of the array if its last element\n\
+is nonzero. This is essentially the 'effective length'\n\
+of the array.";
 
 static PyObject *arr_nz(PyObject * self, PyObject * args)
 {
-	/* nz_ (x): x is an array of unsigned bytes. If x
-	   ends with a bunch of zeros, this returns with the index of
-	   the first zero element after the last nonzero element.
-	   It returns the length of the array if its last element
-	   is nonzero. This is essentially the "effective length"
-	   of the array. */
-	/* self is not used */
 	int i, len;
 	unsigned char *cdat;
 	PyObject *odat;
@@ -1078,26 +848,25 @@ static PyObject *arr_nz(PyObject * self, PyObject * args)
 	return PyInt_FromLong((long)i);
 }
 
-static char arr_find_mask__doc__[] = "";
+static char arr_find_mask__doc__[] =
+    "find_mask (fs, node_edges): This function is used to calculate\n\
+a mask whose corresponding entry is 1 precisely if an edge\n\
+of a cell is cut by an isosurface, i. e., if the function\n\
+fs is one on one of the two vertices of an edge and zero\n\
+on the other (fs = 1 represents where some function on\n\
+the mesh was found to be negative by the calling routine).\n\
+fs is ntotal by nv, where nv is the number of vertices\n\
+of a cell (4 for a tetrahedren, 5 for a pyramid, 6 for a prism).\n\
+node_edges is a nv by ne array, where ne is the number of\n\
+edges on a cell (6 for a tet, 8 for a pyramid, 9 for a prism).\n\
+The entries in each row are 1 precisely if the corresponding edge\n\
+is incident on the vertex. The exclusive or of the rows\n\
+which correspond to nonzero entries in fs contains 1 in\n\
+entries corresponding to edges where fs has opposite values\n\
+on the vertices.";
 
 static PyObject *arr_find_mask(PyObject * self, PyObject * args)
 {
-	/* find_mask (fs, node_edges): This function is used to calculate
-	   a mask whose corresponding entry is 1 precisely if an edge
-	   of a cell is cut by an isosurface, i. e., if the function
-	   fs is one on one of the two vertices of an edge and zero
-	   on the other (fs = 1 represents where some function on
-	   the mesh was found to be negative by the calling routine).
-	   fs is ntotal by nv, where nv is the number of vertices
-	   of a cell (4 for a tetrahedren, 5 for a pyramid, 6 for a prism).
-	   node_edges is a nv by ne array, where ne is the number of
-	   edges on a cell (6 for a tet, 8 for a pyramid, 9 for a prism).
-	   The entries in each row are 1 precisely if the corresponding edge
-	   is incident on the vertex. The exclusive or of the rows
-	   which correspond to nonzero entries in fs contains 1 in
-	   entries corresponding to edges where fs has opposite values
-	   on the vertices.                                            */
-
 	PyObject *fso, *node_edgeso;
 	PyArrayObject *fsa, *node_edgesa, *maska;
 	int *fs, *node_edges, *mask;
@@ -1139,34 +908,34 @@ static PyObject *arr_find_mask(PyObject * self, PyObject * args)
 }
 
 /* Data for construct3 and walk3 */
-int start_face4[] = { 0, 0, 1, 0, 2, 1 };
-int start_face5[] = { 0, 0, 1, 2, 0, 1, 2, 3 };
-int start_face6[] = { 1, 1, 0, 0, 2, 2, 0, 0, 1 };
-int start_face8[] = { 0, 1, 0, 1, 0, 1, 0, 1, 2, 3, 2, 3 };
+static int start_face4[] = { 0, 0, 1, 0, 2, 1 };
+static int start_face5[] = { 0, 0, 1, 2, 0, 1, 2, 3 };
+static int start_face6[] = { 1, 1, 0, 0, 2, 2, 0, 0, 1 };
+static int start_face8[] = { 0, 1, 0, 1, 0, 1, 0, 1, 2, 3, 2, 3 };
 
 static int *start_face[4] = { start_face4, start_face5, start_face6,
 	start_face8
 };
 
-int ef0[] = { 0, 1 };
-int ef1[] = { 0, 2 };
-int ef2[] = { 0, 3 };
-int ef3[] = { 0, 4 };
-int ef4[] = { 0, 5 };
-int ef5[] = { 1, 2 };
-int ef6[] = { 1, 3 };
-int ef7[] = { 1, 4 };
-int ef8[] = { 1, 5 };
-int ef9[] = { 2, 3 };
-int ef10[] = { 2, 4 };
-int ef11[] = { 2, 5 };
-int ef12[] = { 3, 4 };
-int ef13[] = { 3, 5 };
-int *edge_faces4[] = { ef0, ef1, ef5, ef2, ef9, ef6 };
-int *edge_faces5[] = { ef2, ef0, ef5, ef9, ef3, ef7, ef10, ef12 };
-int *edge_faces6[] = { ef6, ef7, ef2, ef3, ef9, ef10, ef0, ef1, ef5 };
+static int ef0[] = { 0, 1 };
+static int ef1[] = { 0, 2 };
+static int ef2[] = { 0, 3 };
+static int ef3[] = { 0, 4 };
+static int ef4[] = { 0, 5 };
+static int ef5[] = { 1, 2 };
+static int ef6[] = { 1, 3 };
+static int ef7[] = { 1, 4 };
+static int ef8[] = { 1, 5 };
+static int ef9[] = { 2, 3 };
+static int ef10[] = { 2, 4 };
+static int ef11[] = { 2, 5 };
+static int ef12[] = { 3, 4 };
+static int ef13[] = { 3, 5 };
+static int *edge_faces4[] = { ef0, ef1, ef5, ef2, ef9, ef6 };
+static int *edge_faces5[] = { ef2, ef0, ef5, ef9, ef3, ef7, ef10, ef12 };
+static int *edge_faces6[] = { ef6, ef7, ef2, ef3, ef9, ef10, ef0, ef1, ef5 };
 
-int *edge_faces8[] = { ef1, ef5, ef2, ef6, ef3, ef7, ef4, ef8, ef10,
+static int *edge_faces8[] = { ef1, ef5, ef2, ef6, ef3, ef7, ef4, ef8, ef10,
 	ef12, ef11, ef13
 };
 
@@ -1174,39 +943,39 @@ static int **edge_faces[] = { edge_faces4, edge_faces5, edge_faces6,
 	edge_faces8
 };
 
-int fe40[] = { 0, 1, 3 };
-int fe41[] = { 0, 5, 2 };
-int fe42[] = { 1, 2, 4 };
-int fe43[] = { 3, 4, 5 };
-int *face_edges4[] = { fe40, fe41, fe42, fe43 };
-int fe50[] = { 0, 1, 4 };
-int fe51[] = { 1, 2, 5 };
-int fe52[] = { 2, 3, 6 };
-int fe53[] = { 0, 7, 3 };
-int fe54[] = { 4, 5, 6, 7 };
-int *face_edges5[] = { fe50, fe51, fe52, fe53, fe54 };
-int fe60[] = { 2, 7, 3, 6 };
-int fe61[] = { 0, 6, 1, 8 };
-int fe62[] = { 4, 8, 5, 7 };
-int fe63[] = { 0, 4, 2 };
-int fe64[] = { 1, 3, 5 };
-int *face_edges6[] = { fe60, fe61, fe62, fe63, fe64 };
-int fe80[] = { 0, 6, 2, 4 };
-int fe81[] = { 1, 5, 3, 7 };
-int fe82[] = { 0, 8, 1, 10 };
-int fe83[] = { 2, 11, 3, 9 };
-int fe84[] = { 4, 9, 5, 8 };
-int fe85[] = { 6, 10, 7, 11 };
-int *face_edges8[] = { fe80, fe81, fe82, fe83, fe84, fe85 };
+static int fe40[] = { 0, 1, 3 };
+static int fe41[] = { 0, 5, 2 };
+static int fe42[] = { 1, 2, 4 };
+static int fe43[] = { 3, 4, 5 };
+static int *face_edges4[] = { fe40, fe41, fe42, fe43 };
+static int fe50[] = { 0, 1, 4 };
+static int fe51[] = { 1, 2, 5 };
+static int fe52[] = { 2, 3, 6 };
+static int fe53[] = { 0, 7, 3 };
+static int fe54[] = { 4, 5, 6, 7 };
+static int *face_edges5[] = { fe50, fe51, fe52, fe53, fe54 };
+static int fe60[] = { 2, 7, 3, 6 };
+static int fe61[] = { 0, 6, 1, 8 };
+static int fe62[] = { 4, 8, 5, 7 };
+static int fe63[] = { 0, 4, 2 };
+static int fe64[] = { 1, 3, 5 };
+static int *face_edges6[] = { fe60, fe61, fe62, fe63, fe64 };
+static int fe80[] = { 0, 6, 2, 4 };
+static int fe81[] = { 1, 5, 3, 7 };
+static int fe82[] = { 0, 8, 1, 10 };
+static int fe83[] = { 2, 11, 3, 9 };
+static int fe84[] = { 4, 9, 5, 8 };
+static int fe85[] = { 6, 10, 7, 11 };
+static int *face_edges8[] = { fe80, fe81, fe82, fe83, fe84, fe85 };
 
 static int **face_edges[] = { face_edges4, face_edges5, face_edges6,
 	face_edges8
 };
 
-int lens4[] = { 3, 3, 3, 3 };
-int lens5[] = { 3, 3, 3, 3, 4 };
-int lens6[] = { 4, 4, 4, 3, 3 };
-int lens8[] = { 4, 4, 4, 4, 4, 4 };
+static int lens4[] = { 3, 3, 3, 3 };
+static int lens5[] = { 3, 3, 3, 3, 4 };
+static int lens6[] = { 4, 4, 4, 3, 3 };
+static int lens8[] = { 4, 4, 4, 4, 4, 4 };
 static int *lens[] = { lens4, lens5, lens6, lens8 };
 
 static int no_edges[4] = { 6, 8, 9, 12 };
@@ -1280,25 +1049,25 @@ static void walk3(int *permute, int *mask, int itype, int pt)
 	return;
 }
 
-static char arr_construct3__doc__[] = "";
+static char arr_construct3__doc__[] = "\
+construct3 (mask, itype) computes how the cut\n\
+edges of a particular type of cell must be ordered so\n\
+that the polygon of intersection can be drawn correctly.\n\
+itype = 0 for tetrahedra; 1 for pyramids; 2 for prisms;\n\
+3 for hexahedra. Suppose nv is the number of vertices\n\
+of the cell type, and ne is the number of edges. Mask\n\
+has been ravelled so that it was flat, originally it\n\
+had 2**nv-2 rows, each with ne entries. Each row is\n\
+ne long, and has an entry of 1 corresponding to each\n\
+edge that is cut when the set of vertices corresponding\n\
+to the row index has negative values. (The binary number\n\
+for the row index + 1 has a one in position i if vertex\n\
+i has a negative value.) The return array permute is\n\
+ne by 2**nv-2, and the rows of permute tell how\n\
+the edges should be ordered to draw the polygon properly.";
 
 static PyObject *arr_construct3(PyObject * self, PyObject * args)
-{				/* construct3 (mask, itype) computes how the cut
-				   edges of a particular type of cell must be ordered so
-				   that the polygon of intersection can be drawn correctly.
-				   itype = 0 for tetrahedra; 1 for pyramids; 2 for prisms;
-				   3 for hexahedra. Suppose nv is the number of vertices
-				   of the cell type, and ne is the number of edges. Mask
-				   has been ravelled so that it was flat, originally it
-				   had 2**nv-2 rows, each with ne entries. Each row is
-				   ne long, and has an entry of 1 corresponding to each
-				   edge that is cut when the set of vertices corresponding
-				   to the row index has negative values. (The binary number
-				   for the row index + 1 has a one in position i if vertex
-				   i has a negative value.) The return array permute is
-				   ne by 2**nv-2, and the rows of permute tell how
-				   the edges should be ordered to draw the polygon properly. */
-
+{
 	PyObject *masko;
 	PyArrayObject *permutea, *maska;
 	int itype, ne, pt, nm;
@@ -1330,12 +1099,12 @@ static PyObject *arr_construct3(PyObject * self, PyObject * args)
 	return PyArray_Return(permutea);
 }
 
-static char arr_to_corners__doc__[] = "";
+static char arr_to_corners__doc__[] = "\
+This routine takes an array of floats describing cell-centered\n\
+values and expands it to node-centered values.";
 
 static PyObject *arr_to_corners(PyObject * self, PyObject * args)
 {
-	/* This routine takes an array of floats describing cell-centered
-	   values and expands it to node-centered values. */
 	PyObject *oarr, *onv;
 	npy_intp sum_nv;
 	PyArrayObject *aarr, *anv, *ares;
@@ -1386,18 +1155,16 @@ static PyObject *arr_to_corners(PyObject * self, PyObject * args)
 /* List of methods defined in the module */
 
 static struct PyMethodDef arr_methods[] = {
-	{"histogram", arr_histogram, 1, arr_histogram__doc__},
-	{"array_set", arr_array_set, 1, arr_array_set__doc__},
-	{"index_sort", arr_index_sort, 1, arr_index_sort__doc__},
-	{"interp", arr_interp, 1, arr_interp__doc__},
-	{"digitize", arr_digitize, 1, arr_digitize__doc__},
-	{"zmin_zmax", arr_zmin_zmax, 1, arr_zmin_zmax__doc__},
-	{"reverse", arr_reverse, 1, arr_reverse__doc__},
-	{"span", arr_span, 1, arr_span__doc__},
-	{"nz", arr_nz, 1, arr_nz__doc__},
-	{"find_mask", arr_find_mask, 1, arr_find_mask__doc__},
-	{"construct3", arr_construct3, 1, arr_construct3__doc__},
-	{"to_corners", arr_to_corners, 1, arr_to_corners__doc__},
+	{"array_set", arr_array_set, METH_VARARGS, arr_array_set__doc__},
+	{"index_sort", arr_index_sort, METH_VARARGS, arr_index_sort__doc__},
+	{"interp", arr_interp, METH_VARARGS, arr_interp__doc__},
+	{"zmin_zmax", arr_zmin_zmax, METH_VARARGS, arr_zmin_zmax__doc__},
+	{"reverse", arr_reverse, METH_VARARGS, arr_reverse__doc__},
+	{"span", arr_span, METH_VARARGS, arr_span__doc__},
+	{"nz", arr_nz, METH_VARARGS, arr_nz__doc__},
+	{"find_mask", arr_find_mask, METH_VARARGS, arr_find_mask__doc__},
+	{"construct3", arr_construct3, METH_VARARGS, arr_construct3__doc__},
+	{"to_corners", arr_to_corners, METH_VARARGS, arr_to_corners__doc__},
 
 	{NULL, NULL}		/* sentinel */
 };
@@ -1410,16 +1177,20 @@ PyMODINIT_FUNC initgistfuncs(void)
 {
 	PyObject *m, *d;
 
-	/* Create the module and add the functions */
-	m = Py_InitModule4("gistfuncs", arr_methods,
-			   arrayfns_module_documentation,
-			   (PyObject *) NULL, PYTHON_API_VERSION);
+	/* initialize python */
+	Py_Initialize();
 
-	/* Add some symbolic constants to the module */
+	/* initialize numpy */
+	import_array();
+
+	/* initialize this module */
+	if ((m = Py_InitModule3("gistfuncs", arr_methods,
+				arrayfns_module_documentation)) == NULL)
+		return;
+
+	/* add symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	ErrorObject = PyErr_NewException("gistfuncs.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
 
-	/* XXXX Add constants here */
-	import_array();
 }

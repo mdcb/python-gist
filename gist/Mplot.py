@@ -2,46 +2,43 @@
 # Author: Travis Oliphant
 # Copyright: SciPy
 
-#__all__ = ['_whoami', '_create_dir', '_is_writable', '_reverse_dict', '_find_and_set', '_ispointtype', '_parse_type_arg', '_clear_global_linetype', '_append_global_linetype', '_minsqueeze', '_add_color', '_chng_font', '_remove_ticks', 'imagesc_cb' ]
+#__all__ = ['_whoami', '_create_dir', '_is_writable', '_reverse_dict', '_find_and_set', '_ispointtype', '_parse_type_arg', '_clear_global_linetype', '_append_global_linetype', '_minsqueeze', '_add_color', '_chng_font', '_remove_ticks' ]
 
 
-__all__ = ['histogram', 'textcolor', 'barplot', 'hold', 'errorbars', 'legend', 'arrow', 'plot', 'matplot', 'addbox', 'xlabel', 'ylabel', 'title', 'title3', 'stem', 'makeleg', 'twoplane', 'surf', 'mysurf', 'expand_limits', 'axes', 'bode', 'addtext', 'write_palette', 'list_palettes', 'change_palette', 'matview', 'imagesc', 'movie', 'setdpi', 'figure', 'full_page', 'subplot' ]
+__all__ = ['histogram', 'textcolor', 'barplot', 'hold', 'errorbars', 'legend', 'arrow', 'plot', 'matplot', 'addbox', 'xlabel', 'ylabel', 'title', 'title3', 'stem', 'makeleg', 'twoplane', 'surf', 'mysurf', 'expand_limits', 'axes', 'bode', 'addtext', 'write_palette', 'list_palettes', 'change_palette', 'matview', 'imagesc', 'movie', 'figure', 'full_page', 'subplot', 'imagesc_cb' ]
 
 
 
-import gist
-import pl3d, plwf
+import sys, os
 import numpy
-from numpy import ravel, reshape, repeat, arange, transpose, compress, \
-     where, ones, newaxis, asarray, pi, cos, sin, arctan2, array, angle
-import types
-import write_style
+import gist
+import pl3d, plwf,colorbar,write_style
+
+
 points = 0.0013000
 inches = 72.27*points
 
+# TODO xwininfo
 _maxwidth=1600
 _maxheight=900
+
 _dpi = 75
 _hold = 0
 _maxcolors=256
-_textcolor=None
+_textcolor='fg'
 
 gist.pldefault(dpi=_dpi,maxcolors=_maxcolors)
 
 # Get a directory that the user has write access to for
 #  storing temporary *.gp and *.gs files
-import tempfile
-import os
-import sys
 
 # functions copied from weave.catalog
-
 def _whoami():
-    """return a string identifying the user."""
+    """Return a string identifying the user."""
     return os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
 
 def _create_dir(p):
-    """ Create a directory and any necessary intermediate directories."""
+    """Create a directory and any necessary intermediate directories."""
     if not os.path.exists(p):
         try:
             os.mkdir(p)
@@ -69,6 +66,7 @@ def _getdir(name='gist'):
     try:
         path = os.path.join(os.environ['HOME'],'.' + name)
     except KeyError:
+        import tempfile
         path = os.path.join(tempfile.gettempdir(),"%s"%_whoami(),
                             name)
     if not os.path.exists(path):
@@ -82,8 +80,9 @@ def _getdir(name='gist'):
 _user_path = _getdir()
 
 def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
-   """Plot a histogram.  ntype is the normalization type.
+   """histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0)
 
+   Plot a histogram.  ntype is the normalization type.
    Use ntype == 2 to compare with probability density function.
    """
    if range is None:
@@ -94,20 +93,20 @@ def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor=0):
    dmin = dmin + 0.0
    dmax = dmax + 0.0
    bin_width = (dmax - dmin)/nbins
-   darray = numpy.zeros((nbins,2),numpy.float32)
-   darray[:,0] = dmin + bin_width*(numpy.arange(nbins)+0.5)
+   arr = numpy.zeros((nbins,2),numpy.float32)
+   arr[:,0] = dmin + bin_width*(numpy.arange(nbins)+0.5)
    bins = dmin + bin_width*(numpy.arange(nbins+1))
-   darray[:,1] = numpy.histogram(data,bins)[0]
+   arr[:,1] = numpy.histogram(data,bins)[0]
    if ntype == 1:
-       darray[:,1] = 1.0*darray[:,1] / numpy.add.reduce(darray[:,1])
+       arr[:,1] = 1.0*arr[:,1] / numpy.add.reduce(arr[:,1])
    elif ntype == 2:
-       darray[:,1] = 1.0/bin_width*darray[:,1] / \
-                     numpy.add.reduce(darray[:,1])
+       arr[:,1] = 1.0/bin_width*arr[:,1] / \
+                     numpy.add.reduce(arr[:,1])
    if bar:
-       barplot(darray[:,0],darray[:,1],width=bwidth,color=bcolor)
+       barplot(arr[:,0],arr[:,1],width=bwidth,color=bcolor)
    else:
-       plot(darray[:,0],darray[:,1])
-   return darray
+       plot(arr[:,0],arr[:,1])
+   return arr
 
 
 def textcolor(color=None):
@@ -135,28 +134,25 @@ _rcolors = _reverse_dict(_colors)
 _rmarkers = _reverse_dict(_markers)
 
 def _find_and_set(dict, str, default):
-    import string
     value = default
     for k in dict.keys():
-        if string.find(str,k) >= 0:
+        if str.find(k) >= 0:
             value = dict[k]
             break
     return value
 
 def barplot(x,y,width=0.8,color=0):
-    """Plot a barplot.
-
-    Description:
+    """barplot(x,y,width=0.8,color=0)
 
       Plot a barplot with centers at x and heights y with given color
-
-    Inputs:
 
       x, y -- Centers and heights of bars
       width -- Relative width of the bars.
       color -- A number from the current palette.
     """
     N = 4*numpy.ones(len(x), dtype=numpy.int32)
+    x=numpy.asarray(x)
+    y=numpy.asarray(y)
     hw = width * (x[1]-x[0])/ 2.0
     Xa = x-hw
     Xb = x+hw
@@ -181,11 +177,11 @@ def barplot(x,y,width=0.8,color=0):
     return
 
 def hold(state):
-    """Draw subsequent plots over the current plot.
+    """hold(state)
+    
+    Draw subsequent plots over the current plot.
 
-    Inputs:
-
-      state -- If 'on' or 'yes' hold the current plot.
+    state -- If 'on' or 'yes' hold the current plot.
                Otherwise refresh screen when drawing new plot.
     """
     global _hold
@@ -200,24 +196,24 @@ def hold(state):
 
 
 def errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25):
-    """Draw connected points with errorbars.
+    """errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25)
+    
+    Plot connected points with errorbars.
 
-    Description:
-
-      Plot connected points with errorbars.
-
-    Inputs:
-
-      x, y -- The points to plot.
-      err -- The error in the y values.
-      ptcolor -- The color for the points.
-      linecolor -- The color of the connecting lines and error bars.
-      pttype -- The type of point ('o', 'x', '+', '.', 'x', '*')
-      linetype -- The type of line ('-', '|', ':', '-.', '-:')
-      fac -- Adjusts how long the horizontal lines are which make the
-             top and bottom of the error bars.
+    x, y -- The points to plot.
+    err -- The error in the y values.
+    ptcolor -- The color for the points.
+    linecolor -- The color of the connecting lines and error bars.
+    pttype -- The type of point ('o', 'x', '+', '.', 'x', '*')
+    linetype -- The type of line ('-', '|', ':', '-.', '-:')
+    fac -- Adjusts how long the horizontal lines are which make the
+           top and bottom of the error bars.
     """
     # create line arrays
+    x=numpy.asarray(x)
+    y=numpy.asarray(y)
+    err=numpy.asarray(err)
+
     yb = y - err
     ye = y + err
     try:
@@ -230,7 +226,7 @@ def errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25
         pass
     else:
         gist.fma()
-    y = where(numpy.isfinite(y),y,0)
+    y = numpy.where(numpy.isfinite(y),y,0)
     gist.plg(y,x,color=_colors[ptcolor],marker=_markers[pttype],type='none')
     gist.pldj(x,yb,x,ye,color=_colors[linecolor],type=_types[linetype])
     viewp = gist.viewport()
@@ -245,30 +241,21 @@ def errorbars(x,y,err,ptcolor='r',linecolor='B',pttype='o',linetype='-',fac=0.25
     return
 
 def legend(text,linetypes=None,lleft=None,color=None,tfont='helvetica',fontsize=14,nobox=0):
-    """Construct and place a legend.
+    """legend(text,linetypes=None,lleft=None,color=None,tfont='helvetica',fontsize=14,nobox=0)
+    
+    Build a legend and place it on the current plot with an interactive prompt.
 
-    Description:
-
-      Build a legend and place it on the current plot with an interactive
-      prompt.
-
-    Inputs:
-
-      text -- A list of strings which document the curves.
-      linetypes -- If not given, then the text strings are associated
-                   with the curves in the order they were originally
-                   drawn.  Otherwise, associate the text strings with the
-                   corresponding curve types given.  See plot for description.
-
+    Example:
+      gist.legend(['white dash','red dot','solid blue'],linetypes=['|w',':r','-B'],color='yellow')
+    
+    text -- A list of strings which document the curves.
+    linetypes -- If not given, then the text strings are associated
+                 with the curves in the order they were originally
+                 drawn.  Otherwise, associate the text strings with the
+                 corresponding curve types given.  See plot for description.
     """
     global _hold
-    global _textcolor
-    if color is None:
-        color = _textcolor
-    else:
-        _textcolor = color
-    if color is None:
-        color = 'black'
+    color = textcolor(color) 
 
     sys = gist.plsys()
     if sys == 0:
@@ -299,10 +286,10 @@ def legend(text,linetypes=None,lleft=None,color=None,tfont='helvetica',fontsize=
     savehold = _hold
     _hold = 1
     for k in range(len(text)):
-        plot(legarr,ypos*legy,linetypes[k])
-        print linetypes[k], text[k]
-        print llx+width+deltax, ypos-deltay
-        if text[k] != "":
+        try: ltype =  linetypes[k] # _GLOBAL_LINE_TYPES holds the style of previous 'plot'
+        except: ltype = '-' # solid
+        plot(legarr,ypos*legy,ltype)
+        if len(text[k]):
             gist.plt(text[k],llx+width+deltax,ypos-deltay,
                      color=color,font=tfont,height=fontsize,tosys=0)
         ypos = ypos + dy
@@ -343,120 +330,112 @@ def _ispointtype(linetype):
             return 0
     return 0
 
-##def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsize=14,nobox=0):
-##    viewp = gist.viewport()
-##    plotlims = gist.limits()
-##    gist.limits(plotlims)
-##    conv_factorx = (viewp[1] - viewp[0]) / (plotlims[1]-plotlims[0])
-##    conv_factory = (viewp[3] - viewp[2]) / (plotlims[3]-plotlims[2])
-##
-##    width = (plotlims[1] - plotlims[0]) / 10.0;
-##    if lleft is None:
-##        lleft = gist.mouse(-1,0,"Click on point for lower left coordinate.")
-##        llx = lleft[0]
-##        lly = lleft[1]
-##    else:
-##        llx,lly = lleft[:2]
-##
-##    dx = width / 3.0
-##    legarr = numpy.arange(llx,llx+width,dx)
-##    legy = numpy.ones(legarr.shape)
-##    dy = fontsize*points/conv_factory*1.15
-##    deltay = fontsize*points / conv_factory / 2.8
-##    deltax = fontsize*points / conv_factorx / 2.8
-##    ypos = lly + deltay;
-##    if linetypes is None:
-##        linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
-##    for k in range(len(text)):
-##        if _ispointtype(linetypes[k]):
-##            pt = len(legarr)/2
-##            plot([legarr[pt]],[ypos*legy[pt]],linetypes[k], hold=1)
-##        else:
-##            plot(legarr,ypos*legy,linetypes[k],hold=1)
-##        print llx+width+deltax, ypos-deltay
-##        if text[k] != "":
-##            gist.plt(text[k],llx+width+deltax,ypos-deltay,
-##                     color=color,font=tfont,height=fontsize,tosys=1)
-##        ypos = ypos + dy
-##
-##    if nobox:
-##        pass
-##    else:
-##        maxlen = numpy.max(map(len,text))
-##        c1 = (llx-deltax,lly-deltay)
-##        c2 = (llx + width + deltax + fontsize*points/conv_factorx * maxlen/1.8 + deltax,
-##              lly + len(text)*dy)
-##        linesx0 = [c1[0],c1[0],c2[0],c2[0]]
-##        linesy0 = [c1[1],c2[1],c2[1],c1[1]]
-##        linesx1 = [c1[0],c2[0],c2[0],c1[0]]
-##        linesy1 = [c2[1],c2[1],c1[1],c1[1]]
-##        gist.pldj(linesx0,linesy0,linesx1,linesy1,color=color)
-##    return
+#def legend(text,linetypes=None,lleft=None,color='black',tfont='helvetica',fontsize=14,nobox=0):
+#    viewp = gist.viewport()
+#    plotlims = gist.limits()
+#    gist.limits(plotlims)
+#    conv_factorx = (viewp[1] - viewp[0]) / (plotlims[1]-plotlims[0])
+#    conv_factory = (viewp[3] - viewp[2]) / (plotlims[3]-plotlims[2])
+#
+#    width = (plotlims[1] - plotlims[0]) / 10.0;
+#    if lleft is None:
+#        lleft = gist.mouse(-1,0,"Click on point for lower left coordinate.")
+#        llx = lleft[0]
+#        lly = lleft[1]
+#    else:
+#        llx,lly = lleft[:2]
+#
+#    dx = width / 3.0
+#    legarr = numpy.arange(llx,llx+width,dx)
+#    legy = numpy.ones(legarr.shape)
+#    dy = fontsize*points/conv_factory*1.15
+#    deltay = fontsize*points / conv_factory / 2.8
+#    deltax = fontsize*points / conv_factorx / 2.8
+#    ypos = lly + deltay;
+#    if linetypes is None:
+#        linetypes = _GLOBAL_LINE_TYPES[:]  # copy them out
+#    for k in range(len(text)):
+#        if _ispointtype(linetypes[k]):
+#            pt = len(legarr)/2
+#            plot([legarr[pt]],[ypos*legy[pt]],linetypes[k], hold=1)
+#        else:
+#            plot(legarr,ypos*legy,linetypes[k],hold=1)
+#        print llx+width+deltax, ypos-deltay
+#        if text[k] != "":
+#            gist.plt(text[k],llx+width+deltax,ypos-deltay,
+#                     color=color,font=tfont,height=fontsize,tosys=1)
+#        ypos = ypos + dy
+#
+#    if nobox:
+#        pass
+#    else:
+#        maxlen = numpy.max(map(len,text))
+#        c1 = (llx-deltax,lly-deltay)
+#        c2 = (llx + width + deltax + fontsize*points/conv_factorx * maxlen/1.8 + deltax,
+#              lly + len(text)*dy)
+#        linesx0 = [c1[0],c1[0],c2[0],c2[0]]
+#        linesy0 = [c1[1],c2[1],c2[1],c1[1]]
+#        linesx1 = [c1[0],c2[0],c2[0],c1[0]]
+#        linesy1 = [c2[1],c2[1],c1[1],c1[1]]
+#        gist.pldj(linesx0,linesy0,linesx1,linesy1,color=color)
+#    return
 
 # import operator
 
 def arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None):
-    """Draw an arrow.
+    """arrow(x0,y0,x1,y1,color=0,ang=45.0,height=6,width=1.5,lc=None)
+    
+    Draw an arrow from (x0,y0) to (x1,y1) in the current coordinate system.
 
-    Description:
-
-      Draw an arrow from (x0,y0) to (x1,y1) in the current coordinate system.
-
-    Inputs:
-
-      x0, y0 -- The beginning point.
-      x1, y1 -- Then ending point.
-      color -- The color of the arrowhead.  Number represents an index
-               in the current palette or a negative number or a spelled
-               out basic color.
-      lc -- The color of the line (same as color by default).
-      ang -- The angle of the arrowhead.
-      height -- The height of the arrowhead in points.
-      width -- The width of the arrow line in points.
+    x0, y0 -- The beginning point.
+    x1, y1 -- Then ending point.
+    color -- The color of the arrowhead.  Number represents an index
+             in the current palette or a negative number or a spelled
+             out basic color.
+    lc -- The color of the line (same as color by default).
+    ang -- The angle of the arrowhead.
+    height -- The height of the arrowhead in points.
+    width -- The width of the arrow line in points.
     """
     if lc is None:
         lc = color
-    if type(lc) is types.StringType:
+    if type(lc) is str:
         lc = _colornum[lc]
-    if type(color) is types.StringType:
+    if type(color) is str:
         color = _colornum[color]
     vp = gist.viewport()
     plotlims = gist.limits()
     gist.limits(plotlims)
     conv_factorx = (vp[1]-vp[0]) / (plotlims[1]-plotlims[0])
     conv_factory = (vp[3]-vp[2]) / (plotlims[3]-plotlims[2])
-    ang = ang*pi/180
+    ang = ang*numpy.pi/180
     height = height*points
-    hypot = height / cos(ang)
+    hypot = height / numpy.cos(ang)
     difx = (x1 - x0) * conv_factorx
     dify = (y1 - y0) * conv_factory
-    theta = arctan2(dify,difx) + pi
+    theta = numpy.arctan2(dify,difx) + numpy.pi
     tha = theta + ang
     thb = theta - ang
-    x1a = x1 + hypot*cos(tha) / conv_factorx
-    x1b = x1 + hypot*cos(thb) / conv_factorx
-    y1a = y1 + hypot*sin(tha) / conv_factory
-    y1b = y1 + hypot*sin(thb) / conv_factory
+    x1a = x1 + hypot*numpy.cos(tha) / conv_factorx
+    x1b = x1 + hypot*numpy.cos(thb) / conv_factorx
+    y1a = y1 + hypot*numpy.sin(tha) / conv_factory
+    y1b = y1 + hypot*numpy.sin(thb) / conv_factory
     gist.pldj([x0],[y0],[x1],[y1],color=lc,width=width)
-    gist.plfp(array([color],'B'),[y1,y1a,y1b],[x1,x1a,x1b],[3])
+    gist.plfp(numpy.array([color],numpy.uint8),[y1,y1a,y1b],[x1,x1a,x1b],[3])
     return
 
 def _parse_type_arg(thearg,nowplotting):
     indx = nowplotting % len(_corder)
     if type(thearg) is type(''):
         tomark = 1
-
         thetype = _find_and_set(_types,thearg,'none')
         thecolor = _find_and_set(_colors,thearg,_colors[_corder[indx]])
         themarker = _find_and_set(_markers,thearg,None)
-
         if (themarker is None):
             tomark = 0
             if thetype == 'none':
                 thetype = 'solid'
-
         return (thetype, thecolor, themarker, tomark)
-
     else:  # no string this time
         return ('solid',_colors[_corder[indx]],'Z',0)
 
@@ -470,7 +449,7 @@ def _append_global_linetype(arg):
 
 def _minsqueeze(arr,min=1):
     # eliminate extra dimensions above min
-    arr = asarray(arr)
+    arr = numpy.asarray(arr)
     arr = numpy.squeeze(arr)
     n = len(arr.shape)
     if n < min:
@@ -478,20 +457,17 @@ def _minsqueeze(arr,min=1):
     return arr
 
 def plot(x,*args,**keywds):
-    """Plot curves.
+    """plot(x,*args,**keywds)
+    
+    Plot one or more curves on the same graph.
 
-    Description:
-
-      Plot one or more curves on the same graph.
-
-    Inputs:
-
-      There can be a variable number of inputs which consist of pairs or
-      triples.  The second variable is plotted against the first using the
-      linetype specified by the optional third variable in the triple.  If
-      only two plots are being compared, the x-axis does not have to be
-      repeated.
+    There can be a variable number of inputs which consist of pairs or
+    triples.  The second variable is plotted against the first using the
+    linetype specified by the optional third variable in the triple.  If
+    only two plots are being compared, the x-axis does not have to be
+    repeated.
     """
+
     try:
         override = 1
         savesys = gist.plsys(2)
@@ -523,7 +499,7 @@ def plot(x,*args,**keywds):
         if numpy.iscomplexobj(y):
             print "Warning: complex data plotting real part."
             y = y.real
-        y = where(numpy.isfinite(y),y,0)
+        y = numpy.where(numpy.isfinite(y),y,0)
         gist.plg(y,x,type='solid',color='blue',marks=0,width=linewidth)
         return
     y = args[0]
@@ -549,13 +525,11 @@ def plot(x,*args,**keywds):
             print "Warning: complex data provided, using only real part."
             x = numpy.real(x)
             y = numpy.real(y)
-        y = where(numpy.isfinite(y),y,0)
+        y = numpy.where(numpy.isfinite(y),y,0)
         y = _minsqueeze(y)
         x = _minsqueeze(x)
         gist.plg(y,x,type=thetype,color=thecolor,marker=themarker,marks=tomark,msize=msize,width=linewidth)
-
         nowplotting = nowplotting + 1
-
         ## Argpos is pointing to the next potential triple of data.
         ## Now one of four things can happen:
         ##
@@ -563,14 +537,12 @@ def plot(x,*args,**keywds):
         ##   2:  argpos points to data, end
         ##   3:  argpos points to data, argpos+1 is data
         ##   4:  argpos points to data, argpos+1 is data, argpos+2 is a string
-
         if argpos >= nargs: break      # no more data
-
         if argpos == nargs-1:          # this is a single data value.
             x = x
             y = args[argpos]
             argpos = argpos+1
-        elif type(args[argpos+1]) is types.StringType:
+        elif type(args[argpos+1]) is str:
             x = x
             y = args[argpos]
             argpos = argpos+1
@@ -595,13 +567,13 @@ def matplot(x,y=None,axis=-1):
     for k in range(y.shape[otheraxis]):
         thiscolor = _colors[_corder[k % len(_corder)]]
         sliceobj[otheraxis] = k
-        ysl = where(numpy.isfinite(y[sliceobj]),y[sliceobj],0)
+        ysl = numpy.where(numpy.isfinite(y[sliceobj]),y[sliceobj],0)
         gist.plg(ysl,x,type='solid',color=thiscolor,marks=0)
         _append_global_linetype(_rcolors[thiscolor]+'-')
 
 
-def addbox(x0,y0,x1,y1,color='black',width=1,type='-'):
-    if not isinstance(color,types.IntType):
+def addbox(x0,y0,x1,y1,color='fg',width=1,type='-'):
+    if not isinstance(color,int):
         color = _colornum[color]
     wordtype = _types[type]
     gist.pldj([x0,x1,x1,x0],[y0,y0,y1,y1],[x1,x1,x0,x0],[y0,y1,y1,y0],
@@ -625,11 +597,9 @@ def write_palette(tofile,pal):
         palsize = pal.shape
     if not (palsize[1] == 3 or palsize[0] == 3):
         raise TypeError, "If input is 2-d, the length of at least one dimension must be 3."
-
     if palsize[0] == 3 and palsize[1] != 3:
         pal = numpy.transpose(pal)
         palsize = pal.shape
-
     if palsize[0] > 256:
         raise ValueError, "Palettes should be no longer than 256."
     fid = open(tofile,'w')
@@ -639,35 +609,30 @@ def write_palette(tofile,pal):
     fid.close()
 
 def list_palettes():
-    import os, glob
+    import glob
     try: direc = os.environ['GISTPATH']
     except: direc = gist.GISTPATH
     files = glob.glob1(direc,"*.gp")
     lengths = map(len,files)
     maxlen = numpy.amax(lengths)
-    print "Available palettes..."
-    print "=====================\n"
+    palettes = dict()
     for file in files:
-        print file[:-3] + ' '*(maxlen-len(file[:-3])-3) + ' --- ',
-        k = 0
+        name = file[:-3]
         fid = open(direc+"/"+file)
-        while 1:
-            line = fid.readline()
-            if line[0] != '#':
-                fid.close()
-                if k == 0:
-                    print
-                break
-            if k > 0:
-                print ' '*(maxlen+3) + line[1:-1]
-            else:
-                print line[1:-1]
-            k = k + 1
-
+        lines = fid.readlines()
+        desc=[]
+        for l in lines:
+          if not l.startswith('#'): continue
+          if l.find('$Id')>0: continue
+          if l[1:-1].replace(' ','') == 'rgb': continue
+          desc.append(l[1:].strip())
+        palettes[name]='; '.join(desc)
+        fid.close()
+    return palettes
 
 def change_palette(pal):
     if pal is not None:
-        if isinstance(pal, types.StringType):
+        if isinstance(pal, str):
             try:
                 gist.palette('%s.gp' % pal)
             except gist.error:
@@ -678,15 +643,18 @@ def change_palette(pal):
         else:
             data = numpy.transpose(numpy.asarray(pal))
             data = data.astype (numpy.uint8)
-            gist.palette(*transpose(data))
+            # FIXME *typo ????
+            gist.palette(*numpy.transpose(data))
             #filename = os.path.join(_user_path,'_temp.gp')
             #write_palette(filename,data)
             #gist.palette(filename)
 
 # chpal = change_palette
 
-def matview(A,cmax=None,cmin=None,palette=None,color='black'):
-    """Plot an image of a matrix.
+def matview(A,cmax=None,cmin=None,palette=None,color='fg'):
+    """matview(A,cmax=None,cmin=None,palette=None,color='fg')
+
+    Plot an image of a matrix.
     """
     A = numpy.asarray(A)
     if A.dtype.char in ['D','F']:
@@ -695,9 +663,9 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
     M,N = A.shape
     A = A[::-1,:]
     if cmax is None:
-        cmax = max(ravel(A))
+        cmax = max(numpy.ravel(A))
     if cmin is None:
-        cmin = min(ravel(A))
+        cmin = min(numpy.ravel(A))
     cmax = float(cmax)
     cmin = float(cmin)
     byteimage = gist.bytscl(A,cmin=cmin,cmax=cmax)
@@ -728,8 +696,10 @@ def matview(A,cmax=None,cmin=None,palette=None,color='black'):
 
 
 def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
-            color='black',colormap=None):
-    """Plot an image on axes.
+            color='fg',colormap=None):
+    """imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None, color='fg',colormap=None)
+    
+    Plot an image on axes.
 
     z -- The data
     cmin -- Value to map to lowest color in palette (min(z) if None)
@@ -758,17 +728,16 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
     if _style is not None:
         if _style == "default":
             _style=os.path.join(_user_path,'image.gs')
-            system = write_style.getsys(hticpos='below',vticpos='left',frame=1,
-                                        color=color)
+            system = write_style.getsys(hticpos='below',vticpos='left',frame=1,color=color)
             fid = open(_style,'w')
             fid.write(write_style.style2string(system))
             fid.close()
         gist.window(style=_style)
         _current_style=_style
     if cmax is None:
-        cmax = max(ravel(z))
+        cmax = max(numpy.ravel(z))
     if cmin is None:
-        cmin = min(ravel(z))
+        cmin = min(numpy.ravel(z))
     cmax = float(cmax)
     cmin = float(cmin)
     byteimage = gist.bytscl(z,cmin=cmin,cmax=cmax)
@@ -777,11 +746,10 @@ def imagesc(z,cmin=None,cmax=None,xryr=None,_style='default', palette=None,
     gist.pli(byteimage,xryr[0],xryr[1],xryr[2],xryr[3])
     return
 
-
 def movie(data,aslice,plen,loop=1,direc='z',cmax=None,cmin=None):
-    "movie(data,slice,pause,loop=1,direc='z')"
+    "movie(data,slice,pause,loop=1,direc='z',cmax=None,cmin=None)"
     gist.animate(1)
-    if type(aslice) is types.IntType:
+    if type(aslice) is int:
         num = aslice
         aslice = [slice(None)]*3
         aslice[ord('x')-ord(direc)-1] = num
@@ -792,19 +760,11 @@ def movie(data,aslice,plen,loop=1,direc='z',cmax=None,cmin=None):
             gist.pause(plen)
     gist.animate(0)
 
-def setdpi(num):
-    """ Set the dpi for new windows """
-    if num in [75,100]:
-        _dpi = num
-        gist.set_default_dpi(_dpi)
-    else:
-        raise ValueError, "DPI must be 75 or 100"
-
-def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color=-2, frame=0, labelsize=14, labelfont='helvetica',aspect=1.618,land=0):
+def figure(n=None,style=os.path.join(_user_path,"currstyle.gs"), color='fg', frame=0, labelsize=14, labelfont='helvetica',aspect=1.618,land=0):
     global _figures
     if (aspect < 0.1) or (aspect > 10):
         aspect = 1.618
-    if isinstance(color, types.StringType):
+    if isinstance(color, str):
         color = _colornum[color]
     fid = open(style,'w')
     syst = write_style.getsys(color=color,frame=frame,
@@ -838,6 +798,7 @@ def _add_color(system, color, frame=0):
         system['ticks']['horiz'] = {}
         system['ticks']['horiz']['tickStyle'] = {'color':color}
         system['ticks']['horiz']['gridStyle'] = {'color':color}
+    
     try:
         text = system['ticks']['horiz']['textStyle']
     except KeyError:
@@ -852,6 +813,7 @@ def _add_color(system, color, frame=0):
         system['ticks']['vert'] = {}
         system['ticks']['vert']['tickStyle'] = {'color':color}
         system['ticks']['vert']['gridStyle'] = {'color':color}
+    
     try:
         text = system['ticks']['vert']['textStyle']
     except KeyError:
@@ -887,10 +849,7 @@ def _remove_ticks(system):
                        }
     return
 
-# plotframe = gist.plsys
-
-import os
-def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',frame=0,fontsize=8,font=None,ticks=1,land=1,wait=0,**kwd):
+def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='fg',frame=0,fontsize=8,font=None,ticks=1,land=1,wait=0,**kwd):
     # Use gist.plsys to change coordinate systems
 
     # all inputs (except fontsize) given as pixels, gist wants
@@ -947,12 +906,12 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     # Now we've got a suitable height and width
 
     if land:
-        cntr = array([5.5,4.25])*_dpi  # landscape
+        cntr = numpy.array([5.5,4.25])*_dpi  # landscape
     else:
         if sys.platform == 'win32':
-            cntr = array([4.25,6.75])*_dpi  # portrait
+            cntr = numpy.array([4.25,6.75])*_dpi  # portrait
         else:
-            cntr = array([4.25,5.5])*_dpi
+            cntr = numpy.array([4.25,5.5])*_dpi
 
     Yspace = ph/float(Numy)*conv
     Xspace = pw/float(Numx)*conv
@@ -962,7 +921,7 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     ytop = (cntr[1]+ph/2.0)*conv
     xleft = (cntr[0]-pw/2.0)*conv
 
-    if type(color) is types.StringType:
+    if type(color) is str:
         color = _colornum[color]
     systems=[]
     ind = -1
@@ -985,14 +944,12 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='black',fram
     gist.winkill(win)
     gist.window(win,style=_current_style,width=int(pw),height=int(ph),wait=wait,**kwd)
 
-_dwidth=6*inches
-_dheight=6*inches
-
-import colorbar
 def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
-               zlabel=None,font='helvetica',fontsize=16,color='black',
+               zlabel=None,font='helvetica',fontsize=16,color='fg',
                palette=None):
-    """Plot an image on axes with a colorbar on the side.
+    """imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',zlabel=None,font='helvetica',fontsize=16,color='fg',palette=None)
+    
+    Plot an image on axes with a colorbar on the side.
 
     z -- The data
     cmin -- Value to map to lowest color in palette (min(z) if None)
@@ -1008,9 +965,9 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
               match this).
     color -- The color to use for the ticks and frame.
     """
+
     if xryr is None:
         xryr = (0,0,z.shape[1],z.shape[0])
-
     if not _hold:
         gist.fma()
     gist.animate(0)
@@ -1024,9 +981,9 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
         gist.window(style=_style)
         _current_style=_style
     if cmax is None:
-        cmax = max(ravel(z))
+        cmax = max(numpy.ravel(z))
     if cmin is None:
-        cmin = min(ravel(z))
+        cmin = min(numpy.ravel(z))
     cmax = float(cmax)
     cmin = float(cmin)
 
@@ -1037,18 +994,14 @@ def imagesc_cb(z,cmin=None,cmax=None,xryr=None,_style='default',
     colorbar.color_bar(cmin,cmax,ncol=240,zlabel=zlabel,font=font,fontsize=fontsize,color=color)
 
 def xlabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
-    """To get symbol font for the next character precede by !.  To get
+    """xlabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0)
+    
+    To get symbol font for the next character precede by !.  To get
     superscript enclose with ^^
     To get subscript enclose with _<text>_
     """
-    global _textcolor
-    if color is None:
-        color = _textcolor
-    else:
-        _textcolor = color
-    if color is None:
-        color = 'black'
 
+    color = textcolor(color)
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     y0 = vp[2] - 0.035 + deltay
@@ -1059,20 +1012,17 @@ def xlabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
 
 
 def ylabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
-    """To get symbol font for the next character precede by !.  To get
+    """ylabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0)
+    
+    To get symbol font for the next character precede by !.  To get
     superscript enclose with ^^
     To get subscript enclose with _<text>_
     """
-    global _textcolor
-    if color is None:
-        color = _textcolor
-    else:
-        _textcolor = color
-    if color is None:
-        color = 'black'
+
+    color = textcolor(color)
     vp = gist.viewport()
     ymidpt = (vp[2] + vp[3])/2.0 + deltay
-    x0 = vp[0] - 0.055 + deltax
+    x0 = vp[0] - 0.040 + deltax
     if text != "":
         gist.plt(text, x0, ymidpt, color=color,
                  font=font, justify="CB", height=fontsize, orient=1)
@@ -1080,20 +1030,16 @@ def ylabel(text,color=None,font='helvetica',fontsize=16,deltax=0.0,deltay=0.0):
 
 
 def title(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
-    """Set title for plot.
+    """title(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0)
+    
+    Set title for plot.
 
     To get symbol font for the next character precede by !.  To get
     superscript enclose with ^^
     To get subscript enclose with _<text>_
     """
-    global _textcolor
-    if color is None:
-        color = _textcolor
-    else:
-        _textcolor = color
-    if color is None:
-        color = 'black'
 
+    color = textcolor(color)
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     if text != "":
@@ -1101,15 +1047,9 @@ def title(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
                  height=fontsize, color=color)
 
 def title3(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
-
-    global _textcolor
-    if color is None:
-        color = _textcolor
-    else:
-        _textcolor = color
-    if color is None:
-        color = 'black'
-
+    """title3(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0)"""
+    
+    color = textcolor(color)
     vp = gist.viewport()
     xmidpt = (vp[0] + vp[1])/2.0 + deltax
     if text != "":
@@ -1117,6 +1057,7 @@ def title3(text,color=None,font='helvetica',fontsize=18,deltax=0.0,deltay=0.0):
                  height=fontsize, color=color)
 
 def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
+    """stem(m, y, linetype='b-', mtype='mo', shift=0.013)"""
     y0 = numpy.zeros(len(y),y.dtype.char)
     y1 = y
     x0 = m
@@ -1135,7 +1076,7 @@ def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
     thetype,thecolor,themarker,tomark = _parse_type_arg(mtype,0)
     if themarker not in ['o','x','.','*']:
         themarker = 'o'
-    y = where(numpy.isfinite(y),y,0)
+    y = numpy.where(numpy.isfinite(y),y,0)
     gist.plg(y,m,color=thecolor,marker=themarker,type='none')
     gist.plg(numpy.zeros(len(m)),m,color=lcolor,marks=0)
     gist.limits()
@@ -1157,6 +1098,7 @@ def stem(m, y, linetype='b-', mtype='mo', shift=0.013):
 
 
 def makeleg(leg,pos,lenx,dd,theight=12):
+    """makeleg(leg,pos,lenx,dd,theight=12)"""
     # Place legend
     x0,y0 = pos
     dx,dy = dd
@@ -1171,9 +1113,15 @@ def makeleg(leg,pos,lenx,dd,theight=12):
 def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
              xlab="",ylab="",zlab="",clab="",titl="",
              totalheight=0.5,space=0.02, medfilt=5,
-             font='helvetica',fontsize=16,color='black',lcolor='white',
-             fcolor='black',  cb=1, line=1, palette=None):
-    """ Visualize a 3d volume as a two connected slices.  The slices are
+             font='helvetica',fontsize=16,color='fg',lcolor='bg',
+             fcolor='fg',  cb=1, line=1, palette=None):
+    """twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
+             xlab="",ylab="",zlab="",clab="",titl="",
+             totalheight=0.5,space=0.02, medfilt=5,
+             font='helvetica',fontsize=16,color='fg',lcolor='bg',
+             fcolor='fg',  cb=1, line=1, palette=None)
+
+    Visualize a 3d volume as a two connected slices.  The slices are
     given in the 2-tuple slice1 and slice2.
 
     These give the dimension and corresponding slice numbers to plot.
@@ -1190,24 +1138,24 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         xe = DATA.shape
     # get two image slices
     # make special style file so that pixels are square
-    getdx = array([1,1,1])
+    getdx = numpy.array([1,1,1])
     imgsl1 = [slice(None,None),slice(None,None),slice(None,None)]
     imgsl1[slice1[0]] = slice1[1]
     img1 = DATA[imgsl1]
     getdx1 = getdx.__copy__()
     getdx1[slice1[0]] = 0
-    dx1 = compress(getdx1,dx,axis=-1)
-    xb1 = compress(getdx1,xb,axis=-1)
-    xe1 = compress(getdx1,xe,axis=-1)
+    dx1 = numpy.compress(getdx1,dx,axis=-1)
+    xb1 = numpy.compress(getdx1,xb,axis=-1)
+    xe1 = numpy.compress(getdx1,xe,axis=-1)
 
     imgsl2 = [slice(None,None),slice(None,None),slice(None,None)]
     imgsl2[slice2[0]] = slice2[1]
     img2 = DATA[imgsl2]
     getdx2 = getdx.__copy__()
     getdx2[slice2[0]] = 0
-    dx2 = compress(getdx2,dx,axis=-1)
-    xb2 = compress(getdx2,xb,axis=-1)
-    xe2 = compress(getdx2,xe,axis=-1)
+    dx2 = numpy.compress(getdx2,dx,axis=-1)
+    xb2 = numpy.compress(getdx2,xb,axis=-1)
+    xe2 = numpy.compress(getdx2,xe,axis=-1)
 
 
     if (slice1[0] == slice2[0]):
@@ -1221,21 +1169,21 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         pass
     elif samedim == 1:
         if samedim > slice1[0]:
-            img1 = transpose(img1)
+            img1 = numpy.transpose(img1)
             dx1 = dx1[::-1]
             xb1 = xb1[::-1]
             xe1 = xe1[::-1]
         if samedim > slice2[0]:
-            img2 = transpose(img2)
+            img2 = numpy.transpose(img2)
             dx2 = dx2[::-1]
             xb2 = xb2[::-1]
             xe2 = xe2[::-1]
     else:
-        img1 = transpose(img1)
+        img1 = numpy.transpose(img1)
         dx1 = dx1[::-1]
         xb1 = xb1[::-1]
         xe1 = xe1[::-1]
-        img2 = transpose(img2)
+        img2 = numpy.transpose(img2)
         dx2 = dx2[::-1]
         xb2 = xb2[::-1]
         xe2 = xe2[::-1]
@@ -1285,9 +1233,9 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         img1 = scipy.signal.medfilt(img1,[medfilt,medfilt])
         img2 = scipy.signal.medfilt(img2,[medfilt,medfilt])
     if cmax is None:
-        cmax = max(max(ravel(img1)),max(ravel(img2)))
+        cmax = max(max(numpy.ravel(img1)),max(numpy.ravel(img2)))
     if cmin is None:
-        cmin = min(min(ravel(img1)),min(ravel(img2)))
+        cmin = min(min(numpy.ravel(img1)),min(numpy.ravel(img2)))
     cmax = float(cmax)
     cmin = float(cmin)
     byteimage = gist.bytscl(img2,cmin=cmin,cmax=cmax)
@@ -1299,7 +1247,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         xstart = xb2[1]
         xstop = xe2[1]
         yval = slice1[1]*(xe2[0] - xb2[0])/(img2.shape[0]) + xb2[0]
-        gist.pldj([xstart],[yval],[xstop],[yval],type='dash',width=2,color='white')
+        gist.pldj([xstart],[yval],[xstop],[yval],type='dash',width=2,color='bg')
 
 
     gist.plsys(2)
@@ -1311,22 +1259,24 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         xstart = xb1[1]
         xstop = xe1[1]
         yval = slice2[1]*(xe1[0] - xb1[0])/(img1.shape[0]) + xb1[0]
-        gist.pldj([xstart],[yval],[xstop],[yval],type='dash',width=2,color='white')
+        gist.pldj([xstart],[yval],[xstop],[yval],type='dash',width=2,color='bg')
 
     if cb:
         colorbar.color_bar(cmin,cmax,ncol=240,zlabel=clab,font=font,fontsize=fontsize,color=color,ymin=ystart,ymax=ystart+totalheight,xmin0=xpos[1]+0.02,xmax0=xpos[1]+0.04)
 
-def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
+def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="fg",phi=-45.0,
          theta=30.0,zscale=1.0,palette=None,gnomon=0):
-    """Plot a three-dimensional wire-frame (surface): z=f(x,y)
+    """surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="fg",phi=-45.0, theta=30.0,zscale=1.0,palette=None,gnomon=0)
+    
+    Plot a three-dimensional wire-frame (surface): z=f(x,y)
     """
     if win is None:
         pl3d.window3()
     else:
         pl3d.window3(win)
     pl3d.set_draw3_(0)
-    phi0 = phi*pi/180.0
-    theta0 = theta*pi/180.0
+    phi0 = phi*numpy.pi/180.0
+    theta0 = theta*numpy.pi/180.0
     pl3d.orient3(phi=phi0,theta=theta0)
     pl3d.light3()
     change_palette(palette)
@@ -1335,23 +1285,25 @@ def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
         raise ValueError, "Input must be a 2-d array --- a surface."
     N,M = sz
     if x is None:
-        x = arange(0,N)
+        x = numpy.arange(0,N)
     if y is None:
-        y = arange(0,M)
+        y = numpy.arange(0,M)
     x = numpy.squeeze(x)
     y = numpy.squeeze(y)
     if (len(numpy.shape(x)) == 1):
-        x = x[:,newaxis]*ones((1,M))
+        x = x[:,newaxis]*numpy.ones((1,M))
     if (len(numpy.shape(y)) == 1):
-        y = ones((N,1))*y[newaxis,:]
+        y = numpy.ones((N,1))*y[newaxis,:]
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale)
     lims = pl3d.draw3(1)
     gist.limits(lims[0],lims[1],lims[2],lims[3])
     pl3d.gnomon(gnomon)
 
-def mysurf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0,
+def mysurf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="fg",phi=-45.0,
          theta=30.0,zscale=1.0,palette=None,gnomon=0,animate=False,limits=True, ireg=None):
-    """Plot a three-dimensional wire-frame (surface): z=f(x,y)
+    """mysurf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="fg",phi=-45.0,theta=30.0,zscale=1.0,palette=None,gnomon=0,animate=False,limits=True, ireg=None)
+    
+    Plot a three-dimensional wire-frame (surface): z=f(x,y)
     """
     if win is None:
     	  pass
@@ -1359,8 +1311,8 @@ def mysurf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0
     else:
         pl3d.window3(win)
     pl3d.set_draw3_(0)
-    phi0 = phi*pi/180.0
-    theta0 = theta*pi/180.0
+    phi0 = phi*numpy.pi/180.0
+    theta0 = theta*numpy.pi/180.0
     pl3d.orient3(phi=phi0,theta=theta0)
     pl3d.light3()
     change_palette(palette)
@@ -1369,15 +1321,15 @@ def mysurf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0
         raise ValueError, "Input must be a 2-d array --- a surface."
     N,M = sz
     if x is None:
-        x = arange(0,N)
+        x = numpy.arange(0,N)
     if y is None:
-        y = arange(0,M)
+        y = numpy.arange(0,M)
     x = numpy.squeeze(x)
     y = numpy.squeeze(y)
     if (len(numpy.shape(x)) == 1):
-        x = x[:,newaxis]*ones((1,M))
+        x = x[:,newaxis]*numpy.ones((1,M))
     if (len(numpy.shape(y)) == 1):
-        y = ones((N,1))*y[newaxis,:]
+        y = numpy.ones((N,1))*y[newaxis,:]
     plwf.plwf(z,y,x,shade=shade,edges=edges,ecolor=edge_color,scale=zscale, ireg=ireg)
     # if animate, the application is responsible to fma
     lims = pl3d.draw3(not animate)
@@ -1386,7 +1338,9 @@ def mysurf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="black",phi=-45.0
     pl3d.gnomon(gnomon)
     
 def expand_limits(xpcnt,ypcnt=None):
-    """Expand the limits by a certain percentage.
+    """expand_limits(xpcnt,ypcnt=None)
+    
+    Expand the limits by a certain percentage.
     """
     if ypcnt is None:
         ypcnt = xpcnt
@@ -1400,6 +1354,7 @@ def expand_limits(xpcnt,ypcnt=None):
     gist.limits(xmin-dx,xmax+dx,ymin-dy,ymax+dy)
 
 def axes(type='b|'):
+    """axes(type='b|')"""
     vals = gist.limits()
     v0,v1,v2,v3 = vals[:4]
     x0 = numpy.r_[v0:v1:5j]
@@ -1410,11 +1365,14 @@ def axes(type='b|'):
     gist.limits(v0,v1,v2,v3)
 
 
-def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'):
-    """Plot a bode plot of the transfer function H as a function of w.
+def bode(w,H,win=0,frame=0,lcolor='blue',color='bg',tcolor=None,freq='rad'):
+    """bode(w,H,win=0,frame=0,lcolor='blue',color='bg',tcolor=None,freq='rad')
+    
+    Plot a bode plot of the transfer function H as a function of w.
     """
+    tcolor = textcolor(tcolor)
     if freq == 'Hz':
-        w = w /2.0 / pi
+        w = w /2.0 / numpy.pi
     subplot(2,1,win,hsep=120,frame=frame,color=color)
     gist.plsys(1)
     gist.plg(20*numpy.log10(abs(H)),w,type='solid',color=lcolor,marks=0)
@@ -1427,7 +1385,7 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
     ylabel('Magnitude (dB)',color=tcolor,deltax=-0.005)
     title("Bode Plot",color=tcolor)
     gist.plsys(2)
-    gist.plg(180/pi*numpy.unwrap(numpy.angle(H)),w,type='solid',color=lcolor,marks=0)
+    gist.plg(180/numpy.pi*numpy.unwrap(numpy.angle(H)),w,type='solid',color=lcolor,marks=0)
     gist.logxy(1,0)
     gist.gridxy(1,1)
     if freq == 'Hz':
@@ -1437,8 +1395,10 @@ def bode(w,H,win=0,frame=0,lcolor='blue',color='black',tcolor='black',freq='rad'
     ylabel('Phase (deg.)',color=tcolor,deltax=-0.005)
 
 
-def addtext(txt,xy=None,fontsize=16,font='helvetica',color='black',
+def addtext(txt,xy=None,fontsize=16,font='helvetica',color=None,
             orient=0,justify='LA',tosys=0):
+    """addtext(txt,xy=None,fontsize=16,font='helvetica',color=None,orient=0,justify='LA',tosys=0"""
+    color = textcolor(color)
     if xy is None:
         result = gist.mouse(0,0,"Click on point for lower left starting position")
         if result is None:

@@ -8,9 +8,9 @@
    avg_, timer_, timer_print.
 """
 
-import numpy
 import os
 import time
+import numpy
 from shapetest import *
 
 class _ZcenError ( Exception ):

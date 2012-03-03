@@ -16,17 +16,18 @@
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
+import numpy
+from gistC import *
 from gist import *
 from shapetest import *
 from yorick import *
-from numpy import *
 
 def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
-   bracket_time = array ([2., 2.], float32 ), lims = None, timing = 0) :
+   bracket_time = numpy.array ([2., 2.], numpy.float32 ), lims = None, timing = 0) :
 
    """
    movie (draw_frame, time_limit = 120., min_interframe = 0.0,
-      bracket_time = array ([2., 2.], float32 ), lims = None, timing = 0)
+      bracket_time = numpy.array ([2., 2.], numpy.float32 ), lims = None, timing = 0)
      runs a movie based on the given DRAW_FRAME function.  The movie
      stops after a total elapsed time of TIME_LIMIT seconds, which
      defaults to 60 (one minute), or when the DRAW_FRAME function
@@ -68,12 +69,12 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
 
    global movie_timing, making_movie
    if is_scalar (bracket_time) :
-      bracket_time = array ( [bracket_time, bracket_time], float32 )
+      bracket_time = numpy.array ( [bracket_time, bracket_time], numpy.float32 )
    elif len (bracket_time) == 1 :
-      bracket_time = array ( [bracket_time [0], bracket_time [0]], float32 )
+      bracket_time = numpy.array ( [bracket_time [0], bracket_time [0]], numpy.float32 )
 
-   elapsed = zeros (3)
-   this_frame = zeros (3)
+   elapsed = numpy.zeros (3)
+   this_frame = numpy.zeros (3)
 
    window (wait = 1, style = "nobox.gs") # make sure window is ready to draw
 
@@ -84,7 +85,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    i = 0
    if timing == 1 :
       elapsed = timer_ (elapsed)
-      elapsed0 = array(elapsed, copy = 1)
+      elapsed0 = numpy.array(elapsed, copy = 1)
    i = i + 1
    more = draw_frame (i)
    if lims != None:
@@ -108,7 +109,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
             waited0 = waited0 + wait
 
    while (more) :
-      this_frame = zeros (3)
+      this_frame = numpy.zeros (3)
       i = i + 1
       more = draw_frame (i)
       if lims != None:

@@ -1,3 +1,7 @@
+#
+# this file is obsolete
+#
+
 %setup -n %{name}-%{unmangled_version}
 
 (cd yorick && patch -p1 < ../patch/xft.patch)

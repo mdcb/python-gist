@@ -17,9 +17,10 @@
 #
 #  ---------------------------------------------------------------------
 
-from gist import *
 import time
-from math import pi
+from numpy import *
+from gist import *
+from gistC import *
 
 def grtest():
 
@@ -256,19 +257,19 @@ def grtest():
 # .. Hence, the temporary array.
 #
 # .. n = [ 5, 10, 15 ]
-# .. list = [ 1, 1, 3, 3, 2, 1, 3 ]
-# .. n(list) = [ 5, 5, 15, 15, 10, 5, 15 ] 
+# .. _list = [ 1, 1, 3, 3, 2, 1, 3 ]
+# .. n(_list) = [ 5, 5, 15, 15, 10, 5, 15 ] 
 
   n =  [3,4,5, 4, 5, 6, 5, 6, 7]
   n2 = [0,3,7,12,16,21,27,32,38]
   x0 = array ( [-2.,0.,2.]*3 )
   y0 = array ( [-2.]*3 + [0.]*3 + [2.]*3 )
   j = 1
-  list = []
+  _list = []
   for i in n:
-     list = list + [j]*i
+     _list = _list + [j]*i
      j = j + 1
-  lenList = len(list)
+  lenList = len(_list)
 
   nlist = arange(1,lenList+1) 
   n2list = arange(1,lenList+1) 
@@ -278,10 +279,10 @@ def grtest():
   y0List = zeros ( (lenList), float32 ) 
 
   for i in range(lenList):
-     nlist[i] = n[list[i]-1]
-     n2list[i] = n2[list[i]-1]
-     x0List[i] = x0[list[i]-1]
-     y0List[i] = y0[list[i]-1]
+     nlist[i] = n[_list[i]-1]
+     n2list[i] = n2[_list[i]-1]
+     x0List[i] = x0[_list[i]-1]
+     y0List[i] = y0[_list[i]-1]
 
   phase = arange(1,lenList+1) - n2list
   theta = 2. * pi * phase / nlist

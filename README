@@ -1,9 +1,30 @@
-INSTALL
+------------------------------------------------------------------------
+Installation
+------------------------------------------------------------------------
 
 git clone https://github.com/mdcb/python-gist.git
 cd python-gist
 git clone https://github.com/dhmunro/yorick.git
+
+- distutil style:
+sudo python setup.py install
+
+- rpm style:
 python setup.py bdist_rpm
 sudo yum install -y dist/python-gist-*.`uname -m`.rpm
+
+------------------------------------------------------------------------
+Authors and Contributors
+------------------------------------------------------------------------
+
+Lila Chase (llnl)
+David H. Munro (llnl)
+Michiel de Hoon (U. of Tokyo)
+Matthieu Bec (gmto)
+J. Hugunin
+Lee Busby (llnl)
+William Magro (Cornell Theory Center)
+Zane Motteler (llnl)
+and others
 
 

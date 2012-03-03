@@ -13,14 +13,14 @@
 # assignments to it over there are not reflected in the copy here.
 # This has been fixed by creating an access function.
 
-from shapetest import *
-from types import *
-from pl3d import *
-from numpy import *
+import numpy
 from gistC import *
 import gistfuncs
+from shapetest import *
+from pl3d import *
+from yorick import *
 
- #
+#
  # Caveats:
  # (A) Performance is reasonably good, but may still be a factor of
  #     several slower than what could be achieved in compiled code.
@@ -67,9 +67,9 @@ def plane3 (normal, point) :
 
     # the normal doesn't really need to be normalized, but this
     # has the desirable side effect of blowing up if normal==0
-    newnorm = zeros (4, float32)
-    newnorm [0:3] = normal / sqrt (sum (normal*normal,axis=0))
-    newnorm [3] = sum (multiply (normal, point),axis=0)
+    newnorm = numpy.zeros (4, numpy.float32)
+    newnorm [0:3] = normal / numpy.sqrt (numpy.sum (normal*normal,axis=0))
+    newnorm [3] = numpy.sum (numpy.multiply (normal, point),axis=0)
     return newnorm
 
 _Mesh3Error = "Mesh3Error"
@@ -83,13 +83,13 @@ def mesh3 (x, y = None, z = None, ** kw) :
           or mesh3(nxnynz, dxdydz, x0y0z0, funcs = [f1,f2,...])
 
       make mesh3 argument for slice3, xyz3, getv3, etc., functions.
-      X, Y, and Z are each 3D coordinate arrays.  The optional F1, F2,
-      etc. are 3D arrays of function values (e.g. density, temperature)
+      X, Y, and Z are each 3D coordinate numpy.arrays.  The optional F1, F2,
+      etc. are 3D numpy.arrays of function values (e.g. density, temperature)
       which have one less value along each dimension than the coordinate
-      arrays.  The "index" of each zone in the returned mesh3 is
-      the index in these cell-centered Fi arrays, so every index from
+      numpy.arrays.  The "index" of each zone in the returned mesh3 is
+      the index in these cell-centered Fi numpy.arrays, so every index from
       one through the total number of cells indicates one real cell.
-      The Fi arrays can also have the same dimensions as X, Y, or Z
+      The Fi numpy.arrays can also have the same dimensions as X, Y, or Z
       in order to represent point-centered quantities.
 
       If X has four dimensions and the length of the first is 3, then
@@ -104,7 +104,7 @@ def mesh3 (x, y = None, z = None, ** kw) :
 
       Added by ZCM 1/13/97: if x, y, and z are one-dimensional of
       the same length and if the keyword verts exists and yields
-      an NCELLS by 8 integer array, then we have an unstructured
+      an NCELLS by 8 integer numpy.array, then we have an unstructured
       rectangular mesh, and the subscripts of cell i's vertices
       are verts[i, 0:8].
 
@@ -121,29 +121,29 @@ def mesh3 (x, y = None, z = None, ** kw) :
       which is the 2nd car of m3, it will work.
     """
 
-    dims = shape (x)
+    dims = numpy.shape (x)
     if len (dims) == 1 and y != None and len (x) == len (y) \
        and z != None and len(x) == len (z) and kw.has_key ("verts") :
         virtuals = [xyz3_irreg, getv3_irreg,
                     getc3_irreg, iterator3_irreg]
         dims = kw ["verts"]
-        if type (dims) != ListType :
-            m3 = [virtuals, [dims, array ( [x, y, z])], []]
+        if type (dims) != list :
+            m3 = [virtuals, [dims, numpy.array ( [x, y, z])], []]
         else : # Irregular mesh with more than one cell type
             sizes = ()
             for nv in dims :
-                sizes = sizes + (shape (nv) [0],) # no. cells of this type
+                sizes = sizes + (numpy.shape (nv) [0],) # no. cells of this type
             totals = [sizes [0]]
             for i in range (1, len (sizes)) :
                 totals.append (totals [i - 1] + sizes [i]) #total cells so far
-            m3 = [virtuals, [dims, array ( [x, y, z]), sizes, totals], []]
+            m3 = [virtuals, [dims, numpy.array ( [x, y, z]), sizes, totals], []]
         if kw.has_key ("funcs") :
             funcs = kw ["funcs"]
         else :
             funcs = []
         i = 0
         for f in funcs:
-            if len (f) != len (x) and len (f) != shape (dims) [0] :
+            if len (f) != len (x) and len (f) != numpy.shape (dims) [0] :
                 # if vertex-centered, f must be same size as x.
                 # if zone centered, its length must match number of cells.
                 raise _Mesh3Error, "F" + `i` + " is not a viable 3D cell value"
@@ -155,24 +155,24 @@ def mesh3 (x, y = None, z = None, ** kw) :
     if len (dims) == 4 and dims [0] == 3 and min (dims) >= 2 :
         xyz = x
         dims = dims [1:4]
-    elif len (dims) == 1 and len (x) == 3 and type (x [0]) == int32 \
+    elif len (dims) == 1 and len (x) == 3 and type (x [0]) == numpy.int32 \
        and y != None and z != None and len (y) == len (z) == 3 :
-        xyz = array ([y, z])
+        xyz = numpy.array ([y, z])
         dims = (1 + x [0], 1 + x [1], 1 + x [2])
         virtuals [0] = xyz3_unif
     elif len (dims) == 1 and y != None and z != None and len (y.shape) == 1 \
        and len (z.shape) == 1 and x.typed  == y.typed == \
-       z.typed == float32 :
+       z.typed == numpy.float32 :
         # regular mesh with unequally spaced points
-        dims = array ( [len (x), len (y), len (z)], int32)
+        dims = numpy.array ( [len (x), len (y), len (z)], numpy.int32)
         xyz = [x, y, z] # has to be a list since could be different lengths
         virtuals [0] = xyz3_unif
     else :
         if len (dims) != 3 or min (dims) < 2 or \
-           y == None or len (shape (y)) != 3 or shape (y) != dims or \
-           z == None or len (shape (z)) != 3 or shape (z) != dims:
-            raise _Mesh3Error, "X,Y,Z are not viable 3D coordinate mesh arrays"
-        xyz = array ( [x, y, z])
+           y == None or len (numpy.shape (y)) != 3 or numpy.shape (y) != dims or \
+           z == None or len (numpy.shape (z)) != 3 or numpy.shape (z) != dims:
+            raise _Mesh3Error, "X,Y,Z are not viable 3D coordinate mesh numpy.arrays"
+        xyz = numpy.array ( [x, y, z])
     dim_cell = (dims [0] - 1, dims [1] - 1, dims [2] - 1)
     m3 = [virtuals, [dim_cell, xyz], []]
     if kw.has_key ("funcs") :
@@ -202,7 +202,7 @@ def mesh3 (x, y = None, z = None, ** kw) :
  #       vertices have positive function values, and some negative.
  #       The function values and vertex coordinates are also returned.
  #   (3) The slice3 routine computes the points along the *edges*
- #       of each cell where the function value is zero (assuming linear
+ #       of each cell numpy.where the function value is zero (asnumpy.suming linear
  #       variation along each edge).  These points will be vertices of
  #       the polygons.  The routine also sorts the vertices into cyclic
  #       order.
@@ -231,7 +231,7 @@ def mesh3 (x, y = None, z = None, ** kw) :
  # fcolor(m3, vertex_list, fslice_1, fslice_2)
  #   the coloring function may need the value of fslice at the vertices
  #   in order to compute the color values by interpolation
- # two "edge functions": one to detect edges where sign of fslice changes,
+ # two "edge functions": one to detect edges numpy.where sign of fslice changes,
  #   second to interpolate for fcolor
  #   second to interpolate for fcolor
  #
@@ -251,7 +251,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
       the list [NVERTS, XYZVERTS, color].  Note that it is impossible to
       pass arguments as addresses, as yorick does in this routine.
       NVERTS is the number of vertices in each polygon of the slice, and
-      XYZVERTS is the 3-by-sum(NVERTS,axis=0) list of polygon vertices.  If the
+      XYZVERTS is the 3-by-numpy.sum(NVERTS,axis=0) list of polygon vertices.  If the
       FCOLOR argument is present, the values of that coloring function on
       the polygons are returned as the value of the slice3 function
       (numberof(color_values) == numberof(NVERTS) == number of polygons).
@@ -305,13 +305,13 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
     global _poly_permutations
 
     iso_index = None
-    if type (fslice) != FunctionType :
+    if not callable (fslice):
         if not kw.has_key ("value") and not is_scalar (fslice) and \
-           len (shape (fslice)) == 1 and len (fslice) == 4 :
+           len (numpy.shape (fslice)) == 1 and len (fslice) == 4 :
             normal = fslice [0:3]
             projection = fslice [3]
             fslice = _plane_slicer
-        elif is_scalar (fslice) and type (fslice) == types.IntType:
+        elif is_scalar (fslice) and type (fslice) == int:
             if not kw.has_key ("value") :
                 raise _Slice3Error, \
                    "value= keyword required when FSLICE is mesh variable"
@@ -342,8 +342,8 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         fcolor = None
 
     # test the different possibilities for fcolor
-    if need_clist and type (fcolor) != FunctionType :
-        if not is_scalar (fcolor) or type (fcolor) != types.IntType :
+    if need_clist and not callable (fcolor):
+        if not is_scalar (fcolor) or type (fcolor) != int :
             raise _Slice3Error, \
                "illegal form of FCOLOR argument, try help,slice3"
 
@@ -377,17 +377,17 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         if fslice == _isosurface_slicer :
             fs = fslice (m3, chunk, iso_index, _value)
             # an isosurface slicer brings back a list [vals, None]
-            # where vals is simply an array of the values of the
+            # numpy.where vals is simply an numpy.array of the values of the
             # iso_index'th function on the vertices of the specified
-            # chunk, or a triple, consisting of the array of
-            # values, an array of relative cell numbers in the
+            # chunk, or a triple, consisting of the numpy.array of
+            # values, an numpy.array of relative cell numbers in the
             # chunk, and an offset to add to the preceding to
             # get absolute cell numbers.
         elif fslice == _plane_slicer :
             fs = fslice (m3, chunk, normal, projection)
             # In the case of a plane slice, fs is a list [vals, _xyz3]
             # (or [ [vals, clist, cell_offset], _xyz3] in the irregular case)
-            # where _xyz3 is the array of vertices of the chunk. _xyz3
+            # numpy.where _xyz3 is the numpy.array of vertices of the chunk. _xyz3
             # is ncells by 3 by something (in the irregular case),
             # ncells by 3 by 2 by 2 by 2 in the regular case,
             # and 3 by ni by nj by nk otherwise. vals will be
@@ -396,10 +396,10 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             # front, and negative if in back.
         else :
             fs = fslice (m3, chunk)
-        if node == 1 and fcolor != None and fcolor != FunctionType :
+        if node == 1 and fcolor != None and not callable(fcolor):
             # need vertex-centered data
             col = getv3 (fcolor, m3, chunk)
-            if type (col) == ListType :
+            if type (col) == list :
                 col = col [0]
         else :
             col = None
@@ -407,7 +407,8 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # (_xyz3 comes back as the last element of the list fs)
         _xyz3 = fs [1]
         fs = fs [0]
-        irregular = type (fs) == ListType
+
+        irregular = type (fs) == list
         if irregular :
             cell_offset = fs [2]
 
@@ -417,7 +418,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
 
         # If the m3 mesh is totally unstructured, the chunk should be
         # arranged so that fslice returns an ncells-by-2-by-2-by-2
-        # (or ncells-by-3-by-2 or ncells-by-5 or ncells-by-4) array
+        # (or ncells-by-3-by-2 or ncells-by-5 or ncells-by-4) numpy.array
         # of vertex values of the slicing function. Note that a
         # chunk of an irregular mesh always consists of just one
         # kind of cell.
@@ -426,78 +427,78 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # chunk should be the far less redundant rectangular patch.
         if (irregular) :
             # fs is a 2-sequence, of which the first element is an ncells-by-
-            # 2-by-2-by-2 (by-3-by-2, by-5, or by-4) array, and the second
-            # is the array of corresponding cell numbers.
+            # 2-by-2-by-2 (by-3-by-2, by-5, or by-4) numpy.array, and the second
+            # is the numpy.array of corresponding cell numbers.
             # here is the fastest way to generate the required cell list
-            dims = shape (fs [0])
+            dims = numpy.shape (fs [0])
             dim1 = dims [0]
             slice3_precision = 0.0
             if len (dims) == 4 : # hex case
-                # Note that the sum below will be between 1 and 7
+                # Note that the numpy.sum below will be between 1 and 7
                 # precisely if f changes sign in the cell.
-                critical_cells = bitwise_and (add.reduce \
-                   (reshape (ravel (transpose (less (fs [0], slice3_precision))), \
+                critical_cells = numpy.bitwise_and (add.reduce \
+                   (numpy.reshape (numpy.ravel (numpy.transpose (numpy.less (fs [0], slice3_precision))), \
                    (8, dim1))), 7)
-                if (sum (critical_cells,axis=0) != 0) :
-                    clist = take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
+                if (numpy.sum (critical_cells,axis=0) != 0) :
+                    clist = numpy.take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
                     ntotal8 = ntotal8 + len (clist)
                 else :
                     clist = None
                 i8.append (len (results))
                 cell_offsets [3] = cell_offset
             elif len (dims) == 3 : # prism case
-                # Note that the sum below will be between 1 and 5
+                # Note that the numpy.sum below will be between 1 and 5
                 # precisely if f changes sign in the cell.
                 critical_cells = add.reduce \
-                   (reshape (ravel (transpose (less (fs [0], slice3_precision))), \
+                   (numpy.reshape (numpy.ravel (numpy.transpose (less (fs [0], slice3_precision))), \
                    (6, dim1)))
-                critical_cells = logical_and (greater (critical_cells, 0),
-                                             less (critical_cells, 6))
-                if (sum (critical_cells,axis=0) != 0) :
-                    clist = take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
+                critical_cells = numpy.logical_and (numpy.greater (critical_cells, 0),
+                                             numpy.less (critical_cells, 6))
+                if (numpy.sum (critical_cells,axis=0) != 0) :
+                    clist = numpy.take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
                     ntotal6 = ntotal6 + len (clist)
                 else :
                     clist = None
                 i6.append (len (results))
                 cell_offsets [2] = cell_offset
             elif dims [1] == 5 : # pyramid case
-                # Note that the sum below will be between 1 and 4
+                # Note that the numpy.sum below will be between 1 and 4
                 # precisely if f changes sign in the cell.
                 critical_cells = add.reduce \
-                   (reshape (ravel (transpose (less (fs [0], slice3_precision))), \
+                   (numpy.reshape (numpy.ravel (numpy.transpose (less (fs [0], slice3_precision))), \
                    (5, dim1)))
-                critical_cells = logical_and (greater (critical_cells, 0),
+                critical_cells = numpy.logical_and (numpy.greater (critical_cells, 0),
                                              less (critical_cells, 5))
-                if (sum (critical_cells,axis=0) != 0) :
-                    clist = take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
+                if (numpy.sum (critical_cells,axis=0) != 0) :
+                    clist = numpy.take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
                     ntotal5 = ntotal5 + len (clist)
                 else :
                     clist = None
                 i5.append (len (results))
                 cell_offsets [1] = cell_offset
             else : # tet case
-                # Note that the sum below will be between 1 and 3
+                # Note that the numpy.sum below will be between 1 and 3
                 # precisely if f changes sign in the cell.
-                critical_cells = bitwise_and (add.reduce \
-                   (reshape (ravel (transpose (less (fs [0], slice3_precision))), \
+                critical_cells = numpy.bitwise_and (add.reduce \
+                   (numpy.reshape (numpy.ravel (numpy.transpose (less (fs [0], slice3_precision))), \
                    (4, dim1))), 3)
-                if (sum (critical_cells,axis=0) != 0) :
-                    clist = take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
+                if (numpy.sum (critical_cells,axis=0) != 0) :
+                    clist = numpy.take (fs [1], numpy.nonzero(critical_cells)[0],axis=0)
                     ntotal4 = ntotal4 + len (clist)
                 else :
                     clist = None
                 i4.append (len (results))
                 cell_offsets [0] = cell_offset
         else :
-            dims = shape (fs)
-            # fs is an ni-by-nj-by-nk array
+            dims = numpy.shape (fs)
+            # fs is an ni-by-nj-by-nk numpy.array
             # result of the zcen is 0, 1/8, 2/8, ..., 7/8, or 1
-#        slice3_precision = max (ravel (abs (fs))) * (-1.e-12)
+#        slice3_precision = max (numpy.ravel (abs (fs))) * (-1.e-12)
             slice3_precision = 0
-            clist1 = ravel (zcen_ (zcen_ (zcen_
-               (array (less (fs, slice3_precision), float32), 0), 1), 2))
-            clist1 = logical_and (less (clist1, .9), greater (clist1, .1))
-            if sum (clist1,axis=0) > 0 :
+            clist1 = numpy.ravel (zcen_ (zcen_ (zcen_
+               (numpy.array (numpy.less (fs, slice3_precision), numpy.float32), 0), 1), 2))
+            clist1 = numpy.logical_and (numpy.less (clist1, .9), numpy.greater (clist1, .1))
+            if numpy.sum (clist1,axis=0) > 0 :
                 clist = numpy.nonzero(clist1)[0]
                 ntotal = ntotal + len (clist)
             else :
@@ -512,30 +513,30 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             #     values at the vertices of these cells
             if (irregular) :
                 # extract the portions of the data indexed by clist
-                fs = take (fs [0], clist,axis=0)
+                fs = numpy.take (fs [0], clist,axis=0)
                 if got_xyz :
-                    _xyz3 = take (_xyz3, clist,axis=0)
+                    _xyz3 = numpy.take (_xyz3, clist,axis=0)
                 if col :
-                    col = take (col, clist,axis=0)
+                    col = numpy.take (col, clist,axis=0)
             else :
                 # extract the to_corners portions of the data indexed by clist
                 indices = to_corners3 (clist, dims [1], dims [2])
-                no_cells = shape (indices) [0]
-                indices = ravel (indices)
-                fs = reshape (take (ravel (fs), indices,axis=0),\
+                no_cells = numpy.shape (indices) [0]
+                indices = numpy.ravel (indices)
+                fs = numpy.reshape (numpy.take (numpy.ravel (fs), indices,axis=0),\
                    (no_cells, 2, 2, 2))
                 if got_xyz :
-                    new_xyz3 = zeros ( (no_cells, 3, 2, 2, 2), float32 )
-                    new_xyz3 [:, 0, ...] = reshape (take (ravel (_xyz3 [0, ...]),\
+                    new_xyz3 = numpy.zeros ( (no_cells, 3, 2, 2, 2), numpy.float32 )
+                    new_xyz3 [:, 0, ...] = numpy.reshape (numpy.take (numpy.ravel (_xyz3 [0, ...]),\
                        indices,axis=0), (no_cells, 2, 2, 2))
-                    new_xyz3 [:, 1, ...] = reshape (take (ravel (_xyz3 [1, ...]),\
+                    new_xyz3 [:, 1, ...] = numpy.reshape (numpy.take (numpy.ravel (_xyz3 [1, ...]),\
                        indices,axis=0), (no_cells, 2, 2, 2))
-                    new_xyz3 [:, 2, ...] = reshape (take (ravel (_xyz3 [2, ...]),\
+                    new_xyz3 [:, 2, ...] = numpy.reshape (numpy.take (numpy.ravel (_xyz3 [2, ...]),\
                        indices,axis=0), (no_cells, 2, 2, 2))
                     _xyz3 = new_xyz3
                     del new_xyz3
                 if col != None :
-                    col = reshape (take (ravel (col), indices,axis=0), (no_cells, 2, 2, 2))
+                    col = numpy.reshape (numpy.take (numpy.ravel (col), indices,axis=0), (no_cells, 2, 2, 2))
                     # NB: col represents node colors, and is only used
                     # if those are requested.
             # here, the iterator converts to absolute cell indices without
@@ -567,14 +568,14 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         if ntot [i] == 0 : # No cells of type i
             continue
         if need_clist :
-            clist = zeros (ntot [i], int32)
-            fs = zeros ( (ntot [i], _no_verts [i]), float32 )
+            clist = numpy.zeros (ntot [i], numpy.int32)
+            fs = numpy.zeros ( (ntot [i], _no_verts [i]), numpy.float32 )
             if got_xyz :
-                xyz = zeros ( (ntot [i], 3, _no_verts [i]), float32 )
+                xyz = numpy.zeros ( (ntot [i], 3, _no_verts [i]), numpy.float32 )
             else :
                 xyz = None
         if need_vert_col :
-            col = zeros ( (ntot [i], _no_verts [i]), float32 )
+            col = numpy.zeros ( (ntot [i], _no_verts [i]), numpy.float32 )
         else :
             col = None
         k = 0
@@ -585,12 +586,12 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             k = k + len (results [itot [i] [j]] [0])
             if need_clist :
                 clist [l:k] = results [itot [i] [j]] [0]
-            fs [l:k] = reshape (results [itot [i] [j]] [1], (k - l, _no_verts [i]))
+            fs [l:k] = numpy.reshape (results [itot [i] [j]] [1], (k - l, _no_verts [i]))
             if xyz != None :
-                xyz [l:k] = reshape (results [itot [i] [j]] [2],
+                xyz [l:k] = numpy.reshape (results [itot [i] [j]] [2],
                    (k - l, 3, _no_verts [i]))
             if col != None :
-                col [l:k] = reshape (results [itot [i] [j]] [3],
+                col [l:k] = numpy.reshape (results [itot [i] [j]] [3],
                    (k - l, _no_verts [i]))
         if not got_xyz :
             # zcm 2/4/97 go to absolute cell list again
@@ -598,53 +599,53 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
                 adder = m3 [1] [3] [i - 1]
             else :
                 adder = 0
-            xyz = reshape (xyz3 (m3, clist + adder), (ntot [i], 3, _no_verts [i]))
+            xyz = numpy.reshape (xyz3 (m3, clist + adder), (ntot [i], 3, _no_verts [i]))
         # produce the lists of edge intersection points
-        # -- generate (nsliced)x12 (9, 8, 6) array of edge mask values
+        # -- generate (nsliced)x12 (9, 8, 6) numpy.array of edge mask values
         # (mask non-zero if edge is cut by plane)
-        below = less (fs, 0.0)
+        below = numpy.less (fs, 0.0)
         # I put the following into C for speed
         mask = gistfuncs.find_mask (below, _node_edges [i])
-        list = numpy.nonzero(mask)[0]
-        edges = array (list, copy = 1)
+        lst = numpy.nonzero(mask)[0]
+        edges = numpy.array (lst, copy = 1)
         cells = edges / _no_edges [i]
         edges = edges % _no_edges [i]
-        # construct edge endpoint indices in fs, xyz arrays
+        # construct edge endpoint indices in fs, xyz numpy.arrays
         # the numbers are the endpoint indices corresponding to
-        # the order of the _no_edges [i] edges in the mask array
-        lower = take (_lower_vert [i], edges,axis=0) + _no_verts [i] * cells
-        upper = take (_upper_vert [i], edges,axis=0) + _no_verts [i] * cells
-        fsl = take (ravel (fs), lower,axis=0)
-        fsu = take (ravel (fs), upper,axis=0)
+        # the order of the _no_edges [i] edges in the mask numpy.array
+        lower = numpy.take (_lower_vert [i], edges,axis=0) + _no_verts [i] * cells
+        upper = numpy.take (_upper_vert [i], edges,axis=0) + _no_verts [i] * cells
+        fsl = numpy.take (numpy.ravel (fs), lower,axis=0)
+        fsu = numpy.take (numpy.ravel (fs), upper,axis=0)
         # following denominator guaranteed non-zero
         denom = fsu - fsl
         fsu = fsu / denom
         fsl = fsl / denom
-        new_xyz = zeros ( (len (lower), 3), float32 )
-        new_xyz [:, 0] = reshape ( (take (ravel (xyz [:, 0]), lower,axis=0) * fsu - \
-           take (ravel (xyz [:, 0]), upper,axis=0) * fsl), (len (lower),))
-        new_xyz [:, 1] = reshape ( (take (ravel (xyz [:, 1]), lower,axis=0) * fsu - \
-           take (ravel (xyz [:, 1]), upper,axis=0) * fsl), (len (lower),))
-        new_xyz [:, 2] = reshape ( (take (ravel (xyz [:, 2]), lower,axis=0) * fsu - \
-           take (ravel (xyz [:, 2]), upper,axis=0) * fsl), (len (lower),))
+        new_xyz = numpy.zeros ( (len (lower), 3), numpy.float32 )
+        new_xyz [:, 0] = numpy.reshape ( (numpy.take (numpy.ravel (xyz [:, 0]), lower,axis=0) * fsu - \
+           numpy.take (numpy.ravel (xyz [:, 0]), upper,axis=0) * fsl), (len (lower),))
+        new_xyz [:, 1] = numpy.reshape ( (numpy.take (numpy.ravel (xyz [:, 1]), lower,axis=0) * fsu - \
+           numpy.take (numpy.ravel (xyz [:, 1]), upper,axis=0) * fsl), (len (lower),))
+        new_xyz [:, 2] = numpy.reshape ( (numpy.take (numpy.ravel (xyz [:, 2]), lower,axis=0) * fsu - \
+           numpy.take (numpy.ravel (xyz [:, 2]), upper,axis=0) * fsl), (len (lower),))
         xyz = new_xyz
         del new_xyz
         if col != None :
             # Extract subset of the data the same way
-            col = take (ravel (col), lower,axis=0) * fsu - \
-               take (ravel (col), upper,axis=0) * fsl
-        # The xyz array is now the output xyzverts array,
+            col = numpy.take (numpy.ravel (col), lower,axis=0) * fsu - \
+               numpy.take (numpy.ravel (col), upper,axis=0) * fsl
+        # The xyz numpy.array is now the output xyzverts numpy.array,
         # but for the order of the points within each cell.
 
         # give each sliced cell a "pattern index" between 0 and 255
         # (non-inclusive) representing the pattern of its 8 corners
         # above and below the slicing plane
-        p2 = left_shift (ones (_no_verts [i], int32) , array (
-           [0, 1, 2, 3, 4, 5, 6, 7], int32) [0: _no_verts [i]])
-        pattern = transpose (sum (transpose (multiply (below, p2)),axis=0))
+        p2 = numpy.left_shift (numpy.ones (_no_verts [i], numpy.int32) , numpy.array (
+           [0, 1, 2, 3, 4, 5, 6, 7], numpy.int32) [0: _no_verts [i]])
+        pattern = numpy.transpose (numpy.sum (numpy.transpose (numpy.multiply (below, p2)),axis=0))
 
         # broadcast the cell's pattern onto each of its sliced edges
-        pattern = take (pattern, list / _no_edges [i],axis=0)
+        pattern = numpy.take (pattern, lst / _no_edges [i],axis=0)
         # Let ne represent the number of edges of this type of cell,
         # and nv the number of vertices.
         # To each pattern, there corresponds a permutation of the
@@ -655,26 +656,26 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # the corresponding indices into the correct order.  (The position
         # of unsliced edges in the list is arbitrary as long as the sliced
         # edges are in the proper order relative to each other.)
-        # Let these permutations be stored in a ne-by-2**nv - 2 array
+        # Let these permutations be stored in a ne-by-2**nv - 2 numpy.array
         # _poly_permutations (see next comment for explanation of 4 * ne):
-        pattern = take (ravel (transpose (_poly_permutations [i])),
+        pattern = numpy.take (numpy.ravel (numpy.transpose (_poly_permutations [i])),
            _no_edges [i] * (pattern - 1) + edges,axis=0) + 4 * _no_edges [i] * cells
-        order = argsort (pattern)
-        xyz1 = zeros ( (len (order), 3), float32 )
-        xyz1 [:,0] = take (ravel (xyz [:,0]), order,axis=0)
-        xyz1 [:,1] = take (ravel (xyz [:,1]), order,axis=0)
-        xyz1 [:,2] = take (ravel (xyz [:,2]), order,axis=0)
+        order = numpy.argsort (pattern)
+        xyz1 = numpy.zeros ( (len (order), 3), numpy.float32 )
+        xyz1 [:,0] = numpy.take (numpy.ravel (xyz [:,0]), order,axis=0)
+        xyz1 [:,1] = numpy.take (numpy.ravel (xyz [:,1]), order,axis=0)
+        xyz1 [:,2] = numpy.take (numpy.ravel (xyz [:,2]), order,axis=0)
         xyz = xyz1
         if col != None :
-            col = take (col, order,axis=0)
-        edges = take (edges, order,axis=0)
-        pattern = take (pattern, order,axis=0)
+            col = numpy.take (col, order,axis=0)
+        edges = numpy.take (edges, order,axis=0)
+        pattern = numpy.take (pattern, order,axis=0)
         # cells(order) is same as cells by construction */
 
         # There remains only the question of splitting the points in
         # a single cell into multiple disjoint polygons.
-        # To do this, we need one more precomputed array: poly_splits
-        # should be another ne-by-2**nv - 2 array with values between 0 and 3
+        # To do this, we need one more precomputed numpy.array: poly_splits
+        # should be another ne-by-2**nv - 2 numpy.array with values between 0 and 3
         # 0 for each edge on the first part, 1 for each edge on the
         # second part, and so on up to 3 for each edge on the fourth
         # part.  The value on unsliced edges can be anything, say 0.
@@ -682,20 +683,20 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # _poly_permutations, by putting _poly_permutations =
         # _poly_permutations(as described above) + _no_edges [i]*poly_splits
         # (this doesn't change the ordering of _poly_permutations).
-        # I assume this has been done here:
+        # I asnumpy.sume this has been done here:
         pattern = pattern / _no_edges [i]
         # now pattern jumps by 4 between cells, smaller jumps within cells
-        # get the list of places where a new value begins, and form a
+        # get the list of places numpy.where a new value begins, and form a
         # new pattern with values that increment by 1 between each plateau
         pattern = dif_ (pattern, 0)
         nz = numpy.nonzero(pattern)[0]
-        list = zeros (len (nz) + 1, int32)
-        list [1:] = nz + 1
-        newpat = zeros (len (pattern) + 1, int32)
+        lst = numpy.zeros (len (nz) + 1, numpy.int32)
+        lst [1:] = nz + 1
+        newpat = numpy.zeros (len (pattern) + 1, numpy.int32)
         newpat [0] = 1
-        newpat [1:] = cumsum (not_equal (pattern, 0),axis=0) + 1
+        newpat [1:] = numpy.cumsum (numpy.not_equal (pattern, 0),axis=0) + 1
         pattern = newpat
-        nverts = gistfuncs.histogram (pattern) [1:]
+        nverts = numpy.bincount (pattern) [1:]
         xyzverts = xyz
 
         # finally, deal with any fcolor function
@@ -704,18 +705,18 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             continue
 
         # if some polys have been split, need to split clist as well
-        if len (list) > len (clist) :
-            clist = take (clist, take (cells, list, axis=0),axis=0)
+        if len (lst) > len (clist) :
+            clist = numpy.take (clist, numpy.take (cells, lst, axis=0),axis=0)
         if col == None :
             if nointerp == None :
-                if type (fcolor) == FunctionType :
+                if callable (fcolor):
                     col = fcolor (m3, clist + cell_offsets [i], lower, upper, fsl,
                        fsu, pattern - 1)
                 else :
                     col = getc3 (fcolor, m3, clist + cell_offsets [i], lower, upper,
                        fsl, fsu, pattern - 1)
             else :
-                if type (fcolor) == FunctionType :
+                if callable (fcolor):
                     col = fcolor (m3, clist + cell_offsets [i])
                 else :
                     col = getc3 (fcolor, m3, clist + cell_offsets [i])
@@ -726,13 +727,13 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
     col_n = 0
     for i in range (len (new_results)) :
         nv_n = nv_n + len (new_results [i] [0])
-        xyzv_n = xyzv_n + shape (new_results [i] [1]) [0]
+        xyzv_n = xyzv_n + numpy.shape (new_results [i] [1]) [0]
         if new_results [i] [2] != None :
             col_n = col_n + len (new_results [i] [2])
-    nverts = zeros (nv_n, int32)
-    xyzverts = zeros ( (xyzv_n, 3), float32 )
+    nverts = numpy.zeros (nv_n, numpy.int32)
+    xyzverts = numpy.zeros ( (xyzv_n, 3), numpy.float32 )
     if col_n != 0 :
-        col = zeros (col_n, float32 )
+        col = numpy.zeros (col_n, numpy.float32 )
     else :
         col = None
     nv_n1 = 0
@@ -740,7 +741,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
     col_n1 = 0
     for i in range (len (new_results)) :
         nv_n2 = len (new_results [i] [0])
-        xyzv_n2 = shape (new_results [i] [1]) [0]
+        xyzv_n2 = numpy.shape (new_results [i] [1]) [0]
         nverts [nv_n1:nv_n1 + nv_n2] = new_results [i] [0]
         xyzverts [xyzv_n1:xyzv_n1 + xyzv_n2] = new_results [i] [1]
         if new_results [i] [2] != None :
@@ -776,7 +777,7 @@ def slice3mesh (xyz, * args, ** kw) :
     slice3mesh returns a triple [nverts, xyzverts, color]
      nverts is no_cells long and the ith entry tells how many
         vertices the ith cell has.
-     xyzverts is sum (nverts,axis=0) by 3 and gives the vertex
+     xyzverts is numpy.sum (nverts,axis=0) by 3 and gives the vertex
         coordinates of the cells in order.
      color, if present, is len (nverts) long and contains
         a color value for each cell in the mesh.
@@ -785,13 +786,13 @@ def slice3mesh (xyz, * args, ** kw) :
 
        slice3mesh (z, color = None)
 
-    z is a two dimensional array of cell function values, assumed
-       to be on a uniform mesh nx by ny cells (assuming z is nx by ny)
+    z is a two dimensional numpy.array of cell function values, asnumpy.sumed
+       to be on a uniform mesh nx by ny cells (asnumpy.suming z is nx by ny)
        nx being the number of cells in the x direction, ny the number
        in the y direction.
-    color, if specified, is either an nx by ny array
+    color, if specified, is either an nx by ny numpy.array
        of cell-centered values by which the surface is to
-       be colored, or an nx +1 by ny + 1 array of vertex-
+       be colored, or an nx +1 by ny + 1 numpy.array of vertex-
        centered values, which will be averaged over each
        cell to give cell-centered values.
 
@@ -807,7 +808,7 @@ def slice3mesh (xyz, * args, ** kw) :
 
        slice3mesh (x, y, z, color = None)
 
-    z is as above, an nx by ny array of function values
+    z is as above, an nx by ny numpy.array of function values
     on a mesh of the same dimensions. There are two choices
     for x and y: they can both be one-dimensional, dimensioned
     nx and ny respectively, in which case they represent a
@@ -824,44 +825,44 @@ def slice3mesh (xyz, * args, ** kw) :
         smooth = 0
     if len (args) == 0 :
         # Only the z argument is present
-        if len (shape (xyz)) != 2 :
+        if len (numpy.shape (xyz)) != 2 :
             raise _Slice3MeshError, \
                "z must be two dimensional."
         else :
             z = xyz
-            ncx = shape (xyz) [0]
-            ncy = shape (xyz) [1]
-            x = arange (ncx, dtype = float32 )
-            y = arange (ncy, dtype = float32 )
+            ncx = numpy.shape (xyz) [0]
+            ncy = numpy.shape (xyz) [1]
+            x = numpy.arange (ncx, dtype = numpy.float32 )
+            y = numpy.arange (ncy, dtype = numpy.float32 )
     elif len (args) == 3 :
         # must be the (nxny, dxdy, x0y0, z...) form
         ncx = xyz [0] + 1
         ncy = xyz [1] + 1
-        x = arange (ncx, dtype = float32 ) * args [0] [0] + args [1] [0]
-        y = arange (ncy, dtype = float32 ) * args [0] [1] + args [1] [1]
+        x = numpy.arange (ncx, dtype = numpy.float32 ) * args [0] [0] + args [1] [0]
+        y = numpy.arange (ncy, dtype = numpy.float32 ) * args [0] [1] + args [1] [1]
         z = args [2]
-        if (ncx, ncy) != shape (z) :
+        if (ncx, ncy) != numpy.shape (z) :
             raise _Slice3MeshError, \
-               "The shape of z must match the shape of x and y."
+               "The numpy.shape of z must match the numpy.shape of x and y."
     elif len (args) == 2 :
         # must be the x, y, z format
         x = xyz
         y = args [0]
         z = args [1]
-        dims = shape (x)
+        dims = numpy.shape (x)
         if len (dims) == 2 :
             two_d = 1
-            if dims != shape (y) or dims != shape (z) :
+            if dims != numpy.shape (y) or dims != numpy.shape (z) :
                 raise _Slice3MeshError, \
-                   "The shapes of x, y, and z must match."
+                   "The numpy.shapes of x, y, and z must match."
             ncx = dims [0]
             ncy = dims [1]
         elif len (dims) == 1 :
             ncx = dims [0]
             ncy = len (y)
-            if (ncx, ncy) != shape (z) :
+            if (ncx, ncy) != numpy.shape (z) :
                 raise _Slice3MeshError, \
-                   "The shape of z must match the shape of x and y."
+                   "The numpy.shape of z must match the numpy.shape of x and y."
         else :
             raise _Slice3MeshError, \
                "Unable to decipher arguments to slice3mesh."
@@ -869,69 +870,69 @@ def slice3mesh (xyz, * args, ** kw) :
         raise _Slice3MeshError, \
            "Unable to decipher arguments to slice3mesh."
 
-    nverts = ones ( (ncx - 1) *  (ncy - 1), int32) * 4
+    nverts = numpy.ones ( (ncx - 1) *  (ncy - 1), numpy.int32) * 4
 
-    ncxx = arange (ncx - 1, dtype = int32) * (ncy)
-    ncyy = arange (ncy - 1, dtype = int32)
+    ncxx = numpy.arange (ncx - 1, dtype = numpy.int32) * (ncy)
+    ncyy = numpy.arange (ncy - 1, dtype = numpy.int32)
 
     if kw.has_key ("color") :
         color = kw ["color"]
     else :
         color = None
     if color != None :
-#     col = array (len (nverts), float32 )
-        if shape (color) == (ncx - 1, ncy - 1) :
+#     col = numpy.array (len (nverts), numpy.float32 )
+        if numpy.shape (color) == (ncx - 1, ncy - 1) :
             col = color
-        elif shape (color) == (ncx, ncy) and smooth == 0 :
-            col = ravel (color)
+        elif numpy.shape (color) == (ncx, ncy) and smooth == 0 :
+            col = numpy.ravel (color)
             # Lower left, upper left, upper right, lower right
-            col = 0.25 * (take (col, ravel (add.outer ( ncxx, ncyy)),axis=0) +
-               take (col, ravel (add.outer ( ncxx, ncyy + 1)),axis=0) +
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0) +
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0))
-        elif shape (color) == (ncx, ncy) and smooth != 0 :
+            col = 0.25 * (numpy.take (col, numpy.ravel (add.outer ( ncxx, ncyy)),axis=0) +
+               numpy.take (col, numpy.ravel (add.outer ( ncxx, ncyy + 1)),axis=0) +
+               numpy.take (col, numpy.ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0) +
+               numpy.take (col, numpy.ravel (add.outer ( ncxx + ncy, ncyy)),axis=0))
+        elif numpy.shape (color) == (ncx, ncy) and smooth != 0 :
             # Node-centered colors are wanted (smooth plots)
-            col = ravel (color)
-            col = ravel (transpose (array ( [
-               take (col, ravel (add.outer ( ncxx, ncyy)),axis=0),
-               take (col, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
-               take (col, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
+            col = numpy.ravel (color)
+            col = numpy.ravel (numpy.transpose (numpy.array ( [
+               numpy.take (col, numpy.ravel (add.outer ( ncxx, ncyy)),axis=0),
+               numpy.take (col, numpy.ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+               numpy.take (col, numpy.ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+               numpy.take (col, numpy.ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
         else :
             raise _Slice3MeshError, \
                "color must be cell-centered or vertex centered."
     else :
         col = None
-    xyzverts = zeros ( (4 * (ncx -1) * (ncy -1), 3), float32 )
+    xyzverts = numpy.zeros ( (4 * (ncx -1) * (ncy -1), 3), numpy.float32 )
 
     if not two_d :
-        x1 = multiply.outer (ones (ncy - 1, float32), x [0:ncx - 1])
-        x2 = multiply.outer (ones (ncy - 1, float32), x [1:ncx])
-        xyzverts [:, 0] = ravel (transpose (array ([x1, x1, x2, x2])))
+        x1 = numpy.multiply.outer (numpy.ones (ncy - 1, numpy.float32), x [0:ncx - 1])
+        x2 = numpy.multiply.outer (numpy.ones (ncy - 1, numpy.float32), x [1:ncx])
+        xyzverts [:, 0] = numpy.ravel (numpy.transpose (numpy.array ([x1, x1, x2, x2])))
         del x1, x2
-        y1 = multiply.outer (y [0:ncy - 1], ones (ncx - 1))
-        y2 = multiply.outer (y [1:ncy], ones (ncx - 1))
-        xyzverts [:, 1] = ravel (transpose (array ([y1, y2, y2, y1])))
+        y1 = numpy.multiply.outer (y [0:ncy - 1], numpy.ones (ncx - 1))
+        y2 = numpy.multiply.outer (y [1:ncy], numpy.ones (ncx - 1))
+        xyzverts [:, 1] = numpy.ravel (numpy.transpose (numpy.array ([y1, y2, y2, y1])))
         del y1, y2
     else :
-        newx = ravel (x)
-        xyzverts [:, 0] = ravel (transpose (array ( [
-           take (newx, ravel (add.outer ( ncxx, ncyy)),axis=0),
-           take (newx, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
-           take (newx, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
-           take (newx, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
-        newy = ravel (y)
-        xyzverts [:, 1] = ravel (transpose (array ( [
-           take (newy, ravel (add.outer ( ncxx, ncyy)),axis=0),
-           take (newy, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
-           take (newy, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
-           take (newy, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
-    newz = ravel (z)
-    xyzverts [:, 2] = ravel (transpose (array ( [
-       take (newz, ravel (add.outer ( ncxx, ncyy)),axis=0),
-       take (newz, ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
-       take (newz, ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
-       take (newz, ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
+        newx = numpy.ravel (x)
+        xyzverts [:, 0] = numpy.ravel (numpy.transpose (numpy.array ( [
+           numpy.take (newx, numpy.ravel (add.outer ( ncxx, ncyy)),axis=0),
+           numpy.take (newx, numpy.ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+           numpy.take (newx, numpy.ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+           numpy.take (newx, numpy.ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
+        newy = numpy.ravel (y)
+        xyzverts [:, 1] = numpy.ravel (numpy.transpose (numpy.array ( [
+           numpy.take (newy, numpy.ravel (add.outer ( ncxx, ncyy)),axis=0),
+           numpy.take (newy, numpy.ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+           numpy.take (newy, numpy.ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+           numpy.take (newy, numpy.ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
+    newz = numpy.ravel (z)
+    xyzverts [:, 2] = numpy.ravel (numpy.transpose (numpy.array ( [
+       numpy.take (newz, numpy.ravel (add.outer ( ncxx, ncyy)),axis=0),
+       numpy.take (newz, numpy.ravel (add.outer ( ncxx, ncyy + 1)),axis=0),
+       numpy.take (newz, numpy.ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
+       numpy.take (newz, numpy.ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
 
     return [nverts, xyzverts, col]
 
@@ -1025,7 +1026,7 @@ def iterator3_rect (m3, chunk, clist) :
             # 3D chunks
             cj = ck = 0
             ci = (njnk * ni - 1) / _chunk3_limit + 1
-        chunk = array ( [[ci == 0, cj == 0, ck == 0],
+        chunk = numpy.array ( [[ci == 0, cj == 0, ck == 0],
                          [not ci, nj * (ci != 0) + (ck != 0),
                           nk * ( (cj + ci) != 0)],
                          [ci, cj, ck], [ni, nj, nk]])
@@ -1034,10 +1035,10 @@ def iterator3_rect (m3, chunk, clist) :
         nj = chunk [3,1]
         nk = chunk [3,2]
         njnk = nj * nk
-        offsets = array ( [njnk, nj, 1], int32)
+        offsets = numpy.array ( [njnk, nj, 1], numpy.int32)
         if clist != None :
             # add offset for this chunk to clist and return
-            return sum (offsets * ( chunk [0] - 1),axis=0) + clist
+            return numpy.sum (offsets * ( chunk [0] - 1),axis=0) + clist
 
     # increment to next chunk
     xi = chunk [1, 0]
@@ -1060,8 +1061,8 @@ def iterator3_rect (m3, chunk, clist) :
         frst = ck % np     # first frst steps are step+1
         if (xk < (step + 1) * frst) : step = step + 1
         xk = xk + step
-        chunk [0] = array ( [xi, xj, ck])
-        chunk [1] = array ( [xi, xj, xk])
+        chunk [0] = numpy.array ( [xi, xj, ck])
+        chunk [1] = numpy.array ( [xi, xj, xk])
     else :
         np = chunk [2, 1]
         if (np) :
@@ -1074,8 +1075,8 @@ def iterator3_rect (m3, chunk, clist) :
             frst = nj % np    # first frst steps are step+1
             if (xj < (step + 1) * frst) : step = step + 1
             xj = xj + step
-            chunk [0, 0:2] = array ( [xi, cj])
-            chunk [1, 0:2] = array ( [xi, xj])
+            chunk [0, 0:2] = numpy.array ( [xi, cj])
+            chunk [1, 0:2] = numpy.array ( [xi, xj])
         else :
             if xi == ni : return None
             ci = xi + 1
@@ -1135,29 +1136,29 @@ def iterator3_irreg (m3, chunk, clist) :
     if clist != None:
         return clist
 
-    dims = m3 [1] [0]     # ncells by _no_verts array of subscripts
+    dims = m3 [1] [0]     # ncells by _no_verts numpy.array of subscripts
                           # (or a list of from one to four of same)
 
-    if type (dims) != ListType :
+    if type (dims) != list :
         if chunk == None:     # get the first chunk
-            return [ [0, min (shape (dims) [0], _chunk3_limit)],
-                     arange (0, min (shape (dims) [0], _chunk3_limit),
-                     dtype = int32)]
+            return [ [0, min (numpy.shape (dims) [0], _chunk3_limit)],
+                     numpy.arange (0, min (numpy.shape (dims) [0], _chunk3_limit),
+                     dtype = numpy.int32)]
         else :                # iterate to next chunk
             start = chunk [0] [1]
-            if start >= shape(dims) [0] :
+            if start >= numpy.shape(dims) [0] :
                 return None
             else :
-                return [ [start, min (shape (dims) [0], start + _chunk3_limit)],
-                         arange (start, min (shape (dims) [0],
+                return [ [start, min (numpy.shape (dims) [0], start + _chunk3_limit)],
+                         numpy.arange (start, min (numpy.shape (dims) [0],
                                                    start + _chunk3_limit),
-                         dtype = int32)]
+                         dtype = numpy.int32)]
     else :
         totals = m3 [1] [3] # cumulative totals of numbers of cells
         if chunk == None :
             return [ [0, min (totals [0], _chunk3_limit)],
-                     arange (0, min (totals [0], _chunk3_limit),
-                     dtype = int32)]
+                     numpy.arange (0, min (totals [0], _chunk3_limit),
+                     dtype = numpy.int32)]
         else :                # iterate to next chunk
             start = chunk [0] [1]
             if start >= totals [-1] :
@@ -1167,9 +1168,9 @@ def iterator3_irreg (m3, chunk, clist) :
                     if start < totals [i] :
                         break
                 return [ [start, min (totals [i], start + _chunk3_limit)],
-                         arange (start,
+                         numpy.arange (start,
                             min (totals [i], start + _chunk3_limit),
-                            dtype = int32)]
+                            dtype = numpy.int32)]
 
 
 def getv3 (i, m3, chunk) :
@@ -1182,7 +1183,7 @@ def getv3 (i, m3, chunk) :
       cell indices, in which case getv3 returns a 2x2x2x(dimsof(CHUNK))
       list of vertex coordinates.  CHUNK may also be a mesh-specific data
       structure used in the slice3 routine, in which case getv3 may
-      return a (ni)x(nj)x(nk) array of vertex values.  For meshes which
+      return a (ni)x(nj)x(nk) numpy.array of vertex values.  For meshes which
       are logically rectangular or consist of several rectangular
       patches, this is up to 8 times less data, with a concomitant
       performance advantage.  Use getv3 when writing slicing functions
@@ -1205,17 +1206,17 @@ def getv3_rect (i, m3, chunk) :
     if i < 0 or is_scalar (fi) or i >= len (fi) :
         raise _Getv3Error, "no such mesh function as F" + `i`
     dims = m3 [1] [0]
-    if dims == shape (fi [i]) :
+    if dims == numpy.shape (fi [i]) :
         raise _Getv3Error, "mesh function F" + `i` + " is not vertex-centered"
-    if len (shape (chunk)) != 1 :
+    if len (numpy.shape (chunk)) != 1 :
         c = chunk
-        # The difference here is that our arrays are 0-based, while
+        # The difference here is that our numpy.arrays are 0-based, while
         # yorick's are 1-based; and the last element in a range is not
-        # included in the result array.
+        # included in the result numpy.array.
         return fi [i] [c [0, 0] - 1:1 + c [1, 0], c [0, 1] - 1:1 + c [1, 1] ,
                        c [0, 2] - 1:1 + c [1, 2]]
     else :
-        # Need to create an array of fi values the same size and shape
+        # Need to create an numpy.array of fi values the same size and numpy.shape
         # as what to_corners3 returns.
         # To avoid exceedingly arcane calculations attempting to
         # go backwards to a cell list, this branch returns the list
@@ -1223,9 +1224,9 @@ def getv3_rect (i, m3, chunk) :
         # Then it is trivial for slice3 to find a list of cell
         # numbers in which fi changes sign.
         indices = to_corners3 (chunk, dims [0] + 1, dims [1] + 1)
-        no_cells = shape (indices) [0]
-        indices = ravel (indices)
-        retval = reshape (take (ravel (fi [i]), indices,axis=0), (no_cells, 2, 2, 2))
+        no_cells = numpy.shape (indices) [0]
+        indices = numpy.ravel (indices)
+        retval = numpy.reshape (numpy.take (numpy.ravel (fi [i]), indices,axis=0), (no_cells, 2, 2, 2))
 
         return [retval, chunk]
 
@@ -1237,7 +1238,7 @@ def getv3_irreg (i, m3, chunk) :
       given chunk. (The function values must have the same dimension
       as the coordinates; there is no attempt to convert zone-centered
       values to vertex-centered values.)
-      (2) an array of relative cell numbers within the list of cells
+      (2) an numpy.array of relative cell numbers within the list of cells
       of this type.
       (3) a number that can be added to these relative numbers to gives
       the absolute cell numbers for correct access to their coordinates
@@ -1258,8 +1259,8 @@ def getv3_irreg (i, m3, chunk) :
     oldfin = chunk [0] [1]
     no_cells = oldfin - oldstart
 
-    if type (verts) != ListType : # Only one kind of cell in mesh
-        indices = ravel (verts [oldstart:oldfin])
+    if type (verts) != list : # Only one kind of cell in mesh
+        indices = numpy.ravel (verts [oldstart:oldfin])
     else : # A list of possibly more than one kind
         sizes = m3 [1] [2]
         totals = m3 [1] [3]
@@ -1273,19 +1274,19 @@ def getv3_irreg (i, m3, chunk) :
         else :
             start = oldstart
             fin = oldfin
-        indices = ravel (verts [start:fin])
+        indices = numpy.ravel (verts [start:fin])
 
-    tc = shape (verts) [1]
-    # ZCM 2/4/97 the array of cell numbers must be relative
+    tc = numpy.shape (verts) [1]
+    # ZCM 2/4/97 the numpy.array of cell numbers must be relative
     if tc == 8 : # hex cells
-        return [ reshape (take (fi [i], indices,axis=0), (no_cells, 2, 2, 2)),
-                arange (0, no_cells, dtype = int32), oldstart]
+        return [ numpy.reshape (numpy.take (fi [i], indices,axis=0), (no_cells, 2, 2, 2)),
+                numpy.arange (0, no_cells, dtype = numpy.int32), oldstart]
     elif tc == 6 : # pyramids
-        return [ reshape (take (fi [i], indices,axis=0), (no_cells, 3, 2)),
-                arange (0, no_cells, dtype = int32), oldstart]
+        return [ numpy.reshape (numpy.take (fi [i], indices,axis=0), (no_cells, 3, 2)),
+                numpy.arange (0, no_cells, dtype = numpy.int32), oldstart]
     else : # tetrahedron or pyramid
-        return [ reshape (take (fi [i], indices,axis=0), (no_cells, tc)),
-                arange (0, no_cells, dtype = int32), oldstart]
+        return [ numpy.reshape (numpy.take (fi [i], indices,axis=0), (no_cells, tc)),
+                numpy.arange (0, no_cells, dtype = numpy.int32), oldstart]
 
 _Getc3Error = "Getc3Error"
 
@@ -1300,7 +1301,7 @@ def getc3 (i, m3, chunk, *args) :
       cell indices, in which case getc3 returns a (dimsof(CHUNK))
       list of vertex coordinates.  CHUNK may also be a mesh-specific data
       structure used in the slice3 routine, in which case getc3 may
-      return a (ni)x(nj)x(nk) array of vertex values.  There is no
+      return a (ni)x(nj)x(nk) numpy.array of vertex values.  There is no
       savings in the amount of data for such a CHUNK, but the gather
       operation is cheaper than a general list of cell indices.
       Use getc3 when writing colorng functions for slice3.
@@ -1308,7 +1309,7 @@ def getc3 (i, m3, chunk, *args) :
       If CHUNK is a CLIST, the additional arguments L, U, FSL, and FSU
       are vertex index lists which override the CLIST if the Ith attached
       function is defined on mesh vertices.  L and U are index lists into
-      the (dimsof(CLIST))x2x2x2 vertex value array, say vva, and FSL
+      the (dimsof(CLIST))x2x2x2 vertex value numpy.array, say vva, and FSL
       and FSU are corresponding interpolation coefficients; the zone
       centered value is computed as a weighted average of involving these
       coefficients.  The CELLS argument is required by histogram to do
@@ -1346,59 +1347,59 @@ def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
     if ( i < 1 or i > len (fi)) :
         raise _Getc3Error, "no such mesh function as F" + `i - 1`
     dims = m3 [0]
-    if shape (fi [i - 1]) == dims :
+    if numpy.shape (fi [i - 1]) == dims :
         # it is a cell-centered quantity
-        if len (shape (chunk)) != 1 :
+        if len (numpy.shape (chunk)) != 1 :
             c = chunk
-            # The difference here is that our arrays are 0-based, while
+            # The difference here is that our numpy.arrays are 0-based, while
             # yorick's are 1-based; and the last element in a range is not
-            # included in the result array.
+            # included in the result numpy.array.
             return fi [i - 1] [c [0, 0] - 1:1 + c [1, 0],
                                c [0, 1] - 1:1 + c [1, 1] ,
                                c [0, 2] - 1:1 + c [1, 2]]
         else :
             [k, l. m] = dims
-            return reshape (take (ravel (fi [i - 1]), chunk,axis=0),
+            return numpy.reshape (numpy.take (numpy.ravel (fi [i - 1]), chunk,axis=0),
                (len (chunk), k, l, m))
     else :
         # it is vertex-centered, so we take averages to get cell quantity
-        if len (shape (chunk)) != 1 :
+        if len (numpy.shape (chunk)) != 1 :
             c = chunk
-            # The difference here is that our arrays are 0-based, while
+            # The difference here is that our numpy.arrays are 0-based, while
             # yorick's are 1-based; and the last element in a range is not
-            # included in the result array.
+            # included in the result numpy.array.
             return zcen_ (zcen_( zcen_ (
                   (fi [i - 1] [c [0, 0] - 1:1 + c [1, 0],
                                c [0, 1] - 1:1 + c [1, 1] ,
                                c [0, 2] - 1:1 + c [1, 2]]), 0), 1), 2)
         else :
             indices = to_corners3 (chunk, dims [1] + 1,  dims [2] + 1)
-            no_cells = shape (indices) [0]
-            indices = ravel (indices)
-            corners = take (ravel (fi [i - 1]), indices,axis=0)
+            no_cells = numpy.shape (indices) [0]
+            indices = numpy.ravel (indices)
+            corners = numpy.take (numpy.ravel (fi [i - 1]), indices,axis=0)
             if l == None :
-                return 0.125 * sum (transpose (reshape (corners, (no_cells, 8))),axis=0)
+                return 0.125 * numpy.sum (numpy.transpose (numpy.reshape (corners, (no_cells, 8))),axis=0)
             else :
                 # interpolate corner values to get edge values
-                corners = (take (corners, l,axis=0) * fsu -
-                   take (corners, u,axis=0) * fsl) / (fsu -fsl)
+                corners = (numpy.take (corners, l,axis=0) * fsu -
+                   numpy.take (corners, u,axis=0) * fsl) / (fsu -fsl)
                 # average edge values (vertex values of polys) on each poly
-                return gistfuncs.histogram (cells, corners) / gistfuncs.histogram (cells)
+                return numpy.bincount (cells, corners) / numpy.bincount (cells)
 
 def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
 
     """
        Same thing as getc3_rect, i. e., returns the same type of
        data structure, but from an irregular mesh.
-       m3 [1] is a 2-list; m3[1] [0] is an array whose ith element
-          is an array of coordinate indices for the ith cell,
-          or a list of up to four such arrays.
-          m3 [1] [1] is the 3 by nverts array of coordinates.
-       m3 [2] is a list of arrays of vertex-centered or cell-centered
+       m3 [1] is a 2-list; m3[1] [0] is an numpy.array whose ith element
+          is an numpy.array of coordinate indices for the ith cell,
+          or a list of up to four such numpy.arrays.
+          m3 [1] [1] is the 3 by nverts numpy.array of coordinates.
+       m3 [2] is a list of numpy.arrays of vertex-centered or cell-centered
           data.
        chunk may be a list, in which case chunk [0] is a 2-sequence
        representing a range of cell indices; or it may be a one-dimensional
-       array, in which case it is a nonconsecutive set of cell indices.
+       numpy.array, in which case it is a nonconsecutive set of cell indices.
        It is guaranteed that all cells indexed by the chunk are the
        same type.
     """
@@ -1407,36 +1408,36 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
     if i < 1 or i > len (fi) :
         raise _Getc3Error, "no such mesh function as F" + `i - 1`
     verts = m3 [1] [0]
-    if type (verts) == ListType :
+    if type (verts) == list :
         sizes = m3 [1] [2]
         totals = m3 [1] [3]
-    if type (verts) == ListType and totals [-1] == len (fi [i - 1]) or \
-       type (verts) != ListType and shape (verts) [0] == len (fi [i - 1]) :
+    if type (verts) == list and totals [-1] == len (fi [i - 1]) or \
+       type (verts) != list and numpy.shape (verts) [0] == len (fi [i - 1]) :
         # cell-centered case
-        if type (chunk) == ListType :
+        if type (chunk) == list :
             return fi [i - 1] [chunk [0] [0]:chunk [0] [1]]
-        elif type (chunk) == ndarray and len (shape (chunk)) == 1 :
-            return take (fi [i - 1], chunk,axis=0)
+        elif type (chunk) == numpy.ndarray and len (numpy.shape (chunk)) == 1 :
+            return numpy.take (fi [i - 1], chunk,axis=0)
         else :
             raise _Getc3Error, "chunk argument is incomprehensible."
 
-    if len (fi [i - 1]) != shape (m3 [1] [1]) [1] :
+    if len (fi [i - 1]) != numpy.shape (m3 [1] [1]) [1] :
         raise _Getc3Error, "F" + `i - 1` + " has the wrong size to be " \
            "either zone-centered or node-centered."
     # vertex-centered case
-    # First we need to pick up the vertex subscripts, which are
+    # First we need to numpy.pick up the vertex subscripts, which are
     # also the fi [i - 1] subscripts.
-    if type (verts) != ListType :
-        if type (chunk) == ListType :
+    if type (verts) != list :
+        if type (chunk) == list :
             indices = verts [chunk [0] [0]:chunk [0] [1]]
-        elif type (chunk) == ndarray and len (shape (chunk)) == 1 :
+        elif type (chunk) == numpy.ndarray and len (numpy.shape (chunk)) == 1 :
             indices = take (verts, chunk,axis=0)
         else :
             raise _Getc3Error, "chunk argument is incomprehensible."
     else :
         # We have a list of vertex subscripts, each for a different
         # type of cell; need to extract the correct list:
-        if type (chunk) == ListType :
+        if type (chunk) == list :
             start = chunk [0] [0]
             fin = chunk [0] [1]
             for j in range (len (totals)) :
@@ -1447,7 +1448,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
                 start = start - totals [j - 1]
                 fin = fin - totals [j - 1]
             indices = verts [start:fin]
-        elif type (chunk) == ndarray and len (shape (chunk)) == 1 :
+        elif type (chunk) == numpy.ndarray and len (numpy.shape (chunk)) == 1 :
             for j in range (len (totals)) :
                 if chunk [-1] <= totals [j] :
                     break
@@ -1455,85 +1456,85 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
             ch = chunk
             if j > 0 :
                 ch = chunk - totals [j - 1]
-            indices = take (verts, ch,axis=0)
+            indices = numpy.take (verts, ch,axis=0)
         else :
             raise _Getc3Error, "chunk argument is incomprehensible."
 
-    shp = shape (indices)
+    shp = numpy.shape (indices)
     no_cells = shp [0]
-    indices = ravel (indices)
-    corners = take (fi [i - 1], indices,axis=0)
+    indices = numpy.ravel (indices)
+    corners = numpy.take (fi [i - 1], indices,axis=0)
     if l == None :
-        return (1. / shp [1]) * transpose ((sum (transpose (reshape (corners,
+        return (1. / shp [1]) * numpy.transpose ((numpy.sum (numpy.transpose (numpy.reshape (corners,
            (no_cells, shp [1]))) [0:shp [1]],axis=0)))
     else :
         # interpolate corner values to get edge values
-        corners = (take (corners, l,axis=0) * fsu -
-           take (corners, u,axis=0) * fsl) / (fsu -fsl)
+        corners = (numpy.take (corners, l,axis=0) * fsu -
+           numpy.take (corners, u,axis=0) * fsl) / (fsu -fsl)
         # average edge values (vertex values of polys) on each poly
-        return gistfuncs.histogram (cells, corners) / gistfuncs.histogram (cells)
+        return numpy.bincount (cells, corners) / numpy.bincount (cells)
 
-_no_verts = array ( [4, 5, 6, 8])
-_no_edges = array ( [6, 8, 9, 12])
+_no_verts = numpy.array ( [4, 5, 6, 8])
+_no_edges = numpy.array ( [6, 8, 9, 12])
 
 # Lower and upper vertex subscripts for each edge
-_lower_vert4 = array ( [0, 0, 0, 1, 2, 3], int32)
-_lower_vert5 = array ( [0, 0, 0, 0, 1, 2, 3, 4], int32)
-_lower_vert6 = array ( [0, 1, 0, 1, 2, 3, 0, 2, 4], int32)
-_lower_vert8 = array ( [0, 1, 2, 3, 0, 1, 4, 5, 0, 2, 4, 6], int32)
+_lower_vert4 = numpy.array ( [0, 0, 0, 1, 2, 3], numpy.int32)
+_lower_vert5 = numpy.array ( [0, 0, 0, 0, 1, 2, 3, 4], numpy.int32)
+_lower_vert6 = numpy.array ( [0, 1, 0, 1, 2, 3, 0, 2, 4], numpy.int32)
+_lower_vert8 = numpy.array ( [0, 1, 2, 3, 0, 1, 4, 5, 0, 2, 4, 6], numpy.int32)
 _lower_vert = [_lower_vert4, _lower_vert5, _lower_vert6, _lower_vert8]
-_upper_vert4 = array ( [1, 2, 3, 2, 3, 1], int32)
-_upper_vert5 = array ( [1, 2, 3, 4, 2, 3, 4, 1], int32)
-_upper_vert6 = array ( [4, 5, 2, 3, 4, 5, 1, 3, 5], int32)
-_upper_vert8 = array ( [4, 5, 6, 7, 2, 3, 6, 7, 1, 3, 5, 7], int32)
+_upper_vert4 = numpy.array ( [1, 2, 3, 2, 3, 1], numpy.int32)
+_upper_vert5 = numpy.array ( [1, 2, 3, 4, 2, 3, 4, 1], numpy.int32)
+_upper_vert6 = numpy.array ( [4, 5, 2, 3, 4, 5, 1, 3, 5], numpy.int32)
+_upper_vert8 = numpy.array ( [4, 5, 6, 7, 2, 3, 6, 7, 1, 3, 5, 7], numpy.int32)
 _upper_vert = [_upper_vert4, _upper_vert5, _upper_vert6, _upper_vert8]
 
-_node_edges8_s = array ( [ [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+_node_edges8_s = numpy.array ( [ [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
                         [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
                         [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
                         [0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0],
                         [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
                         [0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
                         [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]], int32)
-_node_edges8 = array ( [ [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]], numpy.int32)
+_node_edges8 = numpy.array ( [ [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
                         [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
                         [0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
                         [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
                         [0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0],
                         [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
                         [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-                        [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]], int32)
-_node_edges6_s = array ( [ [1, 0, 1, 0, 0, 0, 1, 0, 0],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]], numpy.int32)
+_node_edges6_s = numpy.array ( [ [1, 0, 1, 0, 0, 0, 1, 0, 0],
                         [0, 1, 0, 1, 0, 0, 1, 0, 0],
                         [0, 0, 1, 0, 1, 0, 0, 1, 0],
                         [0, 0, 0, 1, 0, 1, 0, 1, 0],
                         [1, 0, 0, 0, 1, 0, 0, 0, 1],
-                        [0, 1, 0, 0, 0, 1, 0, 0, 1]], int32)
-_node_edges6 = array ( [ [0, 1, 0, 0, 0, 1, 0, 0, 1],
+                        [0, 1, 0, 0, 0, 1, 0, 0, 1]], numpy.int32)
+_node_edges6 = numpy.array ( [ [0, 1, 0, 0, 0, 1, 0, 0, 1],
                         [1, 0, 0, 0, 1, 0, 0, 0, 1],
                         [0, 0, 0, 1, 0, 1, 0, 1, 0],
                         [0, 0, 1, 0, 1, 0, 0, 1, 0],
                         [0, 1, 0, 1, 0, 0, 1, 0, 0],
-                        [1, 0, 1, 0, 0, 0, 1, 0, 0]], int32)
-_node_edges4_s = array ( [ [1, 1, 1, 0, 0, 0],
+                        [1, 0, 1, 0, 0, 0, 1, 0, 0]], numpy.int32)
+_node_edges4_s = numpy.array ( [ [1, 1, 1, 0, 0, 0],
                         [1, 0, 0, 1, 0, 1],
                         [0, 1, 0, 1, 1, 0],
-                        [0, 0, 1, 0, 1, 1]], int32)
-_node_edges4 = array ( [ [0, 0, 1, 0, 1, 1],
+                        [0, 0, 1, 0, 1, 1]], numpy.int32)
+_node_edges4 = numpy.array ( [ [0, 0, 1, 0, 1, 1],
                         [0, 1, 0, 1, 1, 0],
                         [1, 0, 0, 1, 0, 1],
-                        [1, 1, 1, 0, 0, 0]], int32)
-_node_edges5_s = array ( [ [1, 1, 1, 1, 0, 0, 0, 0],
+                        [1, 1, 1, 0, 0, 0]], numpy.int32)
+_node_edges5_s = numpy.array ( [ [1, 1, 1, 1, 0, 0, 0, 0],
                         [1, 0, 0, 0, 1, 0, 0, 1],
                         [0, 1, 0, 0, 1, 1, 0, 0],
                         [0, 0, 1, 0, 0, 1, 1, 0],
-                        [0, 0, 0, 1, 0, 0, 1, 1]], int32)
-_node_edges5 = array ( [ [0, 0, 0, 1, 0, 0, 1, 1],
+                        [0, 0, 0, 1, 0, 0, 1, 1]], numpy.int32)
+_node_edges5 = numpy.array ( [ [0, 0, 0, 1, 0, 0, 1, 1],
                         [0, 0, 1, 0, 0, 1, 1, 0],
                         [0, 1, 0, 0, 1, 1, 0, 0],
                         [1, 0, 0, 0, 1, 0, 0, 1],
-                        [1, 1, 1, 1, 0, 0, 0, 0]], int32)
+                        [1, 1, 1, 1, 0, 0, 0, 0]], numpy.int32)
 
 _node_edges = [_node_edges4_s, _node_edges5_s, _node_edges6_s, _node_edges8_s]
 _node_edges3 = [_node_edges4, _node_edges5, _node_edges6, _node_edges8]
@@ -1542,34 +1543,34 @@ def _construct3 (itype) :
     global _node_edges
     global _no_verts
     global _no_edges
-    i = arange (1, 2**_no_verts [itype] - 1, dtype = int32)
+    i = numpy.arange (1, 2**_no_verts [itype] - 1, dtype = numpy.int32)
     if itype == 0 :
-        below = transpose (not_equal (array ( [bitwise_and (i, 8),
-                                               bitwise_and (i, 4),
-                                               bitwise_and (i, 2),
-                                               bitwise_and (i, 1)]), 0))
+        below = numpy.transpose (numpy.not_equal (numpy.array ( [numpy.bitwise_and (i, 8),
+                                               numpy.bitwise_and (i, 4),
+                                               numpy.bitwise_and (i, 2),
+                                               numpy.bitwise_and (i, 1)]), 0))
     elif itype == 1 :
-        below = transpose (not_equal (array ( [bitwise_and (i, 16),
-                                               bitwise_and (i, 8),
-                                               bitwise_and (i, 4),
-                                               bitwise_and (i, 2),
-                                               bitwise_and (i, 1)]), 0))
+        below = numpy.transpose (numpy.not_equal (numpy.array ( [numpy.bitwise_and (i, 16),
+                                               numpy.bitwise_and (i, 8),
+                                               numpy.bitwise_and (i, 4),
+                                               numpy.bitwise_and (i, 2),
+                                               numpy.bitwise_and (i, 1)]), 0))
     elif itype == 2 :
-        below = transpose (not_equal (array ( [bitwise_and (i, 32),
-                                               bitwise_and (i, 16),
-                                               bitwise_and (i, 8),
-                                               bitwise_and (i, 4),
-                                               bitwise_and (i, 2),
-                                               bitwise_and (i, 1)]), 0))
+        below = numpy.transpose (numpy.not_equal (numpy.array ( [numpy.bitwise_and (i, 32),
+                                               numpy.bitwise_and (i, 16),
+                                               numpy.bitwise_and (i, 8),
+                                               numpy.bitwise_and (i, 4),
+                                               numpy.bitwise_and (i, 2),
+                                               numpy.bitwise_and (i, 1)]), 0))
     elif itype == 3 :
-        below = transpose (not_equal (array ( [bitwise_and (i, 128),
-                                               bitwise_and (i, 64),
-                                               bitwise_and (i, 32),
-                                               bitwise_and (i, 16),
-                                               bitwise_and (i, 8),
-                                               bitwise_and (i, 4),
-                                               bitwise_and (i, 2),
-                                               bitwise_and (i, 1)]), 0))
+        below = numpy.transpose (numpy.not_equal (numpy.array ( [numpy.bitwise_and (i, 128),
+                                               numpy.bitwise_and (i, 64),
+                                               numpy.bitwise_and (i, 32),
+                                               numpy.bitwise_and (i, 16),
+                                               numpy.bitwise_and (i, 8),
+                                               numpy.bitwise_and (i, 4),
+                                               numpy.bitwise_and (i, 2),
+                                               numpy.bitwise_and (i, 1)]), 0))
     # For some reason the node edges for a cell need to be in different order
     # here than in slice3 to get the correct results. Hence _node_edges3.
     mask = gistfuncs.find_mask (below, _node_edges3 [itype])
@@ -1600,7 +1601,7 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
     zaxis_min = None, zaxis_max = None, )
 
       Plot filled z contours on the specified surface. NVERTS and
-      XYZVERTS arrays specify the polygons for the surface being
+      XYZVERTS numpy.arrays specify the polygons for the surface being
       drawn. CONTOURS can be one of the following:
          N, an integer: Plot N contours (therefore, N+1 colored
          components of the surface)
@@ -1629,7 +1630,7 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
     """
 
     # 1. Get contour colors
-    if type (contours) == types.IntType :
+    if type (contours) == int :
         n = contours
         if cmin != None :
             vcmin = cmin
@@ -1644,35 +1645,35 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
             vcmax = max (xyzverts [:, 2])
             maxz = vcmax
         if scale == "lin" :
-            vc = vcmin + arange (1, n + 1, dtype = float32) * \
+            vc = vcmin + numpy.arange (1, n + 1, dtype = numpy.float32) * \
                (vcmax - vcmin) / (n + 1)
         elif scale == "log" :
-            vc = vcmin + exp (arange (1, n + 1, dtype = float32) * \
+            vc = vcmin + exp (numpy.arange (1, n + 1, dtype = numpy.float32) * \
                log (vcmax - vcmin) / (n + 1))
         elif scale == "normal" :
             zlin = xyzverts [:, 2]
             lzlin = len (zlin)
             zbar = add.reduce (zlin) / lzlin
-            zs = sqrt ( (add.reduce (zlin ** 2) - lzlin * zbar ** 2) /
+            zs = numpy.sqrt ( (add.reduce (zlin ** 2) - lzlin * zbar ** 2) /
                 (lzlin - 1))
             z1 = zbar - 2. * zs
             z2 = zbar + 2. * zs
             diff = (z2 - z1) / (n - 1)
-            vc = z1 + arange (n) * diff
+            vc = z1 + numpy.arange (n) * diff
         else :
             raise _ContourError, "Incomprehensible scale parameter."
-    elif type (contours) == ndarray and contours.dtype == float32 :
+    elif type (contours) == numpy.ndarray and contours.dtype == numpy.float32 :
         n = len (contours)
         vc = sort (contours)
     else :
         raise _ContourError, "Incorrect contour specification."
     if split == 0 :
-        colors = (arange (n + 1, dtype = float32) * (199. / n)).astype (numpy.uint8)
+        colors = (numpy.arange (n + 1, dtype = numpy.float32) * (199. / n)).astype (numpy.uint8)
     else :
-        colors = (arange (n + 1, dtype = float32) * (99. / n)).astype (numpy.uint8)
+        colors = (numpy.arange (n + 1, dtype = numpy.float32) * (99. / n)).astype (numpy.uint8)
     # 2. Loop through slice2x calls
-    nv = array (nverts, copy = 1)
-    xyzv = array (xyzverts, copy = 1)
+    nv = numpy.array (nverts, copy = 1)
+    xyzv = numpy.array (xyzverts, copy = 1)
     if clear == 1 :
         clear3 ( ) # Clear any previous plot or we're in trouble
     # find imin--contours below this number need not be computed,
@@ -1704,13 +1705,13 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
         vc [imax - 1] = zaxis_max
     for i in range (imin, imax) :
         [nv, xyzv, d1, nvb, xyzvb, d2] = \
-           slice2x (array ( [0., 0., 1., vc [i]], float32) , nv, xyzv, None)
+           slice2x (numpy.array ( [0., 0., 1., vc [i]], numpy.float32) , nv, xyzv, None)
         if i == imin and zaxis_min != None and zaxis_min == vc [i]:
             # Don't send the "back" surface if it's below zaxis_min.
             continue
         else:
             if color == None :
-                pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype (numpy.uint8),
+                pl3tree (nvb, xyzvb, (numpy.ones (len (nvb)) * colors [i]).astype (numpy.uint8),
                    split = 0, edges = edges)
             else :
                 # N. B. Force edges to be on, otherwise the graph is empty.
@@ -1718,7 +1719,7 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
     if zaxis_max == None or vc [imax - 1] < zaxis_max:
         # send "front" surface if it's not beyond zaxis_max
         if color == None :
-            pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype (numpy.uint8),
+            pl3tree (nv, xyzv, (numpy.ones (len (nv)) * colors [i]).astype (numpy.uint8),
                split = 0, edges = edges)
         else :
             pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
@@ -1733,9 +1734,9 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
     caxis_min = None, caxis_max = None, split = 0)
 
       Plot filled z contours on the specified surface. VALUES is
-      a node-centered array the same length as SUM (NVERTS) whose
+      a node-centered numpy.array the same length as SUM (NVERTS) whose
       contours will be drawn. NVERTS and
-      XYZVERTS arrays specify the polygons for the surface being
+      XYZVERTS numpy.arrays specify the polygons for the surface being
       drawn. CONTOURS can be one of the following:
          N, an integer: Plot N contours (therefore, N+1 colored
          components of the surface)
@@ -1764,7 +1765,7 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
     """
 
     # 1. Get contour colors
-    if type (contours) == types.IntType :
+    if type (contours) == int :
         n = contours
         if cmin != None :
             vcmin = cmin
@@ -1779,36 +1780,36 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
             vcmax = max (values)
             maxz = vcmax
         if scale == "lin" :
-            vc = vcmin + arange (1, n + 1, \
-               dtype = float32) * \
+            vc = vcmin + numpy.arange (1, n + 1, \
+               dtype = numpy.float32) * \
                (vcmax - vcmin) / (n + 1)
         elif scale == "log" :
-            vc = vcmin + exp (arange (1, n + 1, \
-               dtype = float32) * \
+            vc = vcmin + exp (numpy.arange (1, n + 1, \
+               dtype = numpy.float32) * \
                log (vcmax - vcmin) / (n + 1))
         elif scale == "normal" :
             zbar = add.reduce (values) / lzlin
-            zs = sqrt ( (add.reduce (values ** 2) - lzlin * zbar ** 2) /
+            zs = numpy.sqrt ( (add.reduce (values ** 2) - lzlin * zbar ** 2) /
                 (lzlin - 1))
             z1 = zbar - 2. * zs
             z2 = zbar + 2. * zs
             diff = (z2 - z1) / (n - 1)
-            vc = z1 + arange (n) * diff
+            vc = z1 + numpy.arange (n) * diff
         else :
             raise _ContourError, "Incomprehensible scale parameter."
-    elif type (contours) == ndarray and contours.dtype == float32 :
+    elif type (contours) == numpy.ndarray and contours.dtype == numpy.float32 :
         n = len (contours)
         vc = sort (contours)
     else :
         raise _ContourError, "Incorrect contour specification."
     if split == 0 :
-        colors = (arange (n + 1, dtype = float32) * (199. / n)).astype (numpy.uint8)
+        colors = (numpy.arange (n + 1, dtype = numpy.float32) * (199. / n)).astype (numpy.uint8)
     else :
-        colors = (arange (n + 1, dtype = float32) * (99. / n)).astype (numpy.uint8)
+        colors = (numpy.arange (n + 1, dtype = numpy.float32) * (99. / n)).astype (numpy.uint8)
     # 2. Loop through slice2x calls
-    nv = array (nverts, copy = 1)
-    xyzv = array (xyzverts, copy = 1)
-    vals = array (values, copy = 1)
+    nv = numpy.array (nverts, copy = 1)
+    xyzv = numpy.array (xyzverts, copy = 1)
+    vals = numpy.array (values, copy = 1)
     if clear == 1 :
         clear3 ( ) # Clear any previous plot or we're in trouble
     # find imin--contours below this number need not be computed,
@@ -1850,7 +1851,7 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
             continue
         else:
             if color == None :
-                pl3tree (nvb, xyzvb, (ones (len (nvb)) * colors [i]).astype (numpy.uint8),
+                pl3tree (nvb, xyzvb, (numpy.ones (len (nvb)) * colors [i]).astype (numpy.uint8),
                    split = 0, edges = edges)
             else :
                 # N. B. Force edges to be on, otherwise the graph is empty.
@@ -1858,7 +1859,7 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
     if caxis_max == None or vc [imax - 1] < caxis_max:
         # send "front" surface if it's not beyond caxis_max
         if color == None :
-            pl3tree (nv, xyzv, (ones (len (nv)) * colors [i]).astype (numpy.uint8),
+            pl3tree (nv, xyzv, (numpy.ones (len (nv)) * colors [i]).astype (numpy.uint8),
                split = 0, edges = edges)
         else :
             pl3tree (nv, xyzv, "bg", split = 0, edges = 1)
@@ -1870,8 +1871,8 @@ def slice2x (plane, nverts, xyzverts, values = None) :
 
       Slice a polygon list, retaining only those polygons or
       parts of polygons on the positive side of PLANE, that is,
-      the side where xyz(+)*PLANE(+:1:3)-PLANE(4) > 0.0.
-      The NVERTS, VALUES, and XYZVERTS arrays have the meanings of
+      the side numpy.where xyz(+)*PLANE(+:1:3)-PLANE(4) > 0.0.
+      The NVERTS, VALUES, and XYZVERTS numpy.arrays have the meanings of
       the return values from the slice3 function.
       Python returns a sextuple
       [nverts, xyzverts, values, nvertb, xyzvertb, valueb]
@@ -1909,8 +1910,8 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
 
       Perform simple 3D rendering of an object created by slice3
       (possibly followed by slice2).  NVERTS and XYZVERTS are polygon
-      lists as returned by slice3, so XYZVERTS is sum(NVERTS,axis=0)-by-3,
-      where NVERTS is a list of the number of vertices in each polygon.
+      lists as returned by slice3, so XYZVERTS is numpy.sum(NVERTS,axis=0)-by-3,
+      numpy.where NVERTS is a list of the number of vertices in each polygon.
       If present, the VALUES should have the same length as NVERTS;
       they are used to color the polygon.  If VALUES is not specified,
       the 3D lighting calculation set up using the light3 function
@@ -1921,14 +1922,14 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
     """
 
     _draw3 = get_draw3_ ( )
-    if type (nverts) == ListType :
-        list = nverts
-        nverts = list [0]
-        xyzverts = array (list [1], copy = 1)
-        values = list [2]
-        cmin = list [3]
-        cmax = list [4]
-        edges = list [6]
+    if type (nverts) == list :
+        lst = nverts
+        nverts = lst [0]
+        xyzverts = numpy.array (lst [1], copy = 1)
+        values = lst [2]
+        cmin = lst [3]
+        cmax = lst [4]
+        edges = lst [6]
         ## Scale xyzverts to avoid loss of accuracy
         minx = min (xyzverts [:, 0])
         maxx = max (xyzverts [:, 0])
@@ -1948,11 +1949,11 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
 #        xyzverts [:, 1] = y
 #        xyzverts [:, 2] = z
             values = get3_light (xyztmp, nverts)
-        [list, vlist] = sort3d (z, nverts)
-        nverts = take (nverts, list,axis=0)
-        values = take (values, list,axis=0)
-        x = take (x, vlist,axis=0)
-        y = take (y, vlist,axis=0)
+        [lst, vlist] = sort3d (z, nverts)
+        nverts = numpy.take (nverts, lst,axis=0)
+        values = numpy.take (values, lst,axis=0)
+        x = numpy.take (x, vlist,axis=0)
+        y = numpy.take (y, vlist,axis=0)
         _square = get_square_ ( )
         [_xfactor, _yfactor] = get_factors_ ()
         xmax = max (x)
@@ -1983,17 +1984,17 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
            edges = edges)
         return [xmin, xmax, ymin, ymax]
 
-    nverts = array (nverts, int32)
-    xyzverts = array (xyzverts, float32 )
+    nverts = numpy.array (nverts, numpy.int32)
+    xyzverts = numpy.array (xyzverts, numpy.float32 )
 
-    if shape (xyzverts) [0] != sum (nverts,axis=0) or sum (less (nverts, 3),axis=0) or \
-       nverts.dtype != int32 :
+    if numpy.shape (xyzverts) [0] != numpy.sum (nverts,axis=0) or numpy.sum (less (nverts, 3),axis=0) or \
+       nverts.dtype != numpy.int32 :
         raise _Pl3surfError, "illegal or inconsistent polygon list"
     if values != None and len (values) != len (nverts) :
         raise _Pl3surfError, "illegal or inconsistent polygon color values"
 
     if values != None :
-        values = array (values, float32 )
+        values = numpy.array (values, numpy.float32 )
 
     clear3 ( )
     set3_object ( pl3surf, [nverts, xyzverts, values, cmin, cmax, lim, edges])
@@ -2023,11 +2024,11 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
        cmin = None, cmax = None)
 
       Add the polygon list specified by NVERTS (number of vertices in
-      each polygon) and XYZVERTS (3-by-sum(NVERTS,axis=0) vertex coordinates)
+      each polygon) and XYZVERTS (3-by-numpy.sum(NVERTS,axis=0) vertex coordinates)
       to the currently displayed b-tree.  If VALUES is specified, it
       must have the same dimension as NVERTS, and represents the color
       of each polygon.  If VALUES is not specified, the polygons
-      are assumed to form an isosurface which will be shaded by the
+      are asnumpy.sumed to form an isosurface which will be shaded by the
       current 3D lighting model; the isosurfaces are at the leaves of
       the b-tree, sliced by all of the planes.  If PLANE is specified,
       the XYZVERTS must all lie in that plane, and that plane becomes
@@ -2039,9 +2040,9 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
       a b-tree or leaf on the other side.  The first plane you add
       becomes the root node, slicing any existing leaf in half.  When
       you add an isosurface, it propagates down the tree, getting
-      sliced at each node, until its pieces reach the existing leaves,
+      sliced at each node, until its numpy.pieces reach the existing leaves,
       to which they are added.  When you add a plane, it also propagates
-      down the tree, getting sliced at each node, until its pieces
+      down the tree, getting sliced at each node, until its numpy.pieces
       reach the leaves, which it slices, becoming the nodes closest to
       the leaves.
 
@@ -2057,11 +2058,11 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
       viewpoint, a node can always be plotted in the order from one
       side, then the plane, then the other side.
 
-      This routine assumes a "split palette"; the colors for the
+      This routine asnumpy.sumes a "split palette"; the colors for the
       VALUES will be scaled to fit from color 0 to color 99, while
       the colors from the shading calculation will be scaled to fit
       from color 100 to color 199.  (If VALUES is specified as a char
-      array, however, it will be used without scaling.)
+      numpy.array, however, it will be used without scaling.)
       You may specifiy a cmin= or cmax= keyword to affect the
       scaling; cmin is ignored if VALUES is not specified (use the
       ambient= keyword from light3 for that case).
@@ -2080,47 +2081,47 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
     # avoid overhead of local variables for _pl3tree and _pl3leaf
     # -- I don't know if this is such a big deal
     _draw3 = get_draw3_ ()
-    if type (nverts) == ListType :
+    if type (nverts) == list :
         _nverts = []
         for i in range (len (nverts)) :
             _nverts.append (nverts [i])
         return _pl3tree (_nverts [0], nverts [1])
 
-    # We need copies of everything, or else arrays get clobbered.
-    nverts = array (nverts, int32)
-    xyzverts = array (xyzverts, float32 )
+    # We need copies of everything, or else numpy.arrays get clobbered.
+    nverts = numpy.array (nverts, numpy.int32)
+    xyzverts = numpy.array (xyzverts, numpy.float32 )
     if values == "background" :
         values = "bg"
     elif values != None and values != "bg" :
-        values = array (values, values.dtype)
+        values = numpy.array (values, values.dtype)
     if plane != None :
-        plane = plane.astype (float32)
+        plane = plane.astype (numpy.float32)
 
-    if shape (xyzverts) [0] != sum (nverts,axis=0) or sum (less (nverts, 3),axis=0) > 0 or \
-       type (nverts [0]) != int32:
-        print "Dim1 of xyzverts ", shape (xyzverts) [0], " sum (nverts,axis=0) ",\
-           sum (nverts,axis=0), " sum (less (nverts, 3),axis=0) ", sum (less (nverts, 3),axis=0), \
+    if numpy.shape (xyzverts) [0] != numpy.sum (nverts,axis=0) or numpy.sum (less (nverts, 3),axis=0) > 0 or \
+       type (nverts [0]) != numpy.int32:
+        print "Dim1 of xyzverts ", numpy.shape (xyzverts) [0], " numpy.sum (nverts,axis=0) ",\
+           numpy.sum (nverts,axis=0), " numpy.sum (less (nverts, 3),axis=0) ", numpy.sum (less (nverts, 3),axis=0), \
            " type (nverts [0]) ", `type (nverts [0])`
         raise _Pl3treeError, "illegal or inconsistent polygon list."
-    if type (values) == ndarray and len (values) != len (nverts) and \
-       len (values) != sum (nverts,axis=0) :
+    if type (values) == numpy.ndarray and len (values) != len (nverts) and \
+       len (values) != numpy.sum (nverts,axis=0) :
         raise _Pl3treeError, "illegal or inconsistent polygon color values"
-    if type (values) == ndarray and len (values) == sum (nverts,axis=0) :
+    if type (values) == numpy.ndarray and len (values) == numpy.sum (nverts,axis=0) :
         # We have vertex-centered values, which for Gist must be
         # averaged over each cell
-        list = zeros (sum (nverts,axis=0), int32)
-        gistfuncs.array_set (list, cumsum (nverts,axis=0) [0:-1], ones (len (nverts), int32))
+        lst = numpy.zeros (numpy.sum (nverts,axis=0), numpy.int32)
+        gistfuncs.array_set (lst, numpy.cumsum (nverts,axis=0) [0:-1], numpy.ones (len (nverts), numpy.int32))
         tpc = values.dtype
-        values = (gistfuncs.histogram (cumsum (list,axis=0), values) / nverts).astype (tpc)
+        values = (numpy.bincount (numpy.cumsum (lst,axis=0), values) / nverts).astype (tpc)
     if plane != None :
-        if (len (shape (plane)) != 1 or shape (plane) [0] != 4) :
+        if (len (numpy.shape (plane)) != 1 or numpy.shape (plane) [0] != 4) :
             raise _Pl3treeError, "illegal plane format, try plane3 function"
 
     # Note: a leaf is going to be a list of lists.
     leaf = [ [nverts, xyzverts, values, cmin, cmax, split, edges]]
 
     ## max and min of current leaf
-    minmax = array ( [min (xyzverts [:, 0]), max (xyzverts [:, 0]),
+    minmax = numpy.array ( [min (xyzverts [:, 0]), max (xyzverts [:, 0]),
                       min (xyzverts [:, 1]), max (xyzverts [:, 1]),
                       min (xyzverts [:, 2]), max (xyzverts [:, 2])])
 
@@ -2137,7 +2138,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
         oldminmax = tree [1] [1]
         tree = tree [1] [0]
         ## Find new minmax for whole tree
-        minmax = array ( [min (minmax [0], oldminmax [0]),
+        minmax = numpy.array ( [min (minmax [0], oldminmax [0]),
                           max (minmax [1], oldminmax [1]),
                           min (minmax [2], oldminmax [2]),
                           max (minmax [3], oldminmax [3]),
@@ -2157,7 +2158,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
 
 palette_dict = {
    "earth.gp" :
-      [array ([0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3, 4, 5, 5, 6, 7, 8,
+      [numpy.array ([0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3, 4, 5, 5, 6, 7, 8,
                8, 9, 10, 11, 11, 12, 13, 14, 15, 15, 16, 17, 18, 18, 19,
                20, 21, 22, 22, 23, 24, 25, 26, 26, 27, 28, 29, 30, 31, 31,
                32, 33, 34, 35, 36, 36, 37, 38, 39, 40, 41, 41, 42, 43, 44,
@@ -2175,7 +2176,7 @@ palette_dict = {
                217, 219, 220, 221, 222, 223, 225, 226, 227, 228, 229, 231,
                232, 233, 234, 235, 237, 238, 239, 240, 241, 243, 244, 245,
                246, 247, 249, 250, 251, 252, 253, 255], 'B'),
-      array ( [0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 8, 11, 13, 16, 18, 21, 23, 26,
+      numpy.array ( [0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 8, 11, 13, 16, 18, 21, 23, 26,
                28, 31, 33, 36, 38, 41, 43, 45, 48, 50, 52, 55, 57, 59, 61,
                64, 66, 68, 70, 72, 74, 77, 79, 81, 83, 85, 87, 89, 91, 93,
                95, 97, 99, 100, 102, 104, 106, 108, 109, 111, 113, 115,
@@ -2195,7 +2196,7 @@ palette_dict = {
                194, 196, 198, 200, 202, 204, 206, 208, 211, 213, 215, 218,
                221, 223, 226, 229, 232, 235, 238, 241, 244, 248, 251, 255],
                'B'),
-      array ( [0, 46, 58, 69, 81, 92, 104, 116, 116, 116, 116, 116, 117,
+      numpy.array ( [0, 46, 58, 69, 81, 92, 104, 116, 116, 116, 116, 116, 117,
                117, 117, 117, 117, 118, 118, 118, 118, 118, 119, 119, 119,
                119, 119, 120, 120, 120, 120, 120, 121, 121, 121, 121, 121,
                122, 122, 122, 122, 122, 123, 123, 123, 123, 123, 124, 124,
@@ -2215,7 +2216,7 @@ palette_dict = {
                204, 207, 211, 214, 217, 220, 224, 227, 230, 234, 237, 241,
                244, 248, 251, 255] , 'B')],
    "gray.gp" : [
-      array ( [
+      numpy.array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
                18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
                34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49,
@@ -2236,7 +2237,7 @@ palette_dict = {
                239, 240, 241, 242, 243, 244, 245, 246, 247, 249, 250, 251,
                252, 253, 254, 255
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
                18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
                34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49,
@@ -2257,7 +2258,7 @@ palette_dict = {
                239, 240, 241, 242, 243, 244, 245, 246, 247, 249, 250, 251,
                252, 253, 254, 255
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
                18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33,
                34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49,
@@ -2280,7 +2281,7 @@ palette_dict = {
               ] , 'B')
       ],
    "heat.gp" : [
-      array ( [
+      numpy.array ( [
                0, 1, 2, 4, 5, 7, 8, 10, 11, 13, 15, 17, 18, 20, 21, 23, 24,
                26, 27, 28, 30, 31, 33, 34, 36, 37, 39, 40, 42, 43, 46, 47,
                49, 50, 52, 53, 55, 56, 57, 59, 60, 62, 63, 65, 66, 68, 69,
@@ -2301,7 +2302,7 @@ palette_dict = {
                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255, 255, 255, 255, 255
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2319,7 +2320,7 @@ palette_dict = {
                222, 224, 226, 228, 230, 232, 236, 238, 239, 241, 243, 245,
                247, 249, 251, 253
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2337,7 +2338,7 @@ palette_dict = {
               ] , 'B')
       ],
    "rainbow.gp" : [
-      array ( [
+      numpy.array ( [
                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -2356,7 +2357,7 @@ palette_dict = {
                217, 223, 228, 233, 239, 244, 249, 255, 255, 255, 255, 255,
                255, 255, 255, 255, 255
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                0, 0, 0, 0, 0, 0, 0, 0, 5, 11, 16, 22, 27, 32, 38, 43, 48,
                54, 59, 65, 70, 75, 81, 91, 97, 102, 108, 113, 118, 124,
                129, 135, 140, 145, 151, 156, 161, 167, 178, 183, 188, 194,
@@ -2376,7 +2377,7 @@ palette_dict = {
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                42, 36, 31, 26, 20, 15, 10, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2397,7 +2398,7 @@ palette_dict = {
               ] , 'B')
       ],
    "stern.gp" : [
-      array ( [
+      numpy.array ( [
                0, 18, 36, 54, 72, 90, 108, 127, 145, 163, 199, 217, 235,
                254, 249, 244, 239, 234, 229, 223, 218, 213, 208, 203, 197,
                192, 187, 182, 177, 172, 161, 156, 151, 146, 140, 135, 130,
@@ -2419,7 +2420,7 @@ palette_dict = {
                241, 242, 243, 245, 246, 247, 248, 249, 250, 251, 252, 253,
                254
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18,
                19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34,
                35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
@@ -2440,7 +2441,7 @@ palette_dict = {
                239, 240, 241, 242, 243, 245, 246, 247, 248, 249, 250, 251,
                252, 253, 254
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 21, 23, 25, 27, 29, 31,
                33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 63,
                65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93,
@@ -2463,7 +2464,7 @@ palette_dict = {
               ] , 'B')
       ],
    "yarg.gp" : [
-      array ( [
+      numpy.array ( [
                255, 254, 253, 252, 251, 250, 249, 248, 246, 245, 244, 243,
                242, 241, 240, 239, 238, 237, 236, 235, 234, 233, 232, 230,
                229, 228, 227, 226, 225, 224, 223, 222, 221, 220, 219, 218,
@@ -2484,7 +2485,7 @@ palette_dict = {
                22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6,
                5, 4, 3, 2, 1, 0
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                255, 254, 253, 252, 251, 250, 249, 248, 246, 245, 244, 243,
                242, 241, 240, 239, 238, 237, 236, 235, 234, 233, 232, 230,
                229, 228, 227, 226, 225, 224, 223, 222, 221, 220, 219, 218,
@@ -2505,7 +2506,7 @@ palette_dict = {
                21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 6, 5,
                4, 3, 2, 1, 0
               ] , 'B'),
-      array ( [
+      numpy.array ( [
                255, 254, 253, 252, 251, 250, 249, 248, 246, 245, 244, 243,
                242, 241, 240, 239, 238, 237, 236, 235, 234, 233, 232, 230,
                229, 228, 227, 226, 225, 224, 223, 222, 221, 220, 219, 218,
@@ -2535,19 +2536,19 @@ def split_palette ( * name) :
     split_palette
           or split_palette ("palette_name.gp")
       split the current palette or the specified palette into two
-      parts; colors 0 to 99 will be a compressed version of the
+      parts; colors 0 to 99 will be a numpy.compressed version of the
       original, while colors 100 to 199 will be a gray scale.
     """
 
     if len (name) > 0 :
         dum = palette (name [0])
         del dum
-    r = zeros (240, 'B')
-    g = zeros (240, 'B')
-    b = zeros (240, 'B')
+    r = numpy.zeros (240, 'B')
+    g = numpy.zeros (240, 'B')
+    b = numpy.zeros (240, 'B')
     dum = palette (r, g, b, query = 1)
     del dum
-    try : # r may be all zeros, in which case the following will fail:
+    try : # r may be all numpy.zeros, in which case the following will fail:
         n = max (numpy.nonzero(r)[0]) + 1 # (Figure out how many entries there are)
     except :
         n = 0
@@ -2557,18 +2558,18 @@ def split_palette ( * name) :
         del dum
         n = max (max (numpy.nonzero(r)[0]), max (numpy.nonzero(g)[0]),
                  max (numpy.nonzero(b)[0])) + 1
-    newr = zeros (200, 'B')
-    newg = zeros (200, 'B')
-    newb = zeros (200, 'B')
-    newr [0:100] = gistfuncs.interp (r [0:n].astype (float32), arange (n, dtype = float32 ),
-       arange (100, dtype = float32 ) * n / 100).astype (numpy.uint8)
-    newg [0:100] = gistfuncs.interp (g [0:n].astype (float32), arange (n, dtype = float32 ),
-       arange (100, dtype = float32 ) * n / 100).astype (numpy.uint8)
-    newb [0:100] = gistfuncs.interp (b [0:n].astype (float32), arange (n, dtype = float32 ),
-       arange (100, dtype = float32 ) * n / 100).astype (numpy.uint8)
-    newr [100:200] = (arange (100, dtype = int32) * 255 / 99).astype (numpy.uint8)
-    newg [100:200] = (arange (100, dtype = int32) * 255 / 99).astype (numpy.uint8)
-    newb [100:200] = (arange (100, dtype = int32) * 255 / 99).astype (numpy.uint8)
+    newr = numpy.zeros (200, 'B')
+    newg = numpy.zeros (200, 'B')
+    newb = numpy.zeros (200, 'B')
+    newr [0:100] = gistfuncs.interp (r [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
+       numpy.arange (100, dtype = numpy.float32 ) * n / 100).astype (numpy.uint8)
+    newg [0:100] = gistfuncs.interp (g [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
+       numpy.arange (100, dtype = numpy.float32 ) * n / 100).astype (numpy.uint8)
+    newb [0:100] = gistfuncs.interp (b [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
+       numpy.arange (100, dtype = numpy.float32 ) * n / 100).astype (numpy.uint8)
+    newr [100:200] = (numpy.arange (100, dtype = numpy.int32) * 255 / 99).astype (numpy.uint8)
+    newg [100:200] = (numpy.arange (100, dtype = numpy.int32) * 255 / 99).astype (numpy.uint8)
+    newb [100:200] = (numpy.arange (100, dtype = numpy.int32) * 255 / 99).astype (numpy.uint8)
     palette (newr, newg, newb)
 
 def split_bytscl (x, upper, cmin = None, cmax = None) :
@@ -2603,8 +2604,8 @@ def _pl3tree (tree, minmax) :
 
     # apply the 3D coordinate transform to two points along the
     # normal of the splitting plane to judge which is in front
-    xyz = get3_xy (array ( [ [0., 0., 0.],
-                   [tree [0] [0], tree [0] [1], tree [0] [2]]], float32), 1)
+    xyz = get3_xy (numpy.array ( [ [0., 0., 0.],
+                   [tree [0] [0], tree [0] [1], tree [0] [2]]], numpy.float32), 1)
     [x, y, z] = [xyz [:, 0], xyz [:, 1], xyz [:, 2]]
 
     # plot the parts in order toward the current viewpoint
@@ -2653,31 +2654,31 @@ def _pl3leaf (leaf, not_plane, minmax) :
 
     # count number of polys, number of vertices
     _nverts = _xyzverts = 0
-    if type (leaf) == ListType and type (leaf [0]) == ListType :
+    if type (leaf) == list and type (leaf [0]) == list :
         for i in range (len (leaf)) :
             [_nverts, _xyzverts] = _pl3tree_count ( leaf [i], _nverts, _xyzverts )
     else :
         [_nverts, _xyzverts] = _pl3tree_count ( leaf , _nverts, _xyzverts)
 
     # accumulate polys and vertices into a single polygon list
-    # The type of array required for palettes is "Py_GpColor",
+    # The type of numpy.array required for palettes is "Py_GpColor",
     # which translates to "PyArray_UBYTE", which is selected
-    # with a second argument of 'B' to the zeros() function.
-## _values = zeros (_nverts, 'B') # See below
+    # with a second argument of 'B' to the numpy.zeros() function.
+## _values = numpy.zeros (_nverts, 'B') # See below
     old_nverts = _nverts
-    _nverts = zeros (_nverts, int32)
-    _x = zeros (_xyzverts, float32 )
-    _y = zeros (_xyzverts, float32 )
+    _nverts = numpy.zeros (_nverts, numpy.int32)
+    _x = numpy.zeros (_xyzverts, numpy.float32 )
+    _y = numpy.zeros (_xyzverts, numpy.float32 )
     if (not_plane) :
         # Not just straight assignment; make _z a separate copy
-        _z = zeros (_xyzverts, float32 )
+        _z = numpy.zeros (_xyzverts, numpy.float32 )
     else :
         _z = None
     _list = 1
     _vlist = 1
-    if type (leaf) == ListType and type (leaf [0]) == ListType :
+    if type (leaf) == list and type (leaf [0]) == list :
         if leaf [0] [2] != "bg" :
-            _values = zeros (old_nverts, 'B')
+            _values = numpy.zeros (old_nverts, 'B')
         else :
             _values = "bg"
         for i in range (len (leaf)) :
@@ -2685,7 +2686,7 @@ def _pl3leaf (leaf, not_plane, minmax) :
                _x, _y, _z, _list, _vlist, _values, _nverts, minmax)
     else :
         if leaf [2] != "bg" :
-            _values = zeros (old_nverts, 'B')
+            _values = numpy.zeros (old_nverts, 'B')
         else :
             _values = "bg"
         [_list, _vlist, _edges] = _pl3tree_accum ( leaf , not_plane,
@@ -2694,11 +2695,11 @@ def _pl3leaf (leaf, not_plane, minmax) :
     # sort the single polygon list
     if not_plane :
         [_list, _vlist] = sort3d (_z, _nverts)
-        _nverts = take (_nverts, _list,axis=0)
+        _nverts = numpy.take (_nverts, _list,axis=0)
         if _values != "bg" :
-            _values = take (_values, _list,axis=0)
-        _x = take (_x, _vlist,axis=0)
-        _y = take (_y, _vlist,axis=0)
+            _values = numpy.take (_values, _list,axis=0)
+        _x = numpy.take (_x, _vlist,axis=0)
+        _y = numpy.take (_y, _vlist,axis=0)
 
     _square = get_square_ ( )
     [_xfactor, _yfactor] = get_factors_ ()
@@ -2732,7 +2733,7 @@ def _pl3leaf (leaf, not_plane, minmax) :
     return [xmin, xmax, ymin, ymax]
 
 def _pl3tree_count (item, _nverts, _xyzverts) :
-    return [_nverts + len (item [0]), _xyzverts  + len (ravel (item [1])) / 3]
+    return [_nverts + len (item [0]), _xyzverts  + len (numpy.ravel (item [1])) / 3]
 
 def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
    _nverts, minmax) :
@@ -2753,7 +2754,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
     # apparently designed to avoid some overhead.
     # N. B. avoid splitting the palette if split is 0. (ZCM 4/23/97)
 
-    _xyzverts = array (item [1], copy = 1) # protect copy in tree
+    _xyzverts = numpy.array (item [1], copy = 1) # protect copy in tree
     # Normalize copy  (I'm only going to do this if it's an
     # isosurface or is not a plane or has multiple components.
     # There is a real problem here.
@@ -2790,7 +2791,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
                cmax = item [4]).astype (numpy.uint8)
         _list = _list + incr
         # accumulate x, y, and z
-        incr = shape (_xyzverts) [0]
+        incr = numpy.shape (_xyzverts) [0]
         _x [_vlist - 1:_vlist - 1 + incr] = _xyzverts [:, 0]
         _y [_vlist - 1:_vlist - 1 + incr] = _xyzverts [:, 1]
         if not_plane :
@@ -2817,7 +2818,7 @@ def _pl3tree_accum (item, not_plane, _x, _y, _z, _list, _vlist, _values,
                 _values [ _list - 1: _list - 1 + incr] = item [2]
         _list = _list + incr
         # accumulate x, y, and z
-        incr = shape (__xyz) [0]
+        incr = numpy.shape (__xyz) [0]
         _x [_vlist - 1:_vlist - 1 + incr] = __xyz [:, 0]
         _y [_vlist - 1:_vlist - 1 + incr] = __xyz [:, 1]
         if not_plane :
@@ -2864,18 +2865,18 @@ def _pl3tree_slice (plane, leaf) :
         # each item in the leaf list is itself a list
         nvf = ll [0]
         if nvf != None :
-            nvb = array (nvf, copy = 1)
+            nvb = numpy.array (nvf, copy = 1)
         else :
             nvb = None
         xyzf = ll [1]
         if xyzf != None :
-            xyzb = array (xyzf, copy = 1)
+            xyzb = numpy.array (xyzf, copy = 1)
         else :
             xyzb = None
         valf = ll [2]
         if valf != None :
             tpc = valf.dtype.char
-            valb = array (valf, copy = 1)
+            valb = numpy.array (valf, copy = 1)
         else :
             valb = None
         if len (ll) > 4 :
@@ -2940,18 +2941,18 @@ def _pl3tree_prt (tree, depth) :
         print indent + "***error - not a tree"
     print indent + "plane= " + `tree [0]`
     back = tree [1]
-    list = tree [2]
+    lst = tree [2]
     frnt = tree [3]
     if back == None or back == [] :
         print indent + "back = []"
     else :
         _pl3tree_prt (back, depth + 1)
 
-    for leaf in list :
+    for leaf in lst :
         print indent + "leaf length= " + `len (leaf)`
         print indent + "npolys= " + `len (leaf [0])` + \
-           ", nverts= " + `sum (leaf [0],axis=0)` + ", max= " + `max (leaf [0])`
-        print indent + "nverts= " + `shape (leaf [1]) [0]` + \
+           ", nverts= " + `numpy.sum (leaf [0],axis=0)` + ", max= " + `max (leaf [0])`
+        print indent + "nverts= " + `numpy.shape (leaf [1]) [0]` + \
            ", nvals= " + `len (leaf [2])`
 
     if frnt == None or frnt == [] :
@@ -2963,7 +2964,7 @@ def _pl3tree_prt (tree, depth) :
 # ------------------------------------------------------------------------
 
 def _isosurface_slicer (m3, chunk, iso_index, _value) :
-#  Have to remember here that getv3 can either return an array of
+#  Have to remember here that getv3 can either return an numpy.array of
 #  values, or a 2-list consisting of values and the corresponding cell
 #  indices, the latter in the case of an irregular grid.
 # Note: (ZCM 2/24/97) I have fixed slicers to return the vertex
@@ -2971,7 +2972,7 @@ def _isosurface_slicer (m3, chunk, iso_index, _value) :
 # returning the tuple [tmp, None].
 
     tmp = getv3 (iso_index, m3, chunk)
-    if type (tmp) == ListType :
+    if type (tmp) == list :
         tmp[0] = tmp [0] - _value
     else :
         tmp = tmp - _value
@@ -2982,17 +2983,17 @@ def _plane_slicer (m3, chunk, normal, projection) :
     # the tuple. This eliminates the global _xyz3.
 
     x = xyz3(m3,chunk)
-    irregular = type (chunk) == ListType and len (chunk) == 2 \
-       or type (chunk) == ndarray and len (shape (chunk)) == 1 \
-       and type (chunk [0]) == types.IntType
+    irregular = type (chunk) == list and len (chunk) == 2 \
+       or type (chunk) == numpy.ndarray and len (numpy.shape (chunk)) == 1 \
+       and type (chunk [0]) == int
     if irregular :
         # Need to return a list, the first component being the x's,
         # the second being the relative cell list, and the third an offset
         verts = m3 [1] [0]
         cell_offset = 0
-        if type (verts) == ListType :
+        if type (verts) == list :
             totals = m3 [1] [3]
-            if type (chunk) == ListType :
+            if type (chunk) == list :
                 fin = chunk [0] [1]
             else :
                 fin = chunk [-1]
@@ -3001,14 +3002,14 @@ def _plane_slicer (m3, chunk, normal, projection) :
                     break
             if j > 0 :
                 cell_offset = totals [j - 1]
-        if type (chunk) == ListType :
-            clist = arange (0, chunk [0] [1] - chunk [0] [0], dtype = int32)
+        if type (chunk) == list :
+            clist = numpy.arange (0, chunk [0] [1] - chunk [0] [0], dtype = numpy.int32)
         else :
             clist = chunk - cell_offset
         # In the irregular case we know x is ncells by 3 by something
         return [ [x [:,0] * normal [0] + x [:,1] * normal [1] + \
            x [:,2] * normal [2] - projection, clist, cell_offset], x]
-    elif len (shape (x)) == 5 : # It's ncells X 3 X 2 X 2 X 2
+    elif len (numpy.shape (x)) == 5 : # It's ncells X 3 X 2 X 2 X 2
         return [x [:,0] * normal [0] + x [:,1] * normal [1] + \
            x [:,2] * normal [2] - projection, x]
     else :                    # It's 3 X ni X nj X nk
@@ -3025,7 +3026,7 @@ def xyz3 (m3, chunk) :
       (dimsof(CHUNK))x3x2x2x2 list of vertex coordinates.  CHUNK may
       also be a mesh-specific data structure used in the slice3
       routine, in which case xyz3 may return a 3x(ni)x(nj)x(nk)
-      array of vertex coordinates.  For meshes which are logically
+      numpy.array of vertex coordinates.  For meshes which are logically
       rectangular or consist of several rectangular patches, this
       is up to 8 times less data, with a concomitant performance
       advantage.  Use xyz3 when writing slicing functions or coloring
@@ -3037,15 +3038,15 @@ def xyz3 (m3, chunk) :
 
 def xyz3_rect (m3, chunk) :
     m3 = m3 [1]
-    if len (shape (chunk)) != 1 :
+    if len (numpy.shape (chunk)) != 1 :
         c = chunk
-        # The difference here is that our arrays are 0-based, while
+        # The difference here is that our numpy.arrays are 0-based, while
         # yorick's are 1-based; and the last element in a range is not
-        # included in the result array.
+        # included in the result numpy.array.
         return m3 [1] [:,c [0, 0] - 1:1 + c [1, 0], c [0, 1] - 1:1 + c [1, 1] ,
                        c [0, 2] - 1:1 + c [1, 2]]
     else :
-        # Need to create an array of m3 [1] values the same size and shape
+        # Need to create an numpy.array of m3 [1] values the same size and numpy.shape
         # as what to_corners3 returns.
         # To avoid exceedingly arcane calculations attempting to
         # go backwards to a cell list, this branch returns the list
@@ -3055,24 +3056,24 @@ def xyz3_rect (m3, chunk) :
         # numbers in which fi has a negative value.
         dims = m3 [0]
         indices = to_corners3 (chunk, dims [1] + 1, dims [2] + 1)
-        no_cells = shape (indices) [0]
-        indices = ravel (indices)
-        retval = zeros ( (no_cells, 3, 2, 2, 2), float32 )
-        m30 = ravel (m3 [1] [0, ...])
-        retval [:, 0, ...] = reshape (take (m30, indices,axis=0), (no_cells, 2, 2, 2))
-        m31 = ravel (m3 [1] [1, ...])
-        retval [:, 1, ...] = reshape (take (m31, indices,axis=0), (no_cells, 2, 2, 2))
-        m32 = ravel (m3 [1] [2, ...])
-        retval [:, 2, ...] = reshape (take (m32, indices,axis=0), (no_cells, 2, 2, 2))
+        no_cells = numpy.shape (indices) [0]
+        indices = numpy.ravel (indices)
+        retval = numpy.zeros ( (no_cells, 3, 2, 2, 2), numpy.float32 )
+        m30 = numpy.ravel (m3 [1] [0, ...])
+        retval [:, 0, ...] = numpy.reshape (numpy.take (m30, indices,axis=0), (no_cells, 2, 2, 2))
+        m31 = numpy.ravel (m3 [1] [1, ...])
+        retval [:, 1, ...] = numpy.reshape (numpy.take (m31, indices,axis=0), (no_cells, 2, 2, 2))
+        m32 = numpy.ravel (m3 [1] [2, ...])
+        retval [:, 2, ...] = numpy.reshape (numpy.take (m32, indices,axis=0), (no_cells, 2, 2, 2))
         return retval
 
 _xyz3Error = "xyz3Error"
 
 def xyz3_irreg (m3, chunk) :
     xyz = m3 [1] [1]
-    if type (chunk) == ListType and len (chunk) == 2 :
+    if type (chunk) == list and len (chunk) == 2 :
         no_cells = chunk [0] [1] - chunk [0] [0]
-        if type (m3 [1] [0]) == ListType :
+        if type (m3 [1] [0]) == list :
             totals = m3 [1] [3]
             start = chunk [0] [0]
             fin = chunk [0] [1]
@@ -3084,15 +3085,15 @@ def xyz3_irreg (m3, chunk) :
                 start = start - totals [i - 1]
                 fin = fin - totals [i - 1]
             ns = verts [start:fin]
-            shp = shape (verts)
+            shp = numpy.shape (verts)
         else :
-            ns = m3 [1] [0] [chunk [0] [0]:chunk [0] [1]]   # This is a kXnv array
-            shp = shape (m3 [1] [0])
-    elif type (chunk) == ndarray and len (shape (chunk)) == 1 and \
-       type (chunk [0]) == types.IntType :
+            ns = m3 [1] [0] [chunk [0] [0]:chunk [0] [1]]   # This is a kXnv numpy.array
+            shp = numpy.shape (m3 [1] [0])
+    elif type (chunk) == numpy.ndarray and len (numpy.shape (chunk)) == 1 and \
+       type (chunk [0]) == int :
         # chunk is an absolute cell list
         no_cells = len (chunk)
-        if type (m3 [1] [0]) == ListType :
+        if type (m3 [1] [0]) == list :
             totals = m3 [1] [3]
             fin = max (chunk)
             for i in range (len (totals)) :
@@ -3104,45 +3105,45 @@ def xyz3_irreg (m3, chunk) :
             else :
                 start = 0
             verts = m3 [1] [0] [i]
-            ns = take (verts, chunk - start,axis=0)
-            shp = shape (verts)
+            ns = numpy.take (verts, chunk - start,axis=0)
+            shp = numpy.shape (verts)
         else :
-            ns = take (m3 [1] [0], chunk,axis=0)
-            shp = shape (m3 [1] [0])
+            ns = numpy.take (m3 [1] [0], chunk,axis=0)
+            shp = numpy.shape (m3 [1] [0])
     else :
         raise _xyz3Error, "chunk parameter has the wrong type."
     if shp [1] == 8 : # hex
-        retval = zeros ( (no_cells, 3, 2, 2, 2), float32)
+        retval = numpy.zeros ( (no_cells, 3, 2, 2, 2), numpy.float32)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 2, 2, 2))
+           numpy.reshape (numpy.take (xyz [0], numpy.ravel (ns),axis=0), (no_cells, 2, 2, 2))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 2, 2, 2))
+           numpy.reshape (numpy.take (xyz [1], numpy.ravel (ns),axis=0), (no_cells, 2, 2, 2))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 2, 2, 2))
+           numpy.reshape (numpy.take (xyz [2], numpy.ravel (ns),axis=0), (no_cells, 2, 2, 2))
     elif shp [1] == 6 : # prism
-        retval = zeros ( (no_cells, 3, 3, 2), float32)
+        retval = numpy.zeros ( (no_cells, 3, 3, 2), numpy.float32)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 3, 2))
+           numpy.reshape (numpy.take (xyz [0], numpy.ravel (ns),axis=0), (no_cells, 3, 2))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 3, 2))
+           numpy.reshape (numpy.take (xyz [1], numpy.ravel (ns),axis=0), (no_cells, 3, 2))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 3, 2))
+           numpy.reshape (numpy.take (xyz [2], numpy.ravel (ns),axis=0), (no_cells, 3, 2))
     elif shp [1] == 5 : # pyramid
-        retval = zeros ( (no_cells, 3, 5), float32)
+        retval = numpy.zeros ( (no_cells, 3, 5), numpy.float32)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 5))
+           numpy.reshape (numpy.take (xyz [0], numpy.ravel (ns),axis=0), (no_cells, 5))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 5))
+           numpy.reshape (numpy.take (xyz [1], numpy.ravel (ns),axis=0), (no_cells, 5))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 5))
+           numpy.reshape (numpy.take (xyz [2], numpy.ravel (ns),axis=0), (no_cells, 5))
     elif shp [1] == 4 : # tet
-        retval = zeros ( (no_cells, 3, 4), float32)
+        retval = numpy.zeros ( (no_cells, 3, 4), numpy.float32)
         retval [:, 0] = \
-           reshape (take (xyz [0], ravel (ns),axis=0), (no_cells, 4))
+           numpy.reshape (numpy.take (xyz [0], numpy.ravel (ns),axis=0), (no_cells, 4))
         retval [:, 1] = \
-           reshape (take (xyz [1], ravel (ns),axis=0), (no_cells, 4))
+           numpy.reshape (numpy.take (xyz [1], numpy.ravel (ns),axis=0), (no_cells, 4))
         retval [:, 2] = \
-           reshape (take (xyz [2], ravel (ns),axis=0), (no_cells, 4))
+           numpy.reshape (numpy.take (xyz [2], numpy.ravel (ns),axis=0), (no_cells, 4))
     else :
         raise _xyz3Error, "Funny number of cell faces: " + `shp [1]`
     return retval
@@ -3154,7 +3155,7 @@ def xyz3_unif (m3, chunk) :
         c = chunk
         i = c [0] - 1
         dn = c [1] + 1 - i
-        xyz = zeros ( (3, dn [0], dn [1], dn [2]), float32)
+        xyz = numpy.zeros ( (3, dn [0], dn [1], dn [2]), numpy.float32)
     else :
         dims = m3 [0]
         nj = dims [1]
@@ -3163,86 +3164,86 @@ def xyz3_unif (m3, chunk) :
         zchunk = chunk % nk
         ychunk = chunk / nk % nj
         xchunk = chunk / njnk
-        xyz = zeros ( (len (chunk), 3, 2, 2, 2), float32 )
-        ijk0 = array ( [zeros ( (2, 2), int32 ), ones ( (2, 2), int32 )])
-        ijk1 = array ( [ [0, 0], [1, 1]], int32 )
-        ijk1 = array ( [ijk1, ijk1] , int32 )
-        ijk2 = array ( [ [0, 1], [0, 1]], int32 )
-        ijk2 = array ( [ijk2, ijk2] , int32 )
+        xyz = numpy.zeros ( (len (chunk), 3, 2, 2, 2), numpy.float32 )
+        ijk0 = numpy.array ( [numpy.zeros ( (2, 2), numpy.int32 ), numpy.ones ( (2, 2), numpy.int32 )])
+        ijk1 = numpy.array ( [ [0, 0], [1, 1]], numpy.int32 )
+        ijk1 = numpy.array ( [ijk1, ijk1] , numpy.int32 )
+        ijk2 = numpy.array ( [ [0, 1], [0, 1]], numpy.int32 )
+        ijk2 = numpy.array ( [ijk2, ijk2] , numpy.int32 )
     if len (n) == 2: # we have dxdydz and x0y0z0
         dxdydz = n [0]
         x0y0z0 = n [1]
-        if len (shape (chunk)) != 1:
-            # Convert the increment and size into array coordinates
+        if len (numpy.shape (chunk)) != 1:
+            # Convert the increment and size into numpy.array coordinates
             # -- consecutive values
-            xx = arange (dn [0], dtype = float32 ) * dxdydz [0] / (dn [0] - 1)
-            yy = arange (dn [1], dtype = float32 ) * dxdydz [1] / (dn [1] - 1)
-            zz = arange (dn [2], dtype = float32 ) * dxdydz [2] / (dn [2] - 1)
-            xyz [0] = x0y0z0 [0] + i [0] * dxdydz [0] + multiply.outer (
-               multiply.outer ( xx, ones (dn [1], float32 )),
-               ones (dn [2], float32 ))
+            xx = numpy.arange (dn [0], dtype = numpy.float32 ) * dxdydz [0] / (dn [0] - 1)
+            yy = numpy.arange (dn [1], dtype = numpy.float32 ) * dxdydz [1] / (dn [1] - 1)
+            zz = numpy.arange (dn [2], dtype = numpy.float32 ) * dxdydz [2] / (dn [2] - 1)
+            xyz [0] = x0y0z0 [0] + i [0] * dxdydz [0] + numpy.multiply.outer (
+               numpy.multiply.outer ( xx, numpy.ones (dn [1], numpy.float32 )),
+               numpy.ones (dn [2], numpy.float32 ))
             xyz [1] = x0y0z0 [1] + i [1] * dxdydz [0] + \
-               multiply.outer ( ones (dn [0], float32 ), \
-               multiply.outer ( yy, ones (dn [2], float32 )))
+               numpy.multiply.outer ( numpy.ones (dn [0], numpy.float32 ), \
+               numpy.multiply.outer ( yy, numpy.ones (dn [2], numpy.float32 )))
             xyz [2] = x0y0z0 [2] + i [2] * dxdydz [0] + \
-               multiply.outer ( ones (dn [0], float32 ), \
-               multiply.outer ( ones (dn [1], float32 ), zz))
+               numpy.multiply.outer ( numpy.ones (dn [0], numpy.float32 ), \
+               numpy.multiply.outer ( numpy.ones (dn [1], numpy.float32 ), zz))
         else :
             # -- nonconsecutive values
             xyz [:, 0] = add.outer ( xchunk, ijk0) * dxdydz [0] + x0y0z0 [0]
             xyz [:, 1] = add.outer ( ychunk, ijk1) * dxdydz [1] + x0y0z0 [1]
             xyz [:, 2] = add.outer ( zchunk, ijk2) * dxdydz [2] + x0y0z0 [2]
-    elif type (n) == ListType and len (n) == 3: # We have three one-dimensional arrays.
+    elif type (n) == list and len (n) == 3: # We have three one-dimensional numpy.arrays.
         xx = n [0]
         yy = n [1]
         zz = n [2]
         n0 = len (xx)
         n1 = len (yy)
         n2 = len (zz)
-        if len (shape (chunk)) != 1:
-            # Convert the increment and size into array coordinates
+        if len (numpy.shape (chunk)) != 1:
+            # Convert the increment and size into numpy.array coordinates
             # -- consecutive values
-            xyz [0] = multiply.outer (
-               multiply.outer ( xx [i [0]:i [0] + n0],  ones (n1, float32 )), \
-               ones (n2, float32 ))
-            xyz [1] =  multiply.outer ( ones (n0, float32 ), \
-               multiply.outer ( yy [i [1]: i[1] + n1], ones (n2, float32 )))
-            xyz [2] = multiply.outer ( ones (n0, float32 ), \
-               multiply.outer ( ones (n1, float32 ), zz [i [2]: i[2] + n2]))
+            xyz [0] = numpy.multiply.outer (
+               numpy.multiply.outer ( xx [i [0]:i [0] + n0],  numpy.ones (n1, numpy.float32 )), \
+               numpy.ones (n2, numpy.float32 ))
+            xyz [1] =  numpy.multiply.outer ( numpy.ones (n0, numpy.float32 ), \
+               numpy.multiply.outer ( yy [i [1]: i[1] + n1], numpy.ones (n2, numpy.float32 )))
+            xyz [2] = numpy.multiply.outer ( numpy.ones (n0, numpy.float32 ), \
+               numpy.multiply.outer ( numpy.ones (n1, numpy.float32 ), zz [i [2]: i[2] + n2]))
         else :
             # -- nonconsecutive values
-            xyz [:, 0] = reshape (take (xx, ravel (add.outer (xchunk, ijk0)),axis=0),
+            xyz [:, 0] = numpy.reshape (numpy.take (xx, numpy.ravel (add.outer (xchunk, ijk0)),axis=0),
                (len (chunk),  2, 2, 2))
-            xyz [:, 1] = reshape (take (yy, ravel (add.outer (ychunk, ijk1)),axis=0),
+            xyz [:, 1] = numpy.reshape (numpy.take (yy, numpy.ravel (add.outer (ychunk, ijk1)),axis=0),
                (len (chunk),  2, 2, 2))
-            xyz [:, 2] = reshape (take (zz, ravel (add.outer (zchunk, ijk2)),axis=0),
+            xyz [:, 2] = numpy.reshape (numpy.take (zz, numpy.ravel (add.outer (zchunk, ijk2)),axis=0),
                (len (chunk),  2, 2, 2))
     return xyz
 
-def to_corners3 (list, nj, nk) :
+def to_corners3 (lst, nj, nk) :
 
     """
-    to_corners3(list, nj, nk)
-      convert an array of cell indices in an (ni-1)-by-(NJ-1)-by-(NK-1)
+    to_corners3(lst, nj, nk)
+      convert an numpy.array of cell indices in an (ni-1)-by-(NJ-1)-by-(NK-1)
       logically rectangular grid of cells into the list of
       len(LIST)-by-2-by-2-by-2 cell corner indices in the
-      corresponding ni-by-NJ-by-NK array of vertices.
+      corresponding ni-by-NJ-by-NK numpy.array of vertices.
       Note that this computation in Yorick gives an absolute offset
       for each cell quantity in the grid. In Yorick it is legal to
-      index a multidimensional array with an absolute offset. In
-      Python it is not. However, an array can be flattened if
+      index a multidimensional numpy.array with an absolute offset. In
+      Python it is not. However, an numpy.array can be flattened if
       necessary.
       Other changes from Yorick were necessitated by row-major
       order and 0-origin indices, and of course the lack of
-      Yorick array facilities.
+      Yorick numpy.array facilities.
     """
 
     njnk = nj * nk
-    kk = list / (nk - 1)
-    list = list + kk + nk * (kk / (nj - 1))
-    adder = array ( [ [ [0, 1], [nk, nk + 1]],
+    kk = lst / (nk - 1)
+    lst = lst + kk + nk * (kk / (nj - 1))
+    adder = numpy.array ( [ [ [0, 1], [nk, nk + 1]],
                       [ [njnk, njnk + 1], [nk + njnk, nk + njnk + 1]]])
-    res = zeros ( (len (list), 2, 2, 2), int32)
-    for i in range (len(list)):
-        res [i] = adder + list [i]
+    res = numpy.zeros ( (len (lst), 2, 2, 2), numpy.int32)
+    for i in range (len(lst)):
+        res [i] = adder + lst [i]
     return res

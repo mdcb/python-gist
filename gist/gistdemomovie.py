@@ -16,8 +16,10 @@
 #    Copyright (c) 1995.  The Regents of the University of California.
 #                   All rights reserved.
 
+from numpy import *
+from numpy import min
+from gistC import *
 from gist import *
-import numpy
 import gistfuncs
 
 def run(which=None, time_limit=60):
@@ -62,7 +64,7 @@ def run(which=None, time_limit=60):
    y= y*scale
 
    f= exp(-8.*hypot(y+.67,x+.25)**2)*(1.-hypot(y,x)**2)
-   f0 = numpy.array(f) # get an independent copy
+   f0 = array(f) # get an independent copy
    fdot= 0.0*f[1:-1,1:-1]
 
    lf= laplacian(f, y,x)
@@ -70,7 +72,8 @@ def run(which=None, time_limit=60):
    xzd= x[1:,1:]-x[:-1,1:]+x[1:,:-1]-x[:-1,:-1]
    ydz= y[1:,1:]+y[:-1,1:]-y[1:,:-1]-y[:-1,:-1]
    yzd= y[1:,1:]-y[:-1,1:]+y[1:,:-1]-y[:-1,:-1]
-   dt= 0.1875*numpy.sqrt(numpy.min(numpy.min(numpy.abs(xdz*yzd - xzd*ydz))))
+
+   dt= 0.1875*sqrt(min(min(abs(xdz*yzd - xzd*ydz))))
 
    window(0, wait=1, style="nobox.gs")
    palette("heat.gp")

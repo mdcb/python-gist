@@ -22,6 +22,7 @@
 # Copyright (c) 1996, 1997, The Regents of the University of California.
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
+import numpy
 from plwf import *
 from pl3d import *
 from movie import *
@@ -29,7 +30,6 @@ from slice3 import *
 from yorick import *
 from gist import *
 import gistfuncs
-from RNG import * 
 
 print "Type gistdemo3d.run() or gistdemo3d.run(i), i = 1, 2, or 3."
 print "Partway, plots are written to Postscript file; see talk.ps."
@@ -38,15 +38,15 @@ window3 (hcp = "talk.ps", dump = 1)
 
 palette ("gray.gp")
 
-demo5_n = 20 * ones (3,dtype=int)
+demo5_n = 20 * numpy.ones (3,dtype=int)
 
 making_movie = 0
 
 def demo5_light (i) :
    global making_movie
    if i >= 30 : return 0
-   theta = pi / 4 + (i - 1) * 2 * pi/29
-   light3 (sdir = array ( [cos(theta), .25, sin(theta)], float32))
+   theta = numpy.pi / 4 + (i - 1) * 2 * numpy.pi/29
+   light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))
    # without an explicit call to draw3, the light3 function would
    # cause no changes until Python paused for input from the keyboard,
    # since unlike the primitive plotting functions (plg, plf, plfp, ...)
@@ -84,7 +84,7 @@ def run (*itest) :
    if len (itest) == 0 or itest [0] == 1 :
       set_draw3_ (0)
       x = gistfuncs.span (-1, 1, 64, 64)
-      y = transpose (x)
+      y = numpy.transpose (x)
       z = (x + y) * exp (-6.*(x*x+y*y))
       limits_(square = 1)
       print "Plot wire frame: plwf (z, y, x)"
@@ -108,22 +108,22 @@ def run (*itest) :
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print "light3 ( diffuse=.1, specular=1., sdir=array([0,0,-1]))"
-      light3 ( diffuse=.1, specular=1., sdir=array([0,0,-1]))
+      print "light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))"
+      light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))
       [xmin, xmax, ymin, ymax] = draw3(1)
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print "light3 ( diffuse=.5, specular=1., sdir=array([1,.5,1]))"
-      light3 ( diffuse=.5, specular=1., sdir=array([1,.5,1]))
+      print "light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))"
+      light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
       print "light3 ( ambient=.1,diffuse=.1,specular=1.,"
-      print "   sdir=array([[0,0,-1],[1,.5,1]]),spower=array([4,2]))"
+      print "   sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))"
       light3 ( ambient=.1,diffuse=.1,specular=1.,
-             sdir=array([[0,0,-1],[1,.5,1]]),spower=array([4,2]))
+             sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))
       [xmin, xmax, ymin, ymax] = draw3(1)
       limits (xmin, xmax, ymin, ymax)
       paws ( )
@@ -132,7 +132,7 @@ def run (*itest) :
 
       set_draw3_ (0)
       x = gistfuncs.span (-1, 1, 64, 64)
-      y = transpose (x)
+      y = numpy.transpose (x)
       z = (x + y) * exp (-6.*(x*x+y*y))
       print "Default lighting:  light3()"
       orient3 ( )
@@ -151,7 +151,7 @@ def run (*itest) :
 
       print "movie(demo5_light, lims = [xmin, xmax, ymin, ymax])"
       print "demo5_light calls:"
-      print "light3 (sdir = array ( [cos(theta), .25, sin(theta)], float32))"
+      print "light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))"
       making_movie = 1
       movie(demo5_light, lims = [xmin, xmax, ymin, ymax])
       making_movie = 0
@@ -165,15 +165,15 @@ def run (*itest) :
       nx = demo5_n [0]
       ny = demo5_n [1]
       nz = demo5_n [2]
-      xyz = zeros ( (3, nx, ny, nz), float32)
-      xyz [0] = multiply.outer ( gistfuncs.span (-1, 1, nx), ones ( (ny, nz), float32))
-      xyz [1] = multiply.outer ( ones (nx, float32),
-         multiply.outer ( gistfuncs.span (-1, 1, ny), ones (nz, float32)))
-      xyz [2] = multiply.outer ( ones ( (nx, ny), float32), gistfuncs.span (-1, 1, nz))
-      r = sqrt (xyz [0] ** 2 + xyz [1] **2 + xyz [2] **2)
-      theta = arccos (xyz [2] / r)
-      phi = arctan2 (xyz [1] , xyz [0] + logical_not (r))
-      y32 = sin (theta) ** 2 * cos (theta) * cos (2 * phi)
+      xyz = numpy.zeros ( (3, nx, ny, nz), numpy.float32)
+      xyz [0] = numpy.multiply.outer ( gistfuncs.span (-1, 1, nx), numpy.ones ( (ny, nz), numpy.float32))
+      xyz [1] = numpy.multiply.outer ( numpy.ones (nx, numpy.float32),
+         numpy.multiply.outer ( gistfuncs.span (-1, 1, ny), numpy.ones (nz, numpy.float32)))
+      xyz [2] = numpy.multiply.outer ( numpy.ones ( (nx, ny), numpy.float32), gistfuncs.span (-1, 1, nz))
+      r = numpy.sqrt (xyz [0] ** 2 + xyz [1] **2 + xyz [2] **2)
+      theta = numpy.arccos (xyz [2] / r)
+      phi = numpy.arctan2 (xyz [1] , xyz [0] + numpy.logical_not (r))
+      y32 = numpy.sin (theta) ** 2 * numpy.cos (theta) * numpy.cos (2 * phi)
       m3 = mesh3 (xyz, funcs = [r * (1. + y32)])
       del r, theta, phi, xyz, y32
 
@@ -186,8 +186,8 @@ def run (*itest) :
           # (inner isosurface)
       [nw, xyzw, dum] = slice3 (m3, 1, None, None, value = 1.)
           # (outer isosurface)
-      pxy = plane3 ( array ([0, 0, 1], float32 ), zeros (3, float32))
-      pyz = plane3 ( array ([1, 0, 0], float32 ), zeros (3, float32))
+      pxy = plane3 ( numpy.array ([0, 0, 1], numpy.float32 ), numpy.zeros (3, numpy.float32))
+      pyz = plane3 ( numpy.array ([1, 0, 0], numpy.float32 ), numpy.zeros (3, numpy.float32))
       [np, xyzp, vp] = slice3 (m3, pyz, None, None, 1)
           # (pseudo-colored slice)
       [np, xyzp, vp] = slice2 (pxy, np, xyzp, vp)
@@ -254,12 +254,12 @@ def run (*itest) :
 #      c = f.ZNodeVelocity
 #      n_zones = f.NumZones
 #      # Put vertices in right order for Gist
-#      n_z = transpose (
-#         take (transpose (n_z), array ( [0, 4, 3, 7, 1, 5, 2, 6])))
+#      n_z = numpy.transpose (
+#         take (numpy.transpose (n_z), numpy.array ( [0, 4, 3, 7, 1, 5, 2, 6])))
 #      m3 = mesh3 (x, y, z, funcs = [c], verts = n_z ) # [0:10])
 #      [nv, xyzv, cv] = slice3 (m3, 1, None, None, 1, value = .9 * max (c) )
-#      pyz = plane3 ( array ([1, 0, 0], float32 ), zeros (3, float32))
-#      pxz = plane3 ( array ([0, 1, 0], float32 ), zeros (3, float32))
+#      pyz = plane3 ( numpy.array ([1, 0, 0], numpy.float32 ), numpy.zeros (3, numpy.float32))
+#      pxz = plane3 ( numpy.array ([0, 1, 0], numpy.float32 ), numpy.zeros (3, numpy.float32))
 #
 #      # draw a colored plane first
 #      fma ()
@@ -343,12 +343,12 @@ def run (*itest) :
 #      # Try bert's data
 #      from PR import PR
 #      f = PR ('./berts_plot')
-#      nums = array ( [63, 63, 49], int32)
-#      dxs = array ( [2.5, 2.5, 10.], float32 )
-#      x0s = array ( [-80., -80., 0.0], float32 )
+#      nums = numpy.array ( [63, 63, 49], numpy.int32)
+#      dxs = numpy.array ( [2.5, 2.5, 10.], numpy.float32 )
+#      x0s = numpy.array ( [-80., -80., 0.0], numpy.float32 )
 #      c = f.c
 #
-#      m3 = mesh3 (nums, dxs, x0s, funcs = [transpose (c)])
+#      m3 = mesh3 (nums, dxs, x0s, funcs = [numpy.transpose (c)])
 #      [nv, xyzv, dum] = slice3 (m3, 1, None, None, value = 6.5)
 #      fma ()
 #      clear3 ()
@@ -390,34 +390,34 @@ def run (*itest) :
 #      nz_prism = []
 #      for i in range (4) :
 #         if ZLss [i] == 4 : # TETRAHEDRON
-#            nz_tet = reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
+#            nz_tet = numpy.reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
 #                     (ZLsc [i], ZLss [i]))
 #            ntet = ZLsc [i]
 #            istart = istart + ZLss [i] * ZLsc [i]
 #         elif ZLss[i] == 5 : # PYRAMID
-#            nz_pyr = reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
+#            nz_pyr = numpy.reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
 #                     (ZLsc [i], ZLss [i]))
 #            npyr = ZLsc [i]
 #            # Now reorder the points (bill has the apex last instead of first)
-#            nz_pyr = transpose (
-#               take (transpose (nz_pyr), array ( [4, 0, 1, 2, 3])))
+#            nz_pyr = numpy.transpose (
+#               take (numpy.transpose (nz_pyr), numpy.array ( [4, 0, 1, 2, 3])))
 #            istart = istart + ZLss [i] * ZLsc [i]
 #         elif ZLss[i] == 6 : # PRISM
-#            nz_prism = reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
+#            nz_prism = numpy.reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
 #                     (ZLsc [i], ZLss [i]))
 #            nprism = ZLsc [i]
 #            # now reorder the points (bill goes around a square face 
 #            # instead of traversing the opposite sides in the same direction.
-#            nz_prism = transpose (
-#               take (transpose (nz_prism), array ( [0, 1, 3, 2, 4, 5])))
+#            nz_prism = numpy.transpose (
+#               take (numpy.transpose (nz_prism), numpy.array ( [0, 1, 3, 2, 4, 5])))
 #            istart = istart + ZLss [i] * ZLsc [i]
 #         elif ZLss[i] == 8 : # HEXAHEDRON
-#            nz_hex = reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
+#            nz_hex = numpy.reshape (ZLsn [istart: istart + ZLss [i] * ZLsc [i]],
 #                     (ZLsc [i], ZLss [i]))
 #            # now reorder the points (bill goes around a square face 
 #            # instead of traversing the opposite sides in the same direction.
-#            nz_hex = transpose (
-#               take (transpose (nz_hex), array ( [0, 1, 3, 2, 4, 5, 7, 6])))
+#            nz_hex = numpy.transpose (
+#               take (numpy.transpose (nz_hex), numpy.array ( [0, 1, 3, 2, 4, 5, 7, 6])))
 #            nhex = ZLsc [i]
 #            istart = istart + ZLss [i] * ZLsc [i]
 #         else :
@@ -426,8 +426,8 @@ def run (*itest) :
 #      m3 = mesh3 (x, y, z, funcs = [c], verts = [nz_tet, nz_pyr, nz_prism,
 #         nz_hex])
 #      [nv, xyzv, cv] = slice3 (m3, 1, None, None, 1, value = .9 * max (c) )
-#      pyz = plane3 ( array ([1, 0, 0], float32 ), zeros (3, float32))
-#      pxz = plane3 ( array ([0, 1, 0], float32 ), zeros (3, float32))
+#      pyz = plane3 ( numpy.array ([1, 0, 0], numpy.float32 ), numpy.zeros (3, numpy.float32))
+#      pxz = plane3 ( numpy.array ([0, 1, 0], numpy.float32 ), numpy.zeros (3, numpy.float32))
 #
 #      # draw a colored plane first
 #      fma ()
@@ -483,11 +483,11 @@ def run (*itest) :
 
       print "Test plwf on the sombrero function"
       # compute sombrero function
-      x = arange (-20, 21, dtype= float32)
-      y = arange (-20, 21, dtype= float32)
-      z = zeros ( (41, 41), float32)
-      r = sqrt (add.outer ( x ** 2, y **2)) + 1e-6
-      z = sin (r) / r
+      x = numpy.arange (-20, 21, dtype= numpy.float32)
+      y = numpy.arange (-20, 21, dtype= numpy.float32)
+      z = numpy.zeros ( (41, 41), numpy.float32)
+      r = numpy.sqrt (add.outer ( x ** 2, y **2)) + 1e-6
+      z = numpy.sin (r) / r
       fma ()
       clear3 ()
       gnomon (0)
@@ -531,7 +531,7 @@ def run (*itest) :
 
       print "light3(diffuse=.2,specular=1)"
       print "demo5_light calls:"
-      print "light3 (sdir = array ( [cos(theta), .25, sin(theta)], float32))"
+      print "light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))"
       light3(diffuse=.2,specular=1)
       making_movie = 1
       movie(demo5_light, lims = [xmin, xmax, ymin, ymax])
@@ -556,11 +556,11 @@ def run (*itest) :
       nv1 = nc1 + 1
       br = - (nc1 / 2)
       tr = nc1 / 2 + 1
-      x = arange (br, tr, dtype= float32) * 40. / nc1
-      y = arange (br, tr, dtype= float32) * 40. / nc1
-      z = zeros ( (nv1, nv1), float32)
-      r = sqrt (add.outer ( x ** 2, y **2)) + 1e-6
-      z = sin (r) / r
+      x = numpy.arange (br, tr, dtype= numpy.float32) * 40. / nc1
+      y = numpy.arange (br, tr, dtype= numpy.float32) * 40. / nc1
+      z = numpy.zeros ( (nv1, nv1), numpy.float32)
+      r = numpy.sqrt (numpy.add.outer ( x ** 2, y **2)) + 1e-6
+      z = numpy.sin (r) / r
       # In order to use pl3surf, we need to construct a mesh
       # using mesh3. The way I am going to do that is to define
       # a function on the 3d mesh so that the sombrero function
@@ -571,10 +571,10 @@ def run (*itest) :
       maxz = maxz + .05 * abs (maxz)
       zmult = max (max (abs (x)), max (abs (y)))
       dz = (maxz - z0)
-      nxnynz = array ( [nc1, nc1, 1], int32)
-      dxdydz = array ( [1.0, 1.0, zmult*dz], float32 )
-      x0y0z0 = array ( [float (br), float (br), z0*zmult], float32 )
-      meshf = zeros ( (nv1, nv1, 2), float32 )
+      nxnynz = numpy.array ( [nc1, nc1, 1], numpy.int32)
+      dxdydz = numpy.array ( [1.0, 1.0, zmult*dz], numpy.float32 )
+      x0y0z0 = numpy.array ( [float (br), float (br), z0*zmult], numpy.float32 )
+      meshf = numpy.zeros ( (nv1, nv1, 2), numpy.float32 )
       meshf [:, :, 0] = zmult*z - (x0y0z0 [2])
       meshf [:, :, 1] = zmult*z - (x0y0z0 [2] + dxdydz [2])
 
@@ -634,24 +634,24 @@ def run (*itest) :
 
       # The following computations define an interesting 3d surface.
 
-      xr = multiply.outer (
-         arange (1, kmax + 1, dtype= float32), ones (lmax, float32))
-      yr = multiply.outer (
-         ones (kmax, float32), arange (1, lmax + 1, dtype= float32))
-      zt = 5. + xr + .2 * random_sample (kmax, lmax)   # ranf (xr)
-      rt = 100. + yr + .2 * random_sample (kmax, lmax)   # ranf (yr)
+      xr = numpy.multiply.outer (
+         numpy.arange (1, kmax + 1, dtype= numpy.float32), numpy.ones (lmax, numpy.float32))
+      yr = numpy.multiply.outer (
+         numpy.ones (kmax, numpy.float32), numpy.arange (1, lmax + 1, dtype= numpy.float32))
+      zt = 5. + xr + .2 * numpy.random.random_sample ([kmax, lmax])   # ranf (xr)
+      rt = 100. + yr + .2 * numpy.random.random_sample ([kmax, lmax])   # ranf (yr)
       z = s * (rt + zt)
-      z = z + .02 * z * random_sample (kmax, lmax)   # ranf (z)
-      ut = rt/sqrt (rt ** 2 + zt ** 2)
-      vt = zt/sqrt (rt ** 2 + zt ** 2)
-      ireg =  multiply.outer ( ones (kmax, float32), ones (lmax, float32))
+      z = z + .02 * z * numpy.random.random_sample ([kmax, lmax])   # ranf (z)
+      ut = rt/numpy.sqrt (rt ** 2 + zt ** 2)
+      vt = zt/numpy.sqrt (rt ** 2 + zt ** 2)
+      ireg =  numpy.multiply.outer ( numpy.ones (kmax, numpy.float32), numpy.ones (lmax, numpy.float32))
       ireg [0:1, 0:lmax]=0
       ireg [0:kmax, 0:1]=0
       ireg [1:15, 7:12]=2
       ireg [1:15, 12:lmax]=3
       ireg [3:7, 3:7]=0
-      freg=ireg + .2 * (1. - random_sample (kmax, lmax))  # ranf (ireg))
-      freg=array (freg, float32)
+      freg=ireg + .2 * (1. - numpy.random.random_sample ([kmax, lmax]))  # ranf (ireg))
+      freg=numpy.array (freg, numpy.float32)
       #rt [4:6, 4:6] = -1.e8
       z [3:10, 3:12] = z [3:10, 3:12] * .9
       z [5, 5] = z [5, 5] * .9
@@ -665,9 +665,9 @@ def run (*itest) :
       paws ()
 
       print "two slice3mesh and two pl3tree"
-      nxny = array ( [kmax - 1, lmax - 1])
-      x0y0 = array ( [0., 0.])
-      dxdy = array ( [1., 1.])
+      nxny = numpy.array ( [kmax - 1, lmax - 1])
+      x0y0 = numpy.array ( [0., 0.])
+      dxdy = numpy.array ( [1., 1.])
       [nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg)
       [nw, xyzw, col] = slice3mesh (nxny, dxdy, x0y0, freg + ut)
       pl3tree (nv, xyzv)
@@ -706,10 +706,10 @@ def run (*itest) :
       paws ()
 
       print 'palette ("gray.gp")'
-      print "light3 ( diffuse=.1, specular=1., sdir=array([0,0,-1]))"
+      print "light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))"
       set_draw3_ (0)
       palette ("gray.gp")
-      light3 ( diffuse=.1, specular=1., sdir=array([0,0,-1]))
+      light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))
       pl3surf (nv, xyzv)
       draw3 (1)
       paws ()

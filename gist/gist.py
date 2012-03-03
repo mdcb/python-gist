@@ -56,16 +56,13 @@
 """
 
 __all__ = ['winkill', 'pltitle', 'ylimits', 'moush', 'eps', 'xytitles', 'plmk', 'plmk_default', 'plfc', 'plh' ]
-# __all__.append(['_spanz', '_spann'])
 
-
-from numpy import *
 import sys, os
+import numpy
 from gistC import *
 import gistfuncs
 #from mesh import * # still experimental, undebugged
 from shapetest import *
-import types
 
 # Parameters used by pltitle and xytitles
 pltitle_height= 18;
@@ -188,27 +185,27 @@ def xytitles(xtitle = "", ytitle = "", delta = (0.,0.)):
 
 #  ---------------------------------------------------------------------
 
+# Half-hearted attempt at span()(zcen), which returns N-1 "zone-centered"
+# values in sequence (lb, ..., ub)
 def _spanz(lb,ub,n):
-
    if n < 3: raise ValueError, '3rd arg must be at least 3'
    c = 0.5*(ub - lb)/(n - 1.0)
    b = lb + c
    a = (ub - c - b)/(n - 2.0)
-   return map(lambda x,A=a,B=b: A*x + B, arange(n-1))
+   return map(lambda x,A=a,B=b: A*x + B, numpy.arange(n-1))
 
 #  .. predefined markers: square, +, delta, circle, diamond, x, grad
-
-_seq = _spanz(-pi,pi,37)
+_seq = _spanz(-numpy.pi,numpy.pi,37)
 _plmk_markers = (
-   array([[-1,1,1,-1],[-1,-1,1,1]])*.007,
-   array([[-4,-1,-1,1,1,4,4,1,1,-1,-1,-4],
-      [-1,-1,-4,-4,-1,-1,1,1,4,4,1,1]])*.007/sqrt(7),
-   array([[-sqrt(3),sqrt(3),0],[-1,-1,2]])*.007/sqrt(.75*sqrt(3)),
-   array([cos(_seq),sin(_seq)])*.007/(pi/4.),
-   array([[-1,0,1,0],[0,-1,0,1]])*.007*sqrt(2),
-   array([[-1,-2.5,-1.5,0,1.5,2.5,1,2.5,1.5,0,-1.5,-2.5],
-      [0,-1.5,-2.5,-1,-2.5,-1.5,0,1.5,2.5,1,2.5,1.5]])*.007*sqrt(2)/sqrt(7),
-   array([[0,sqrt(3),-sqrt(3)],[-2,1,1]])*.007/sqrt(.75*sqrt(3))
+   numpy.array([[-1,1,1,-1],[-1,-1,1,1]])*.007,
+   numpy.array([[-4,-1,-1,1,1,4,4,1,1,-1,-1,-4],
+      [-1,-1,-4,-4,-1,-1,1,1,4,4,1,1]])*.007/numpy.sqrt(7),
+   numpy.array([[-numpy.sqrt(3),numpy.sqrt(3),0],[-1,-1,2]])*.007/numpy.sqrt(.75*numpy.sqrt(3)),
+   numpy.array([numpy.cos(_seq),numpy.sin(_seq)])*.007/(numpy.pi/4.),
+   numpy.array([[-1,0,1,0],[0,-1,0,1]])*.007*numpy.sqrt(2),
+   numpy.array([[-1,-2.5,-1.5,0,1.5,2.5,1,2.5,1.5,0,-1.5,-2.5],
+      [0,-1.5,-2.5,-1,-2.5,-1.5,0,1.5,2.5,1,2.5,1.5]])*.007*numpy.sqrt(2)/numpy.sqrt(7),
+   numpy.array([[0,numpy.sqrt(3),-numpy.sqrt(3)],[-2,1,1]])*.007/numpy.sqrt(.75*numpy.sqrt(3))
    )
 del(_seq)
 
@@ -264,21 +261,23 @@ def plmk(y,x=None,marker=None,width=None,color=None,msize=None):
 
    if not color: color = _plmk_color;
    ecolor = color;
-   if type(color) == types.StringType:
+   if type(color) == str:
       color = color_dict[color];
   
    if not width: width = _plmk_width;
    if width >= 10:
-      if not color:
-         color = ecolor = -2 # magic number for "fg"
-      z = ones(1+len(y)) * color
-      z = z.astype(uint8) # convert array to type <unsigned char>
       width = None
+   if not color:
+      color = ecolor = -2 # magic number for "fg"
 
-   n = ones(1+len(y));
+   z = numpy.ones(1+len(y)) * color
+   z = z.astype(numpy.uint8) # convert array to type <unsigned char>
+
+   n = numpy.ones(1+len(y),numpy.int64);
    n[0] = len(ym);
-   if not x: x = 1 + arange(len(y));
-   plfp( z, concatenate((ym,y)), concatenate((xm,x)),n,
+   if not x: x = 1 + numpy.arange(len(y));
+   
+   plfp( z, numpy.concatenate((ym,y)), numpy.concatenate((xm,x)),n,
       edges=1, ewidth=width, ecolor=ecolor)
 
 #  ---------------------------------------------------------------------
@@ -296,57 +295,6 @@ def plmk_default(color=None, msize=None, width=None):
    if msize: _plmk_msize = msize
    if not (color or width or msize):
       _plmk_msize = _plmk_color = _plmk_width = None
-
-#  ---------------------------------------------------------------------
-
-def _spann (zmin, zmax, n = 8, fudge = 0, force = 0) :
-   """
-   _spann (zmin, zmax, n = 8, fudge = 0, force = 0)
-      return no more than N equally spaced "nice" numbers between
-      ZMIN and ZMAX.
-      Note that in general _spann may not supply the number of
-      values that you asked for. To force it to do so, set
-      keyword FORCE to nonzero.
-      SEE ALSO: span, spanl, plc, plfc
-   """
-   dz = (zmax - zmin) / max (float (n), 0.)
-   if dz == 0. :
-      dz = abs (zmin)
-   if (dz != 0.) :
-      power = floor (log10 (dz) + 0.00001)
-      base = dz / (10. ** power)
-      if base > 5.00001 :
-         base = 1.0
-         power = power + 1.0
-      elif base > 2.00001 :
-         base = 5.0
-      else :
-         base = 2.0
-      # Round dz up to nearest "nice" number
-      dz = base * 10.0 ** power
-      zmin = ceil (zmin / dz - fudge)
-      zmax = floor (zmax / dz + fudge)
-      if (force == 0) :
-         nz = int (zmax - zmin + 1.0)
-      else :
-         nz = n
-      if nz > 1 :
-         levs = gistfuncs.span (zmin * dz, zmax * dz, nz)
-      else :
-         if nz < 1 :
-            if base < 1.5 :
-               base = 5.0
-               power = power - 1
-            elif base < 2.5 :
-               base = 1.0
-            else :
-               base = 2.0
-            dz = base * 10.0 ** power
-            zmin = ceil (zmin / dz + 0.001)
-         levs = array ( [zmin * dz])
-   else :
-      levs = array ( [-1.0, 1.0])
-   return (levs)
 
 _ContourError = "ContourError"
 
@@ -368,11 +316,11 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       contours desired, or a list of the values of Z at which you want
       contour curves.  These curves divide the mesh into len(CONTOURS+1)
       regions, each of which is filled with a solid color.  If CONTOURS is
-      None or not given, 8 "nice" equally spaced level values _spanning the
+      None or not given, 8 "nice" equally spaced level values spanning the
       range of Z are selected.
 
       If you specify CONTOURS, you may also specify COLORS, an array of
-      color numbers (Python dtype 'B', integers between 0 and the
+      color numbers (Python dtype 'B', np.uint8, integers between 0 and the
       length of the current palette - 1, normally 199) of length
       len(CONTOURS)+1. If you do not specify them, equally
       spaced colors are chosen.
@@ -381,75 +329,75 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       are determined.  SCALE may be "lin", "log", or "normal"
       specifying linearly, logarithmically, or normally spaced
       contours. Note that unlike Yorick's plfc, this routine does
-      not use _spann to compute its contours. Neither, apparently,
+      not use spann to compute its contours. Neither, apparently,
       does plc, which uses a third algorithm which matches neither
-      the one we use nor the one _spann uses. So if you plot filled
+      the one we use nor the one spann uses. So if you plot filled
       contours and then plot contour lines, the contours will in
       general not coincide exactly.
 
-      Note that you may use _spann to calculate your contour levels
+      Note that you may use spann to calculate your contour levels
       if you wish.
 
       The following keywords are legal (each has a separate help entry):
     KEYWORDS: triangle, region
     SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
-              color_bar, _spann, contour, limits, logxy, range, fma, hcp
+              color_bar, contour, limits, logxy, range, fma, hcp
    """
    # 1. Get contour colors
 
    (vcmin, vcmax) = gistfuncs.zmin_zmax (z, ireg)
-   if type (contours) == types.IntType :
+   if type (contours) == int :
       n = contours
-      vc = zeros (n + 2, float32)
+      vc = numpy.zeros (n + 2, numpy.float32)
       vc [0] = vcmin
       vc [n + 1] = vcmax
       if scale == "lin" or scale == None :
-          #    This stuff is in lieu of the _spann stuff in Yorick.
-          vc [1:n + 1] = vcmin + arange (1, n + 1) * \
+          # This stuff is in lieu of the spann stuff in Yorick.
+          vc [1:n + 1] = vcmin + numpy.arange (1, n + 1) * \
              (vcmax - vcmin) / (n + 1)
       elif scale == "log" :
-          vc [1:n + 1] = vcmin + exp (arange (1, n + 1) * \
+          vc [1:n + 1] = vcmin + exp (numpy.arange (1, n + 1) * \
              log (vcmax - vcmin) / (n + 1))
       elif scale == "normal" :
-          zlin = ravel (z)
+          zlin = numpy.ravel (z)
           lzlin = len (zlin)
           zbar = add.reduce (zlin) / lzlin
-          zs = sqrt ( (add.reduce (zlin ** 2) - lzlin * zbar ** 2) /
+          zs = numpy.sqrt ( (add.reduce (zlin ** 2) - lzlin * zbar ** 2) /
               (lzlin - 1))
           z1 = zbar - 2. * zs
           z2 = zbar + 2. * zs
           diff = (z2 - z1) / (n - 1)
-          vc [1:n + 1] = z1 + arange (n) * diff
+          vc [1:n + 1] = z1 + numpy.arange (n) * diff
       else :
           raise _ContourError, "Incomprehensible scale parameter."
-   elif type (contours) == ndarray and contours.dtype.type == float64 :
+   elif type (contours) == numpy.ndarray and contours.dtype.type == numpy.float64 :
       n = len (contours)
-      vc = zeros (n + 2, float32)
+      vc = numpy.zeros (n + 2, numpy.float32)
       vc [0] = vcmin
       vc [n + 1] = vcmax
-      vc [1:n + 1] = sort (contours)
+      vc [1:n + 1] = numpy.sort (contours)
    else :
       raise _ContourError, "Incorrect contour specification."
    if colors == None :
-      colors = (arange (n + 1) * (199. / n)).astype(uint8)
+      colors = (numpy.arange (n + 1) * (199. / n)).astype(numpy.uint8)
    else :
-      colors = array (colors)
+      colors = numpy.array (colors)
       if len (colors) != n + 1 :
          raise "PLFC_Error", \
             "colors must specify one more color than contours."
-      if colors.dtype != uint8 :
+      if colors.dtype != numpy.uint8 :
          colors = bytscl (colors)
 
    if triangle == None :
-      triangle = zeros (z.shape, int32)
+      triangle = numpy.zeros (z.shape, numpy.int32)
 
   # Set mesh first
    plmesh (y, x, ireg, triangle = triangle)
    for i in range (n + 1) :
-      [nc, yc, xc] = contour (array ( [vc [i], vc [i + 1]]), z)
+      [nc, yc, xc] = contour (numpy.array ( [vc [i], vc [i + 1]]), z)
       if (is_scalar(nc) and nc == 0 or nc is None) :
          continue
-      plfp ( (ones (len (nc)) * colors [i]).astype(uint8),
+      plfp ( (numpy.ones (len (nc)) * colors [i]).astype(numpy.uint8),
          yc, xc, nc, edges = 0)
 
 def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
@@ -486,7 +434,7 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
       The following keywords are legal (each has a separate help entry):
     KEYWORDS: width, hide, color, height
     SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
-              color_bar, _spann, contour, limits, logxy, range, fma, hcp
+              color_bar, contour, limits, logxy, range, fma, hcp
    """
 
    color_dict = { 'bg':-1, 'fg':-2, 'black':-3, 'white':-4, 'red':-5,
@@ -495,30 +443,30 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
    barx = [[]] * n
    if x==None:
       for i in range(n):
-         barx[i] = array([i,i,i+1,i+1])
+         barx[i] = numpy.array([i,i,i+1,i+1])
    else:
-      if type(x) == types.IntType or type(x) == types.float32Type:
+      if type(x) == int or type(x) == numpy.float32:
          # x denotes the width of the bars, which are all equal
          for i in range(n-1):
-            barx[i] = array([i,i,i+1,i+1]) * x
-      elif type(x) == types.ListType or type(x) == ndarray:
+            barx[i] = numpy.array([i,i,i+1,i+1]) * x
+      elif type(x) == list or type(x) == numpy.ndarray:
          if len(x) == n:
             # x denotes the width of the bars, which can be different
             offset = 0
             for i in range(n):
-               barx[i] = offset + array([0,0,1,1]) * x[i]
+               barx[i] = offset + numpy.array([0,0,1,1]) * x[i]
                offset = offset + x[i]
          elif len(x) == n + 1:
             for i in range(n):
-               barx[i] = array([x[i],x[i],x[i+1],x[i+1]])
+               barx[i] = numpy.array([x[i],x[i],x[i+1],x[i+1]])
          elif len(x) == 2*n:
             for i in range(n):
-               barx[i] = array([x[2*i],x[2*i],x[2*i+1],x[2*i+1]])
+               barx[i] = numpy.array([x[2*i],x[2*i],x[2*i+1],x[2*i+1]])
          else:
             raise "plh error: inconsistent length of X"
    bary = [[]] * n
    for i in range(n):
-      bary[i] = array([0,y[i],y[i],0])
+      bary[i] = numpy.array([0,y[i],y[i],0])
    if labels:
       if current_window() < 0:
          window(style="boxed.gs",legends=0)
@@ -532,12 +480,12 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
          style['systems'][0]['ticks']['horizontal']['flags'] = flags
          set_style(style)
    if color != None:
-      if type(color) != types.ListType and type(color) != ndarray:
+      if type(color) != list and type(color) != numpy.ndarray:
    	 color = [color] * n
       for i in range(n):
    	 z = color[i]
-   	 if type(z) == types.StringType: z = color_dict[z]
-   	 plfp(array([z],uint8),bary[i],barx[i],[4])
+   	 if type(z) == str: z = color_dict[z]
+   	 plfp(numpy.array([z],numpy.uint8),bary[i],barx[i],[4])
    for i in range(n):
       plg(bary[i],barx[i],width=width,hide=hide,marks=0)
    if labels:
