@@ -139,7 +139,8 @@ class mkconfig_cmd(Command):
 
   def run(self):
     log.info('making config')
-    os.system('cd %s; gmake clean config;' % patch_work_dir)
+    patchdir=os.path.join(patch_work_dir,'yorick')
+    os.system('cd %s; gmake clean config;' % patchdir)
     log.info('parse config')
     libraries=[]
     define_macros=[]

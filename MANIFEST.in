@@ -1,4 +1,4 @@
-include MANIFEST.in README setup.py
+include ChangeLog MANIFEST.in README setup.py setup.cfg
 recursive-include gist *
 recursive-include yorick *
 recursive-include plugin *
