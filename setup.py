@@ -123,10 +123,10 @@ class patch_cmd(Command):
     self.copy_tree('yorick', patchdir)
     log.info('applying patches')
     if self.xft_patch:
-      os.system('cd %s && patch -p1 < ../../patch/xft.patch' % patchdir)
+      os.system('cd %s && patch -N -p1 < ../../patch/xft.patch' % patchdir)
       for ext in self.distribution.ext_modules:
         ext.define_macros.append(('HAVE_XFT', None))
-    if self.zeroborder_patch: os.system('cd %s && patch -p1 < ../../patch/yorick-cvs-pwin-border.patch' % patchdir)
+    if self.zeroborder_patch: os.system('cd %s && patch -N -p1 < ../../patch/yorick-cvs-pwin-border.patch' % patchdir)
 
 class mkconfig_cmd(Command):
   description = 'configure yorick prior to build'
@@ -230,7 +230,6 @@ setup(
      ],
   packages = ['gist'],
   package_dir = {'gist': 'gist'},
-  install_path = 'gist',
   data_files=data_files,
   )
 
