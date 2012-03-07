@@ -1,4 +1,4 @@
-07/03/12 mdcb 2.2.01x-3
+07/03/12 mdcb 2.2.01x-4
 - build from vanilla yorick clone on github.
 - fix namespace pollution due to imported foreign modules.
 - add module constant 'version' aligned with yorick version.
