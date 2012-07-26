@@ -61,7 +61,7 @@ define_macros=[]
 extra_compile_args=[]
 
 # version
-version=file('yorick/play/yversion.h').readline()
+version=open('yorick/play/yversion.h').readline()
 version=version.strip().split(' ')[-1]
 version=version.strip('"')
 
