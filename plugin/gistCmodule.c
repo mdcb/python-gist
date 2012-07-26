@@ -9982,8 +9982,7 @@ static struct PyMethodDef gist_methods[] = {
 
 void initgistC(void)
 {
-	PyObject *m, *d, *sys_path;
-	int i, n;
+	PyObject *m, *d;
 
 	/* initialize python */
 	Py_Initialize();
