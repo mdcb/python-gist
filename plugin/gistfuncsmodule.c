@@ -109,15 +109,15 @@ static PyObject *arr_array_set(PyObject * self, PyObject * args)
 	if (PyFloat_Check(srcarg)) {
 		scalar_source = 1;
 		scalar_type = 'f';
-		ds = PyFloat_AS_DOUBLE((PyFloatObject *) srcarg);
+		ds = PyFloat_AS_DOUBLE(srcarg);
 	} else if (PyInt_Check(srcarg)) {
 		scalar_source = 1;
 		scalar_type = 'i';
-		is = PyInt_AS_LONG((PyIntObject *) srcarg);
+		is = PyInt_AS_LONG(srcarg);
 	} else if (PyString_Check(srcarg)) {
 		scalar_source = 1;
 		scalar_type = 'c';
-		cs = PyString_AS_STRING((PyStringObject *) srcarg)[0];
+		cs = PyString_AS_STRING(srcarg)[0];
 	} else if (nd == 2) {
 		d1 = A_DIM(tararg, 1);
 		if (A_NDIM(srcarg) != 2 || A_DIM(srcarg, 1) != d1) {
