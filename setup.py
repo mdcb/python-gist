@@ -145,7 +145,7 @@ class mkconfig_cmd(Command):
     libraries=[]
     define_macros=[]
     #include_dirs=[]
-    for line in file(os.path.join(patch_work_dir,'yorick/Make.cfg')):
+    for line in open(os.path.join(patch_work_dir,'yorick/Make.cfg')):
       if line.startswith('#'): continue
       key,val=line.strip().split('=')
       if val != '':
