@@ -10006,8 +10006,8 @@ void initgistC(void)
 
 	d = PyModule_GetDict(m);
 
-	GistError = PyString_FromString("gist.error");
-	PyDict_SetItemString(d, "error", GistError);
+	GistError = PyErr_NewException("gist.error", NULL, NULL);
+	PyModule_AddObject(m, "error", GistError);
 
 	_slice2_precision = PyFloat_FromDouble(0.0);
 	PyDict_SetItemString(d, "slice2_precision", _slice2_precision);
