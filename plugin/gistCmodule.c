@@ -620,9 +620,6 @@ static void clearMemList(void)
 
 /******************************E N D***********************************/
 
-/* This module's initialization routine */
-void initgistC(void);
-
 /* Routines in the Gist user interface */
 static PyObject *animate(PyObject * self, PyObject * args);
 static PyObject *bytscl(PyObject * self, PyObject * args, PyObject * kd);
