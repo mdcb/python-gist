@@ -194,8 +194,11 @@ class Gist_dist(Distribution):
 
 long_description='''The Python Gist Scientific Graphics Package is a module for production of general scientific graphics. Gist is the graphic frontend for Yorick, written by David H. Munro of Lawrence Livermore National Laboratory. The library is small, portable, efficient, and full-featured. It produces x-vs-y plots with ``good'' tick marks and tick labels, 2-D quadrilateral mesh plots with contours, vector fields, or pseudocolor maps on such meshes, and a selection of 3-D plots.'''
 
+if sys.version_info.major == 2: name='python-gist'
+else: name='python%d-gist' % sys.version_info.major
+
 setup(
-  name='python-gist',
+  name=name,
   distclass=Gist_dist,
   version=version,
   description='gist for python.',
