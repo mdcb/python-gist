@@ -10043,33 +10043,6 @@ void initgistC(void)
 	gistA.t.height = 14.0 * ONE_POINT;
 	GhSetText();
 
-/* Find that component of sys.path which ends in "/graphics/gist", and
-   add it to gistPathDefault.
-*/
-	m = (PyObject *) PyImport_AddModule("sys");
-	d = PyModule_GetDict(m);
-	sys_path = PyDict_GetItemString(d, "path");
-	n = PySequence_Length(sys_path);	/* sys.path is a list of strings. */
-	for (i = 0; i < n; i++) {
-		PyObject *op;
-		char *s;
-		op = PySequence_GetItem(sys_path, i);
-		s = PyString_AsString(op);
-		if (strstr(s, OUR_SPECIAL_DIR)) {
-			gistpath =
-			    (char *)malloc(strlen(gistPathDefault) +
-					   strlen(s) + 2);
-			if (gistpath) {
-				oldgistpath = gistPathDefault;
-				strcpy(gistpath, gistPathDefault);
-				strcat(gistpath, ":");
-				strcat(gistpath, s);
-				gistPathDefault = gistpath;
-			}
-			break;
-		}
-	}
-
 	{
 		/* set up play p_abort to work with SETJMP0 macro used here */
 		/* do not call p_handler -- would disturb python signal handling */
