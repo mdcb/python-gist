@@ -10032,9 +10032,9 @@ void initgistC(void)
 		TO_STDERR("Gist: Warning: Exit procedure not registered\n");
 		flush_stderr();
 	}
-	/* Default is to put occasional markers on curves. */
+	/* Default is not to put occasional markers on curves. */
 	GhGetLines();
-	gistA.dl.marks = 1;
+	gistA.dl.marks = 0;
 	GhSetLines();
 
 	/* Default text is 14 point Helvetica. */
