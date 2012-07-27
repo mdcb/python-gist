@@ -146,7 +146,7 @@ def getsys(color=-2,frame=1,labelsize=14, font='helvetica', ticks='solid', hticp
             break
 
     if not found:
-        print "Unknown font: %s" % font
+        print("Unknown font: %s" % font)
         return
 
     Nfont = tfont[fontlist[k]]
@@ -262,9 +262,9 @@ def style2string(systemslist, landscape=0):
     if type(systemslist) is list:
         num = len(systemslist)
         if type(systemslist[0]) is not dict:
-            raise TypeError, "dict2string: first argument should be a dicitonary or a list"
+            raise TypeError("dict2string: first argument should be a dicitonary or a list")
     elif type(systemslist) is not dict:
-        raise TypeError, "dict2string: first argument should be a dictionary or a list"
+        raise TypeError("dict2string: first argument should be a dictionary or a list")
     else:
         systemslist = [systemslist]
 

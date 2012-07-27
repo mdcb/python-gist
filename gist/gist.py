@@ -59,10 +59,10 @@ __all__ = ['winkill', 'pltitle', 'ylimits', 'moush', 'eps', 'xytitles', 'plmk', 
 
 import sys, os
 import numpy
-from gistC import *
+from .gistC import *
 import gistfuncs
 #from mesh import * # still experimental, undebugged
-from shapetest import *
+from .shapetest import *
 
 # Parameters used by pltitle and xytitles
 pltitle_height= 18;
@@ -139,7 +139,7 @@ def moush(*arg):
       if xy == None: return None
       return mesh_loc (xy[1], xy[0]);
    else:
-      print "Mouse takes 0, 2, or 3 args: ( [ y, x [ , ireg ] ] )"
+      print("Mouse takes 0, 2, or 3 args: ( [ y, x [ , ireg ] ] )")
       return None
 
 #  ---------------------------------------------------------------------
@@ -188,11 +188,11 @@ def xytitles(xtitle = "", ytitle = "", delta = (0.,0.)):
 # Half-hearted attempt at span()(zcen), which returns N-1 "zone-centered"
 # values in sequence (lb, ..., ub)
 def _spanz(lb,ub,n):
-   if n < 3: raise ValueError, '3rd arg must be at least 3'
+   if n < 3: raise ValueError('3rd arg must be at least 3')
    c = 0.5*(ub - lb)/(n - 1.0)
    b = lb + c
    a = (ub - c - b)/(n - 2.0)
-   return map(lambda x,A=a,B=b: A*x + B, numpy.arange(n-1))
+   return list(map(lambda x,A=a,B=b: A*x + B, numpy.arange(n-1)))
 
 #  .. predefined markers: square, +, delta, circle, diamond, x, grad
 _seq = _spanz(-numpy.pi,numpy.pi,37)
@@ -369,7 +369,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
           diff = (z2 - z1) / (n - 1)
           vc [1:n + 1] = z1 + numpy.arange (n) * diff
       else :
-          raise _ContourError, "Incomprehensible scale parameter."
+          raise _ContourError("Incomprehensible scale parameter.")
    elif type (contours) == numpy.ndarray and contours.dtype.type == numpy.float64 :
       n = len (contours)
       vc = numpy.zeros (n + 2, numpy.float32)
@@ -377,14 +377,13 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
       vc [n + 1] = vcmax
       vc [1:n + 1] = numpy.sort (contours)
    else :
-      raise _ContourError, "Incorrect contour specification."
+      raise _ContourError("Incorrect contour specification.")
    if colors == None :
       colors = (numpy.arange (n + 1) * (199. / n)).astype(numpy.uint8)
    else :
       colors = numpy.array (colors)
       if len (colors) != n + 1 :
-         raise "PLFC_Error", \
-            "colors must specify one more color than contours."
+         raise Exception("PLFC_Error, colors must specify one more color than contours.")
       if colors.dtype != numpy.uint8 :
          colors = bytscl (colors)
 
@@ -463,7 +462,7 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
             for i in range(n):
                barx[i] = numpy.array([x[2*i],x[2*i],x[2*i+1],x[2*i+1]])
          else:
-            raise "plh error: inconsistent length of X"
+            raise Exception("plh error: inconsistent length of X")
    bary = [[]] * n
    for i in range(n):
       bary[i] = numpy.array([0,y[i],y[i],0])
@@ -481,11 +480,11 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
          set_style(style)
    if color != None:
       if type(color) != list and type(color) != numpy.ndarray:
-   	 color = [color] * n
+         color = [color] * n
       for i in range(n):
-   	 z = color[i]
-   	 if type(z) == str: z = color_dict[z]
-   	 plfp(numpy.array([z],numpy.uint8),bary[i],barx[i],[4])
+         z = color[i]
+         if type(z) == str: z = color_dict[z]
+         plfp(numpy.array([z],numpy.uint8),bary[i],barx[i],[4])
    for i in range(n):
       plg(bary[i],barx[i],width=width,hide=hide,marks=0)
    if labels:

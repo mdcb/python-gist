@@ -11,7 +11,7 @@
 import os
 import time
 import numpy
-from shapetest import *
+from .shapetest import *
 
 class _ZcenError ( Exception ):
    pass
@@ -27,11 +27,11 @@ def zcen_ (x, i = 0) :
    """
 
    if is_scalar (x) :
-      raise _ZcenError, "zcen_ must be called with an array."
+      raise _ZcenError("zcen_ must be called with an array.")
    dims = numpy.shape (x)
    ndims = len (dims)
    if i < 0 or i > ndims - 1 :
-      raise _ZcenError, "i <%d> is out of the range of x's dimensions <%d>." % (i+1,ndims)
+      raise _ZcenError("i <%d> is out of the range of x's dimensions <%d>." % (i+1,ndims))
    if i == 0 :
       newx = (x [0:dims [0]-1] + x [1:dims [0]]) /2.0
    elif i == 1 :
@@ -60,11 +60,11 @@ def dif_ (x, i = 0) :
    """
 
    if is_scalar (x) :
-      raise _DifError, "dif_ must be called with an array."
+      raise _DifError("dif_ must be called with an array.")
    dims = numpy.shape (x)
    ndims = len (dims)
    if i < 0 or i > ndims - 1 :
-      raise _DifError, "i <%d> is out of the range of x's dimensions <%d>." % (i+1,ndims)
+      raise _DifError("i <%d> is out of the range of x's dimensions <%d>." % (i+1,ndims))
    if i == 0 :
       newx = x [1:dims [0]] - x [0:dims [0] - 1]
    elif i == 1 :
@@ -181,8 +181,8 @@ def timer_print (label, split, *other_args) :
    out a timing summary for splits accumulated by timer_.
    """
 
-   print label, split
+   print((label, split))
    i = 0
    while i < len (other_args) :
-      print other_args [i], other_args [i + 1]
+      print((other_args [i], other_args [i + 1]))
       i = i + 2

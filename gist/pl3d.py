@@ -3,10 +3,10 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 import numpy
-from gistC import *
+from .gistC import *
 import gistfuncs
-from shapetest import *
-from yorick import *
+from .shapetest import *
+from .yorick import *
 
 
 #  PL3D.PY
@@ -147,7 +147,7 @@ def setz3 ( zc = None ) :
     """
 
     if not is_scalar (zc) :
-        raise _ZcError, "camera position must be scalar."
+        raise _ZcError("camera position must be scalar.")
 
     setzc3_ (zc)
 
@@ -189,25 +189,25 @@ def orient3 ( ** kw ) :
     except :
         _orient3_phi = - numpy.pi / 4.
 
-    if kw.has_key ("phi") and kw ["phi"] == None :
+    if "phi" in kw and kw ["phi"] == None :
         kw ["phi"] = _orient3_phi
-    if kw.has_key ("theta") and kw ["theta"] == None :
+    if "theta" in kw and kw ["theta"] == None :
         kw ["theta"] = _orient3_theta
-    if not kw.has_key ("phi") and not kw.has_key ("theta") :
+    if "phi" not in kw and "theta" not in kw :
         phi = _orient3_phi
         theta = _orient3_theta
-    elif not kw.has_key ("phi") or not kw.has_key ("theta") :
+    elif "phi" not in kw or "theta" not in kw :
         gr3 = numpy.array (getrot3_ (), copy = 1)
         z = dot (numpy.transpose (gr3), numpy.array ( [0., 0., 1.]))
         if abs (z [0]) > 1.e-6 :
             # object z-axis not aligned with viewer y-axis
-            if not kw.has_key ("theta") :
+            if "theta" not in kw :
                 theta = _orient3_theta
                 phi = kw ["phi"]
             else :
                 phi = _orient3_phi
                 theta = kw ["theta"]
-        elif not kw.has_key ("theta") :
+        elif "theta" not in kw :
             phi = kw ["phi"]
             if (abs (z [1]) < 1.e-6) :
                 theta = _orient3_theta
@@ -316,35 +316,34 @@ def light3 ( * kw, ** kwds ) :
     if len (kw) > 0 : kwds = kw [0]
     old = _draw3_list [_draw3_nv:] [0:5]
     flags = 0
-    if kwds.has_key ("ambient") and kwds ["ambient"] != None :
+    if "ambient" in kwds and kwds ["ambient"] != None :
         ambient = kwds ["ambient"]
         if not is_scalar (ambient) :
-            raise _AmbientError, "ambient light level must be scalar."
+            raise _AmbientError("ambient light level must be scalar.")
         flags = flags | 1
         _draw3_list [_draw3_nv] = ambient
-    if kwds.has_key ("diffuse") and kwds ["diffuse"] != None :
+    if "diffuse" in kwds and kwds ["diffuse"] != None :
         diffuse = kwds ["diffuse"]
         if not is_scalar (diffuse) :
-            raise _DiffuseError, "diffuse light level must be scalar."
+            raise _DiffuseError("diffuse light level must be scalar.")
         flags = flags | 2
         _draw3_list [_draw3_nv + 1 ] = diffuse
 
-    if kwds.has_key ("specular") and kwds ["specular"] != None :
+    if "specular" in kwds and kwds ["specular"] != None :
         specular = kwds ["specular"]
         flags = flags | 4
     else :
         specular = _draw3_list [_draw3_nv + 2]
-    if kwds.has_key ("spower") and kwds ["spower"] != None :
+    if "spower" in kwds and kwds ["spower"] != None :
         spower = kwds ["spower"]
         flags = flags | 8
     else :
         spower = _draw3_list [_draw3_nv + 3]
-    if kwds.has_key ("sdir") and kwds ["sdir"] != None :
+    if "sdir" in kwds and kwds ["sdir"] != None :
         sdir = kwds ["sdir"]
         dims = numpy.shape (sdir)
         if dims == 0 or len (dims) == 2 and dims [1] != 3 :
-            raise _LightingError, \
-               "lighting direction must be 3 vector or ns-by-3 array."
+            raise _LightingError("lighting direction must be 3 vector or ns-by-3 array.")
         flags = flags | 16
     else :
         sdir = _draw3_list [_draw3_nv + 4]
@@ -590,7 +589,7 @@ def get3_xy (xyz, *flg) :
         rm = (xyz - numpy.array ( [ go3_ [0], go3_ [1], go3_ [2]]))
         tmpxyz = dot (rm, lm)
     else:
-        raise _Get3Error, "xyz has a bad numpy.shape: " + `shp`
+        raise _Get3Error("xyz has a bad numpy.shape: " + repr(shp))
 
     # do optional perspective projection
     zc = getzc3_ ()
@@ -628,7 +627,7 @@ def undo3 (n = 1) :
     global _in_undo3, _undo3_list
     n = 2 * n
     if n < 0 or n > len (_undo3_list) :
-        raise _UndoError, "not that many items in undo list"
+        raise _UndoError("not that many items in undo list")
     _in_undo3 = 1     # flag to skip undo3_set_
     # perhaps should save discarded items in a redo list?
     use_list = undo3_list [-n:]
@@ -783,11 +782,11 @@ def window3 ( * n , **kw ) :
     initialize style="nobox.gs" window for 3D graphics
     """
 
-    if kw.has_key ("dump") :
+    if "dump" in kw :
         dump = kw ["dump"]
     else :
         dump = 0
-    if kw.has_key ("hcp") :
+    if "hcp" in kw :
         if len (n) == 0 :
             window (wait=1, style="nobox.gs", legends=0, hcp=kw ["hcp"],
                dump = dump)
@@ -1037,7 +1036,7 @@ def gnomon (* on, ** kw) :
         _gnomon = 0
     if old != _gnomon :
         draw3_trigger ()
-    if kw.has_key ("chr") :
+    if "chr" in kw :
         chr = kw ["chr"]
     else :
         chr = ["X", "Y", "Z"]
@@ -1172,7 +1171,7 @@ def gnomon_text_ (chr, x, y, pts, invert) :
     col = "fg"
     if invert :
         savesys = plsys (0)
-	print 'savesys',savesys
+        print(('savesys',savesys))
         plg (numpy.array ( [y, y]), numpy.array ( [x, x]), type = 1, width = 2.2 * pts,
              color = col, marks = 0, legend = "")
         plsys (savesys)
@@ -1180,7 +1179,7 @@ def gnomon_text_ (chr, x, y, pts, invert) :
     plt (chr, x, y, justify = "CH", color = col, height = pts,
          font = "helvetica", opaque = 0)
 
-from movie import *
+from .movie import *
 
 g_nframes = 30
 

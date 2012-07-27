@@ -14,11 +14,12 @@
 # This has been fixed by creating an access function.
 
 import numpy
-from gistC import *
+from .gistC import *
 import gistfuncs
-from shapetest import *
-from pl3d import *
-from yorick import *
+from .shapetest import *
+from .pl3d import *
+from .yorick import *
+import collections
 
 #
  # Caveats:
@@ -123,7 +124,7 @@ def mesh3 (x, y = None, z = None, ** kw) :
 
     dims = numpy.shape (x)
     if len (dims) == 1 and y != None and len (x) == len (y) \
-       and z != None and len(x) == len (z) and kw.has_key ("verts") :
+       and z != None and len(x) == len (z) and "verts" in kw :
         virtuals = [xyz3_irreg, getv3_irreg,
                     getc3_irreg, iterator3_irreg]
         dims = kw ["verts"]
@@ -137,7 +138,7 @@ def mesh3 (x, y = None, z = None, ** kw) :
             for i in range (1, len (sizes)) :
                 totals.append (totals [i - 1] + sizes [i]) #total cells so far
             m3 = [virtuals, [dims, numpy.array ( [x, y, z]), sizes, totals], []]
-        if kw.has_key ("funcs") :
+        if "funcs" in kw :
             funcs = kw ["funcs"]
         else :
             funcs = []
@@ -146,7 +147,7 @@ def mesh3 (x, y = None, z = None, ** kw) :
             if len (f) != len (x) and len (f) != numpy.shape (dims) [0] :
                 # if vertex-centered, f must be same size as x.
                 # if zone centered, its length must match number of cells.
-                raise _Mesh3Error, "F" + `i` + " is not a viable 3D cell value"
+                raise _Mesh3Error("F" + repr(i) + " is not a viable 3D cell value")
             m3 [2] = m3 [2] + [f]
             i = i + 1
         return m3
@@ -171,11 +172,11 @@ def mesh3 (x, y = None, z = None, ** kw) :
         if len (dims) != 3 or min (dims) < 2 or \
            y == None or len (numpy.shape (y)) != 3 or numpy.shape (y) != dims or \
            z == None or len (numpy.shape (z)) != 3 or numpy.shape (z) != dims:
-            raise _Mesh3Error, "X,Y,Z are not viable 3D coordinate mesh numpy.arrays"
+            raise _Mesh3Error("X,Y,Z are not viable 3D coordinate mesh numpy.arrays")
         xyz = numpy.array ( [x, y, z])
     dim_cell = (dims [0] - 1, dims [1] - 1, dims [2] - 1)
     m3 = [virtuals, [dim_cell, xyz], []]
-    if kw.has_key ("funcs") :
+    if "funcs" in kw :
         funcs = kw ["funcs"]
     else :
         funcs = []
@@ -188,7 +189,7 @@ def mesh3 (x, y = None, z = None, ** kw) :
             m3 [2] = m3 [2] + [f]
             i = i + 1
         else :
-            raise _Mesh3Error, "F" + `i` + " is not a viable 3D cell value"
+            raise _Mesh3Error("F" + repr(i) + " is not a viable 3D cell value")
 
     return m3
 
@@ -305,24 +306,22 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
     global _poly_permutations
 
     iso_index = None
-    if not callable (fslice):
-        if not kw.has_key ("value") and not is_scalar (fslice) and \
+    if not isinstance(fslice, collections.Callable):
+        if "value" not in kw and not is_scalar (fslice) and \
            len (numpy.shape (fslice)) == 1 and len (fslice) == 4 :
             normal = fslice [0:3]
             projection = fslice [3]
             fslice = _plane_slicer
         elif is_scalar (fslice) and type (fslice) == int:
-            if not kw.has_key ("value") :
-                raise _Slice3Error, \
-                   "value= keyword required when FSLICE is mesh variable"
+            if "value" not in kw :
+                raise _Slice3Error("value= keyword required when FSLICE is mesh variable")
             _value = kw ["value"]
             iso_index = fslice
             fslice = _isosurface_slicer
         else :
-            raise _Slice3Error, \
-               "illegal form of FSLICE argument, try help,slice3"
+            raise _Slice3Error("illegal form of FSLICE argument, try help,slice3")
 
-    if kw.has_key ("node") :
+    if "node" in kw :
         node = kw ["node"]
     else :
         node = 0
@@ -342,10 +341,9 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         fcolor = None
 
     # test the different possibilities for fcolor
-    if need_clist and not callable (fcolor):
+    if need_clist and not isinstance(fcolor, collections.Callable):
         if not is_scalar (fcolor) or type (fcolor) != int :
-            raise _Slice3Error, \
-               "illegal form of FCOLOR argument, try help,slice3"
+            raise _Slice3Error("illegal form of FCOLOR argument, try help,slice3")
 
     # chunk up the m3 mesh and evaluate the slicing function to
     # find those cells cut by fslice==0
@@ -396,7 +394,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             # front, and negative if in back.
         else :
             fs = fslice (m3, chunk)
-        if node == 1 and fcolor != None and not callable(fcolor):
+        if node == 1 and fcolor != None and not isinstance(fcolor, collections.Callable):
             # need vertex-centered data
             col = getv3 (fcolor, m3, chunk)
             if type (col) == list :
@@ -558,7 +556,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         return None
     if ntotal : # (regular mesh, but can be handled same as hex)
         ntotal8 = ntotal
-        i8 = range (len (results))
+        i8 = list(range(len (results)))
         itot [3] = i8
     ntot = [ntotal4, ntotal5, ntotal6, ntotal8]
     new_results = []
@@ -709,14 +707,14 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
             clist = numpy.take (clist, numpy.take (cells, lst, axis=0),axis=0)
         if col == None :
             if nointerp == None :
-                if callable (fcolor):
+                if isinstance(fcolor, collections.Callable):
                     col = fcolor (m3, clist + cell_offsets [i], lower, upper, fsl,
                        fsu, pattern - 1)
                 else :
                     col = getc3 (fcolor, m3, clist + cell_offsets [i], lower, upper,
                        fsl, fsu, pattern - 1)
             else :
-                if callable (fcolor):
+                if isinstance(fcolor, collections.Callable):
                     col = fcolor (m3, clist + cell_offsets [i])
                 else :
                     col = getc3 (fcolor, m3, clist + cell_offsets [i])
@@ -819,15 +817,14 @@ def slice3mesh (xyz, * args, ** kw) :
     """
 
     two_d = 0
-    if kw.has_key ("smooth") :
+    if "smooth" in kw :
         smooth = kw ["smooth"]
     else :
         smooth = 0
     if len (args) == 0 :
         # Only the z argument is present
         if len (numpy.shape (xyz)) != 2 :
-            raise _Slice3MeshError, \
-               "z must be two dimensional."
+            raise _Slice3MeshError("z must be two dimensional.")
         else :
             z = xyz
             ncx = numpy.shape (xyz) [0]
@@ -842,8 +839,7 @@ def slice3mesh (xyz, * args, ** kw) :
         y = numpy.arange (ncy, dtype = numpy.float32 ) * args [0] [1] + args [1] [1]
         z = args [2]
         if (ncx, ncy) != numpy.shape (z) :
-            raise _Slice3MeshError, \
-               "The numpy.shape of z must match the numpy.shape of x and y."
+            raise _Slice3MeshError("The numpy.shape of z must match the numpy.shape of x and y.")
     elif len (args) == 2 :
         # must be the x, y, z format
         x = xyz
@@ -853,29 +849,25 @@ def slice3mesh (xyz, * args, ** kw) :
         if len (dims) == 2 :
             two_d = 1
             if dims != numpy.shape (y) or dims != numpy.shape (z) :
-                raise _Slice3MeshError, \
-                   "The numpy.shapes of x, y, and z must match."
+                raise _Slice3MeshError("The numpy.shapes of x, y, and z must match.")
             ncx = dims [0]
             ncy = dims [1]
         elif len (dims) == 1 :
             ncx = dims [0]
             ncy = len (y)
             if (ncx, ncy) != numpy.shape (z) :
-                raise _Slice3MeshError, \
-                   "The numpy.shape of z must match the numpy.shape of x and y."
+                raise _Slice3MeshError("The numpy.shape of z must match the numpy.shape of x and y.")
         else :
-            raise _Slice3MeshError, \
-               "Unable to decipher arguments to slice3mesh."
+            raise _Slice3MeshError("Unable to decipher arguments to slice3mesh.")
     else :
-        raise _Slice3MeshError, \
-           "Unable to decipher arguments to slice3mesh."
+        raise _Slice3MeshError("Unable to decipher arguments to slice3mesh.")
 
     nverts = numpy.ones ( (ncx - 1) *  (ncy - 1), numpy.int32) * 4
 
     ncxx = numpy.arange (ncx - 1, dtype = numpy.int32) * (ncy)
     ncyy = numpy.arange (ncy - 1, dtype = numpy.int32)
 
-    if kw.has_key ("color") :
+    if "color" in kw :
         color = kw ["color"]
     else :
         color = None
@@ -899,8 +891,7 @@ def slice3mesh (xyz, * args, ** kw) :
                numpy.take (col, numpy.ravel (add.outer ( ncxx + ncy, ncyy + 1)),axis=0),
                numpy.take (col, numpy.ravel (add.outer ( ncxx + ncy, ncyy)),axis=0)])))
         else :
-            raise _Slice3MeshError, \
-               "color must be cell-centered or vertex centered."
+            raise _Slice3MeshError("color must be cell-centered or vertex centered.")
     else :
         col = None
     xyzverts = numpy.zeros ( (4 * (ncx -1) * (ncy -1), 3), numpy.float32 )
@@ -1204,10 +1195,10 @@ def getv3_rect (i, m3, chunk) :
     fi = m3 [2]
     i = i - 1
     if i < 0 or is_scalar (fi) or i >= len (fi) :
-        raise _Getv3Error, "no such mesh function as F" + `i`
+        raise _Getv3Error("no such mesh function as F" + repr(i))
     dims = m3 [1] [0]
     if dims == numpy.shape (fi [i]) :
-        raise _Getv3Error, "mesh function F" + `i` + " is not vertex-centered"
+        raise _Getv3Error("mesh function F" + repr(i) + " is not vertex-centered")
     if len (numpy.shape (chunk)) != 1 :
         c = chunk
         # The difference here is that our numpy.arrays are 0-based, while
@@ -1248,11 +1239,11 @@ def getv3_irreg (i, m3, chunk) :
     fi = m3 [2]
     i = i - 1
     if i < 0 or is_scalar (fi) or i >= len (fi) :
-        raise _Getv3Error, "no such function as F" + `i`
+        raise _Getv3Error("no such function as F" + repr(i))
     # len (fi [i]) and the second dimension of m3 [1] [1] (xyz) should
     # be the same, i. e., there is a value associated with each coordinate.
     if len (fi [i]) != len (m3 [1] [1] [0]) :
-        raise _Getv3Error, "mesh function F" + `i` + " is not vertex-centered."
+        raise _Getv3Error("mesh function F" + repr(i) + " is not vertex-centered.")
 
     verts = m3 [1] [0]
     oldstart = chunk [0] [0]
@@ -1331,7 +1322,7 @@ def getc3 (i, m3, chunk, *args) :
         fsu = args [3]
         cells = args [4]
     else :
-        raise _Getc3Error, "getc3 requires either three or eight parameters."
+        raise _Getc3Error("getc3 requires either three or eight parameters.")
 
     return m3 [0] [2] (i, m3, chunk, l, u, fsl, fsu, cells)
 
@@ -1345,7 +1336,7 @@ def getc3_rect (i, m3, chunk, l, u, fsl, fsu, cells) :
     fi = m3 [2]
     m3 = m3 [1]
     if ( i < 1 or i > len (fi)) :
-        raise _Getc3Error, "no such mesh function as F" + `i - 1`
+        raise _Getc3Error("no such mesh function as F" + repr(i - 1))
     dims = m3 [0]
     if numpy.shape (fi [i - 1]) == dims :
         # it is a cell-centered quantity
@@ -1406,7 +1397,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
 
     fi = m3 [2]
     if i < 1 or i > len (fi) :
-        raise _Getc3Error, "no such mesh function as F" + `i - 1`
+        raise _Getc3Error("no such mesh function as F" + repr(i - 1))
     verts = m3 [1] [0]
     if type (verts) == list :
         sizes = m3 [1] [2]
@@ -1419,11 +1410,11 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
         elif type (chunk) == numpy.ndarray and len (numpy.shape (chunk)) == 1 :
             return numpy.take (fi [i - 1], chunk,axis=0)
         else :
-            raise _Getc3Error, "chunk argument is incomprehensible."
+            raise _Getc3Error("chunk argument is incomprehensible.")
 
     if len (fi [i - 1]) != numpy.shape (m3 [1] [1]) [1] :
-        raise _Getc3Error, "F" + `i - 1` + " has the wrong size to be " \
-           "either zone-centered or node-centered."
+        raise _Getc3Error("F" + repr(i - 1) + " has the wrong size to be " \
+           "either zone-centered or node-centered.")
     # vertex-centered case
     # First we need to numpy.pick up the vertex subscripts, which are
     # also the fi [i - 1] subscripts.
@@ -1433,7 +1424,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
         elif type (chunk) == numpy.ndarray and len (numpy.shape (chunk)) == 1 :
             indices = take (verts, chunk,axis=0)
         else :
-            raise _Getc3Error, "chunk argument is incomprehensible."
+            raise _Getc3Error("chunk argument is incomprehensible.")
     else :
         # We have a list of vertex subscripts, each for a different
         # type of cell; need to extract the correct list:
@@ -1458,7 +1449,7 @@ def getc3_irreg (i, m3, chunk, l, u, fsl, fsu, cells) :
                 ch = chunk - totals [j - 1]
             indices = numpy.take (verts, ch,axis=0)
         else :
-            raise _Getc3Error, "chunk argument is incomprehensible."
+            raise _Getc3Error("chunk argument is incomprehensible.")
 
     shp = numpy.shape (indices)
     no_cells = shp [0]
@@ -1661,12 +1652,12 @@ def plzcont (nverts, xyzverts, contours = 8, scale = "lin", clear = 1,
             diff = (z2 - z1) / (n - 1)
             vc = z1 + numpy.arange (n) * diff
         else :
-            raise _ContourError, "Incomprehensible scale parameter."
+            raise _ContourError("Incomprehensible scale parameter.")
     elif type (contours) == numpy.ndarray and contours.dtype == numpy.float32 :
         n = len (contours)
         vc = sort (contours)
     else :
-        raise _ContourError, "Incorrect contour specification."
+        raise _ContourError("Incorrect contour specification.")
     if split == 0 :
         colors = (numpy.arange (n + 1, dtype = numpy.float32) * (199. / n)).astype (numpy.uint8)
     else :
@@ -1796,12 +1787,12 @@ def pl4cont (nverts, xyzverts, values, contours = 8, scale = "lin", clear = 1,
             diff = (z2 - z1) / (n - 1)
             vc = z1 + numpy.arange (n) * diff
         else :
-            raise _ContourError, "Incomprehensible scale parameter."
+            raise _ContourError("Incomprehensible scale parameter.")
     elif type (contours) == numpy.ndarray and contours.dtype == numpy.float32 :
         n = len (contours)
         vc = sort (contours)
     else :
-        raise _ContourError, "Incorrect contour specification."
+        raise _ContourError("Incorrect contour specification.")
     if split == 0 :
         colors = (numpy.arange (n + 1, dtype = numpy.float32) * (199. / n)).astype (numpy.uint8)
     else :
@@ -1989,9 +1980,9 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
 
     if numpy.shape (xyzverts) [0] != numpy.sum (nverts,axis=0) or numpy.sum (less (nverts, 3),axis=0) or \
        nverts.dtype != numpy.int32 :
-        raise _Pl3surfError, "illegal or inconsistent polygon list"
+        raise _Pl3surfError("illegal or inconsistent polygon list")
     if values != None and len (values) != len (nverts) :
-        raise _Pl3surfError, "illegal or inconsistent polygon color values"
+        raise _Pl3surfError("illegal or inconsistent polygon color values")
 
     if values != None :
         values = numpy.array (values, numpy.float32 )
@@ -2099,13 +2090,13 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
 
     if numpy.shape (xyzverts) [0] != numpy.sum (nverts,axis=0) or numpy.sum (less (nverts, 3),axis=0) > 0 or \
        type (nverts [0]) != numpy.int32:
-        print "Dim1 of xyzverts ", numpy.shape (xyzverts) [0], " numpy.sum (nverts,axis=0) ",\
+        print(("Dim1 of xyzverts ", numpy.shape (xyzverts) [0], " numpy.sum (nverts,axis=0) ",\
            numpy.sum (nverts,axis=0), " numpy.sum (less (nverts, 3),axis=0) ", numpy.sum (less (nverts, 3),axis=0), \
-           " type (nverts [0]) ", `type (nverts [0])`
-        raise _Pl3treeError, "illegal or inconsistent polygon list."
+           " type (nverts [0]) ", repr(type (nverts [0]))))
+        raise _Pl3treeError("illegal or inconsistent polygon list.")
     if type (values) == numpy.ndarray and len (values) != len (nverts) and \
        len (values) != numpy.sum (nverts,axis=0) :
-        raise _Pl3treeError, "illegal or inconsistent polygon color values"
+        raise _Pl3treeError("illegal or inconsistent polygon color values")
     if type (values) == numpy.ndarray and len (values) == numpy.sum (nverts,axis=0) :
         # We have vertex-centered values, which for Gist must be
         # averaged over each cell
@@ -2115,7 +2106,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
         values = (numpy.bincount (numpy.cumsum (lst,axis=0), values) / nverts).astype (tpc)
     if plane != None :
         if (len (numpy.shape (plane)) != 1 or numpy.shape (plane) [0] != 4) :
-            raise _Pl3treeError, "illegal plane format, try plane3 function"
+            raise _Pl3treeError("illegal plane format, try plane3 function")
 
     # Note: a leaf is going to be a list of lists.
     leaf = [ [nverts, xyzverts, values, cmin, cmax, split, edges]]
@@ -2917,7 +2908,7 @@ def pl3tree_prt () :
     if len (_draw3_list) >= _draw3_n :
         tree = _draw3_list [_draw3_n:]
         if tree == None or tree == [] or tree [0] != pl3tree :
-            print "<current 3D display not a pl3tree>"
+            print("<current 3D display not a pl3tree>")
 #        raise _Pl3tree_prtError, "<current 3D display not a pl3tree>"
         else :
             tree = tree [1] [0]
@@ -2928,7 +2919,7 @@ def pl3_other_prt(tree = None):
         pl3tree_prt ()
     else :
         if tree == None or tree == []:
-            print "<current 3D display not a pl3tree>"
+            print("<current 3D display not a pl3tree>")
         else :
             _pl3tree_prt (tree, 0)
 
@@ -2936,30 +2927,30 @@ def _pl3tree_prt (tree, depth) :
     if tree == None or tree == [] :
         return
     indent = (" " * (1 + 2 * depth)) [0:-1]
-    print indent + "+DEPTH= " + `depth`
+    print((indent + "+DEPTH= " + repr(depth)))
     if len (tree) != 4 :
-        print indent + "***error - not a tree"
-    print indent + "plane= " + `tree [0]`
+        print((indent + "***error - not a tree"))
+    print((indent + "plane= " + repr(tree [0])))
     back = tree [1]
     lst = tree [2]
     frnt = tree [3]
     if back == None or back == [] :
-        print indent + "back = []"
+        print((indent + "back = []"))
     else :
         _pl3tree_prt (back, depth + 1)
 
     for leaf in lst :
-        print indent + "leaf length= " + `len (leaf)`
-        print indent + "npolys= " + `len (leaf [0])` + \
-           ", nverts= " + `numpy.sum (leaf [0],axis=0)` + ", max= " + `max (leaf [0])`
-        print indent + "nverts= " + `numpy.shape (leaf [1]) [0]` + \
-           ", nvals= " + `len (leaf [2])`
+        print((indent + "leaf length= " + repr(len (leaf))))
+        print((indent + "npolys= " + repr(len (leaf [0])) + \
+           ", nverts= " + repr(numpy.sum (leaf [0],axis=0)) + ", max= " + repr(max (leaf [0]))))
+        print((indent + "nverts= " + repr(numpy.shape (leaf [1]) [0]) + \
+           ", nvals= " + repr(len (leaf [2]))))
 
     if frnt == None or frnt == [] :
-        print  indent + "frnt = []"
+        print((indent + "frnt = []"))
     else :
         _pl3tree_prt (frnt, depth + 1)
-    print indent + "+DEPTH= " + `depth`
+    print((indent + "+DEPTH= " + repr(depth)))
 
 # ------------------------------------------------------------------------
 
@@ -3111,7 +3102,7 @@ def xyz3_irreg (m3, chunk) :
             ns = numpy.take (m3 [1] [0], chunk,axis=0)
             shp = numpy.shape (m3 [1] [0])
     else :
-        raise _xyz3Error, "chunk parameter has the wrong type."
+        raise _xyz3Error("chunk parameter has the wrong type.")
     if shp [1] == 8 : # hex
         retval = numpy.zeros ( (no_cells, 3, 2, 2, 2), numpy.float32)
         retval [:, 0] = \
@@ -3145,7 +3136,7 @@ def xyz3_irreg (m3, chunk) :
         retval [:, 2] = \
            numpy.reshape (numpy.take (xyz [2], numpy.ravel (ns),axis=0), (no_cells, 4))
     else :
-        raise _xyz3Error, "Funny number of cell faces: " + `shp [1]`
+        raise _xyz3Error("Funny number of cell faces: " + repr(shp [1]))
     return retval
 
 def xyz3_unif (m3, chunk) :

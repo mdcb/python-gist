@@ -17,10 +17,10 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 import numpy
-from gistC import *
+from .gistC import *
 from gist import *
-from shapetest import *
-from yorick import *
+from .shapetest import *
+from .yorick import *
 
 def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
    bracket_time = numpy.array ([2., 2.], numpy.float32 ), lims = None, timing = 0) :
@@ -99,7 +99,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
       waited = waited0 = 0.0
       if wait > 0 :
          if wait > 5 :
-            print "Movie starts in", wait, "secs, or when you hit <RETURN>"
+            print("Movie starts in %s secs, or when you hit <RETURN>" % str(wait))
          time.sleep (wait)
          waited0 = waited0 + wait
       else :
@@ -132,7 +132,7 @@ def movie (draw_frame, time_limit = 120., min_interframe = 0.0,
       wait = bracket_time [1] - this_frame [2]
       if wait > 0 :
          if wait > 5 :
-            print "Holding last frame for", wait, "secs, or hit <RETURN>"
+            print("Holding last frame for %s secs, or hit <RETURN>" % str(wait))
          time.sleep (5)      # wait)
          waited0 = waited0 + wait
 
@@ -159,14 +159,14 @@ def movie_stats ( *timing ) :
    else :
       timing = movie_timing
    cpu = timing [0] + timing [1]
-   print "user", timing [0], "system", timing [1]
+   print(("user", timing [0], "system", timing [1]))
    wall = timing [2]
    nframes = timing [3]
    waited = timing [4] + timing [5]
    wait = timing [5]
 
-   print "  Wall(sec)  Wait(sec)  CPU(sec)"
-   print "  %9.3f  %9.3f  %8.3f   %ld frames\n" % (wall, waited, cpu, nframes)
-   print "  %9.3f  %9.3f  %8.3f   per frame\n" % \
+   print("  Wall(sec)  Wait(sec)  CPU(sec)")
+   print(("  %9.3f  %9.3f  %8.3f   %ld frames\n" % (wall, waited, cpu, nframes)))
+   print(("  %9.3f  %9.3f  %8.3f   per frame\n" % \
       ( (wall - waited) / nframes, wait / ( (nframes > 1) * (nframes - 1) + \
-      (nframes <= 1) * 1), cpu / nframes)
+      (nframes <= 1) * 1), cpu / nframes)))

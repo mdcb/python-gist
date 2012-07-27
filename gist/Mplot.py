@@ -11,9 +11,7 @@ __all__ = ['histogram', 'textcolor', 'barplot', 'hold', 'errorbars', 'legend', '
 
 import sys, os
 import numpy
-import gist
-import pl3d, plwf,colorbar,write_style
-
+from . import gist, pl3d, plwf, colorbar, write_style
 
 points = 0.0013000
 inches = 72.27*points
@@ -71,10 +69,10 @@ def _getdir(name='gist'):
                             name)
     if not os.path.exists(path):
         _create_dir(path)
-        os.chmod(path,0700)
+        os.chmod(path,0o700)
     if not _is_writable(path):
-        print "warning: default directory is not write accessible."
-        print "default:", path
+        print("warning: default directory is not write accessible.")
+        print("default: %s" % path)
     return path
 
 _user_path = _getdir()
@@ -190,8 +188,8 @@ def hold(state):
     elif state in ['off', 'no']:
         _hold = 0
     else:
-        raise ValueError, 'holds argument can be "on","off",'\
-                          '"yes","no". Not ' + state
+        raise ValueError('holds argument can be "on","off",'\
+                          '"yes","no". Not ' + state)
     return
 
 
@@ -497,7 +495,7 @@ def plot(x,*args,**keywds):
         y = _minsqueeze(x)
         x = numpy.arange(0,len(y))
         if numpy.iscomplexobj(y):
-            print "Warning: complex data plotting real part."
+            print("Warning: complex data plotting real part.")
             y = y.real
         y = numpy.where(numpy.isfinite(y),y,0)
         gist.plg(y,x,type='solid',color='blue',marks=0,width=linewidth)
@@ -522,7 +520,7 @@ def plot(x,*args,**keywds):
             else:
                 _append_global_linetype(_rtypes[thetype]+_rcolors[thecolor])
         if numpy.iscomplexobj(x) or numpy.iscomplexobj(y):
-            print "Warning: complex data provided, using only real part."
+            print("Warning: complex data provided, using only real part.")
             x = numpy.real(x)
             y = numpy.real(y)
         y = numpy.where(numpy.isfinite(y),y,0)
@@ -582,10 +580,10 @@ def addbox(x0,y0,x1,y1,color='fg',width=1,type='-'):
 def write_palette(tofile,pal):
     pal = numpy.asarray(pal)
     if pal.dtype.char not in ['B','b','s','i','l']:
-        raise ValueError, "Palette data must be integer data."
+        raise ValueError("Palette data must be integer data.")
     palsize = pal.shape
     if len(palsize) > 2:
-        raise TypeError, "Input must be a 1-d or 2-d array"
+        raise TypeError("Input must be a 1-d or 2-d array")
     if len(palsize) == 2:
         if palsize[0] == 1 and palsize[1] > 1:
             pal = pal[0]
@@ -596,12 +594,12 @@ def write_palette(tofile,pal):
         pal = numpy.multiply.outer(pal,ones((3,),pal.dtype.char))
         palsize = pal.shape
     if not (palsize[1] == 3 or palsize[0] == 3):
-        raise TypeError, "If input is 2-d, the length of at least one dimension must be 3."
+        raise TypeError("If input is 2-d, the length of at least one dimension must be 3.")
     if palsize[0] == 3 and palsize[1] != 3:
         pal = numpy.transpose(pal)
         palsize = pal.shape
     if palsize[0] > 256:
-        raise ValueError, "Palettes should be no longer than 256."
+        raise ValueError("Palettes should be no longer than 256.")
     fid = open(tofile,'w')
     fid.write("ncolors=%d\n\n#  r   g   b\n" % palsize[0])
     for k in range(palsize[0]):
@@ -613,7 +611,7 @@ def list_palettes():
     try: direc = os.environ['GISTPATH']
     except: direc = gist.GISTPATH
     files = glob.glob1(direc,"*.gp")
-    lengths = map(len,files)
+    lengths = list(map(len,files))
     maxlen = numpy.amax(lengths)
     palettes = dict()
     for file in files:
@@ -639,7 +637,7 @@ def change_palette(pal):
                 if len(pal) > 3 and pal[-2:] == 'gp':
                     gist.palette(pal)
                 else:
-                    raise ValueError, "Palette %s not found." % pal
+                    raise ValueError("Palette %s not found." % pal)
         else:
             data = numpy.transpose(numpy.asarray(pal))
             data = data.astype (numpy.uint8)
@@ -658,7 +656,7 @@ def matview(A,cmax=None,cmin=None,palette=None,color='fg'):
     """
     A = numpy.asarray(A)
     if A.dtype.char in ['D','F']:
-        print "Warning: complex array given, plotting magnitude."
+        print("Warning: complex array given, plotting magnitude.")
         A = abs(A)
     M,N = A.shape
     A = A[::-1,:]
@@ -901,7 +899,7 @@ def subplot(Numy,Numx,win=0,pw=None,ph=None,hsep=100,vsep=100,color='fg',frame=0
     if printit and msg:
         message = "Warning: Requested height and width too large.\n"
         message +="Changing to %d x %d" % (pw,ph)
-        print message
+        print(message)
 
     # Now we've got a suitable height and width
 
@@ -1159,7 +1157,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
 
 
     if (slice1[0] == slice2[0]):
-        raise ValueError, "Same slice dimension.."
+        raise ValueError("Same slice dimension..")
 
     for k in range(3):
         if k not in [slice1[0],slice2[0]]:
@@ -1201,9 +1199,9 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
         xwidth = rescale * xwidth
         height1 = rescale * height1
         totalheight = totalheight * rescale
-        print xwidth, height1
+        print((xwidth, height1))
     else:
-        print xwidth
+        print(xwidth)
     ystart = 0.5 - totalheight / 2
     ypos1 = [ystart, ystart+height1]
     ypos2 = [ystart+height1+space,ystart+totalheight]
@@ -1282,7 +1280,7 @@ def surf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="fg",phi=-45.0,
     change_palette(palette)
     sz = numpy.shape(z)
     if len(sz) != 2:
-        raise ValueError, "Input must be a 2-d array --- a surface."
+        raise ValueError("Input must be a 2-d array --- a surface.")
     N,M = sz
     if x is None:
         x = numpy.arange(0,N)
@@ -1318,7 +1316,7 @@ def mysurf(z,x=None,y=None,win=None,shade=0,edges=1,edge_color="fg",phi=-45.0,
     change_palette(palette)
     sz = numpy.shape(z)
     if len(sz) != 2:
-        raise ValueError, "Input must be a 2-d array --- a surface."
+        raise ValueError("Input must be a 2-d array --- a surface.")
     N,M = sz
     if x is None:
         x = numpy.arange(0,N)
@@ -1402,7 +1400,7 @@ def addtext(txt,xy=None,fontsize=16,font='helvetica',color=None,
     if xy is None:
         result = gist.mouse(0,0,"Click on point for lower left starting position")
         if result is None:
-            raise ValueError, "Invalid point entered."
+            raise ValueError("Invalid point entered.")
         x,y = result[4],result[5]
         tosys = 0
     else:

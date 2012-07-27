@@ -4,7 +4,7 @@
 # ed williams' colorbar stuff
 
 import numpy
-from gistC import *
+from .gistC import *
 import gistfuncs
 
 import sys # FIXME something weird's happening
@@ -82,7 +82,7 @@ def color_bar (minz, maxz, split = 0, ncol = None, ymax=0.85, ymin=0.44, xmin0=0
         scales.append ( "% .5g" % levs [i])
     ys = ymin + (ymax - ymin) * (levs - minz) / (maxz - minz)
     llev = len (levs)
-    rllev = range (llev)
+    rllev = list(range(llev))
     for i in rllev :
         plt (scales [i], xmax0+0.005, ys [i], color=color)   # labels
     xmin = numpy.zeros (llev, numpy.float32)

@@ -23,7 +23,7 @@ def no_of_dims (x) :
         if is_scalar (x) : return i
         try :
             x = x[0]
-        except IndexError, TypeError :
+        except (IndexError, TypeError):
             return i
     return -1
 

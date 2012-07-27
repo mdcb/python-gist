@@ -13,9 +13,9 @@
 #
 
 import numpy
-from gistC import bytscl # TODO: numpy
+from .gistC import bytscl # TODO: numpy
 import gistfuncs
-from pl3d import *
+from .pl3d import *
 
 def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
    ecolor =  None, ewidth = None, cull = None, scale = None, cmax = None,
@@ -235,7 +235,7 @@ def lightwf (cmax) :
    _draw3_n = get_draw3_n_ ()
    _list = _draw3_list [_draw3_n:]
    if _list [0] != plwf :
-      raise _LightwfError, "current 3D display list is not a plwf"
+      raise _LightwfError("current 3D display list is not a plwf")
    _list [1] [7] = cmax
    undo3_set_ (lightwf, _list)
 
@@ -272,16 +272,16 @@ def xyz_wf (z, y, x, scale = 1.0) :
    """
 
    if len (numpy.shape (z)) < 2 :
-      raise _Xyz_wfError, "impossible dimensions for z array"
+      raise _Xyz_wfError("impossible dimensions for z array")
    nx = numpy.shape (z) [0]
    ny = numpy.shape (z) [1]
    if y == None or x == None :
       if x != None or y != None :
-         raise _Xyz_wfError, "either give y,x both or neither"
+         raise _Xyz_wfError("either give y,x both or neither")
       x = gistfuncs.span (0, ny - 1, ny, nx)
       y = numpy.transpose (gistfuncs.span (0, nx - 1, nx, ny))
    elif numpy.shape (x) != numpy.shape (z) or numpy.shape (y) != numpy.shape (z) :
-      raise _Xyz_wfError, "x, y, and z must all have same dimensions"
+      raise _Xyz_wfError("x, y, and z must all have same dimensions")
    xyscl = max (maxelt_ (x) - minelt_ (x),
                 maxelt_ (y) - minelt_ (y))
    if scale != None:

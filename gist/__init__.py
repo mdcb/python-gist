@@ -1,5 +1,5 @@
-from gistC import *
+from .gistC import *
 import gistfuncs
-from gist import *
-from Mplot import *
+from .gist import *
+from .Mplot import *
 

@@ -23,16 +23,16 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 import numpy
-from plwf import *
-from pl3d import *
-from movie import *
-from slice3 import *
-from yorick import *
+from .plwf import *
+from .pl3d import *
+from .movie import *
+from .slice3 import *
+from .yorick import *
 from gist import *
 import gistfuncs
 
-print "Type gistdemo3d.run() or gistdemo3d.run(i), i = 1, 2, or 3."
-print "Partway, plots are written to Postscript file; see talk.ps."
+print("Type gistdemo3d.run() or gistdemo3d.run(i), i = 1, 2, or 3.")
+print("Partway, plots are written to Postscript file; see talk.ps.")
 
 window3 (hcp = "talk.ps", dump = 1)
 
@@ -62,7 +62,8 @@ def demo5_light (i) :
    return 1
 
 def paws ( ) :
-    i = raw_input ("Type in any string to continue; ^C to return to prompt. ")
+		# was 'raw_input' ...
+    i = eval(input ("Type in any string to continue; ^C to return to prompt. "))
     return
 
 def run (*itest) :
@@ -87,7 +88,7 @@ def run (*itest) :
       y = numpy.transpose (x)
       z = (x + y) * exp (-6.*(x*x+y*y))
       limits_(square = 1)
-      print "Plot wire frame: plwf (z, y, x)"
+      print("Plot wire frame: plwf (z, y, x)")
       orient3 ( )
       light3 ( )
       plwf (z, y, x)
@@ -96,32 +97,32 @@ def run (*itest) :
       plt("opaque wire mesh", .30, .42)
       paws ( )
 
-      print 'plwf(z,y,x,shade=1,ecolor="red")'
+      print('plwf(z,y,x,shade=1,ecolor="red")')
       plwf(z,y,x,shade=1,ecolor="red")
       [xmin, xmax, ymin, ymax] = draw3(1) # not necessary interactively
       limits (xmin, xmax, ymin, ymax)
       paws()
 
-      print "plwf(z,y,x,shade=1,edges=0)"
+      print("plwf(z,y,x,shade=1,edges=0)")
       plwf(z,y,x,shade=1,edges=0)
       [xmin, xmax, ymin, ymax] = draw3(1) # not necessary interactively
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print "light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))"
+      print("light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))")
       light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))
       [xmin, xmax, ymin, ymax] = draw3(1)
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print "light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))"
+      print("light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))")
       light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print "light3 ( ambient=.1,diffuse=.1,specular=1.,"
-      print "   sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))"
+      print("light3 ( ambient=.1,diffuse=.1,specular=1.,")
+      print("   sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))")
       light3 ( ambient=.1,diffuse=.1,specular=1.,
              sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))
       [xmin, xmax, ymin, ymax] = draw3(1)
@@ -134,7 +135,7 @@ def run (*itest) :
       x = gistfuncs.span (-1, 1, 64, 64)
       y = numpy.transpose (x)
       z = (x + y) * exp (-6.*(x*x+y*y))
-      print "Default lighting:  light3()"
+      print("Default lighting:  light3()")
       orient3 ( )
       light3 ( )
       plwf (z,y,x,shade=1,edges=0)
@@ -142,16 +143,16 @@ def run (*itest) :
       limits (xmin, xmax, ymin, ymax)
       paws( )
 
-      print "light3(diffuse=.2,specular=1)"
+      print("light3(diffuse=.2,specular=1)")
       light3(diffuse=.2,specular=1)
       limits_(square = 1)
       [xmin, xmax, ymin, ymax] = draw3(1) # not necessary interactively
       limits (xmin, xmax, ymin, ymax)
       paws()
 
-      print "movie(demo5_light, lims = [xmin, xmax, ymin, ymax])"
-      print "demo5_light calls:"
-      print "light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))"
+      print("movie(demo5_light, lims = [xmin, xmax, ymin, ymax])")
+      print("demo5_light calls:")
+      print("light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))")
       making_movie = 1
       movie(demo5_light, lims = [xmin, xmax, ymin, ymax])
       making_movie = 0
@@ -177,7 +178,7 @@ def run (*itest) :
       m3 = mesh3 (xyz, funcs = [r * (1. + y32)])
       del r, theta, phi, xyz, y32
 
-      print "   test uses " + `(nx - 1) * (ny - 1) * (nz - 1)` + " cells"
+      print(("   test uses " + repr((nx - 1) * (ny - 1) * (nz - 1)) + " cells"))
       elapsed = [0., 0., 0.]
       elapsed = timer_ (elapsed)
       elapsed0 = elapsed
@@ -207,12 +208,12 @@ def run (*itest) :
       timer_print ("slicing time", elapsed - elapsed0)
 
       fma ()
-      print 'Generate palette for pl3tree:  split_palette ("earth.gp")'
+      print('Generate palette for pl3tree:  split_palette ("earth.gp")')
       split_palette ("earth.gp")
-      print "gnomon -- turn on gnomon"
+      print("gnomon -- turn on gnomon")
       gnomon (1)
 
-      print "pl3tree with 1 slicing plane, 2 isosurfaces"
+      print("pl3tree with 1 slicing plane, 2 isosurfaces")
       clear3 ()
       # Make sure we don't draw till ready
       set_draw3_ (0)
@@ -229,7 +230,7 @@ def run (*itest) :
       paws ()
       hcp ()
 
-      print "spin3 animated rotation, use rot3 or orient3 for one frame"
+      print("spin3 animated rotation, use rot3 or orient3 for one frame")
       # don't want limits to autoscale during animation
       lims = limits ( )
       spin3 ()
@@ -481,7 +482,7 @@ def run (*itest) :
 
    if len (itest) == 0 or itest [0] == 7 :
 
-      print "Test plwf on the sombrero function"
+      print("Test plwf on the sombrero function")
       # compute sombrero function
       x = numpy.arange (-20, 21, dtype= numpy.float32)
       y = numpy.arange (-20, 21, dtype= numpy.float32)
@@ -502,8 +503,8 @@ def run (*itest) :
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print "Try smooth contours, log mode:"
-      print 'plzcont (nv, xyzv, contours = 20, scale = "normal")'
+      print("Try smooth contours, log mode:")
+      print('plzcont (nv, xyzv, contours = 20, scale = "normal")')
       [nv, xyzv, dum] = slice3mesh (x, y, z)
       zmult = max (max (abs (x)), max (abs (y)))
       plzcont (nv, xyzv, contours = 20, scale = "normal")
@@ -511,27 +512,27 @@ def run (*itest) :
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print 'plzcont (nv, xyzv, contours = 20, scale = "lin", edges=1)'
+      print('plzcont (nv, xyzv, contours = 20, scale = "lin", edges=1)')
       plzcont (nv, xyzv, contours = 20, scale = "lin", edges=1)
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print 'plwf (z, fill = z, shade = 1, ecolor = "black")'
+      print('plwf (z, fill = z, shade = 1, ecolor = "black")')
       plwf (z, fill = z, shade = 1, ecolor = "black")
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print "plwf (z, fill = z, shade = 1, edges = 0)"
+      print("plwf (z, fill = z, shade = 1, edges = 0)")
       plwf (z, fill = z, shade = 1, edges = 0)
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print "light3(diffuse=.2,specular=1)"
-      print "demo5_light calls:"
-      print "light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))"
+      print("light3(diffuse=.2,specular=1)")
+      print("demo5_light calls:")
+      print("light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))")
       light3(diffuse=.2,specular=1)
       making_movie = 1
       movie(demo5_light, lims = [xmin, xmax, ymin, ymax])
@@ -540,7 +541,7 @@ def run (*itest) :
       demo5_light(1)
       paws ()
 
-      print "plwf (z, fill = None, shade = 1, edges = 0)"
+      print("plwf (z, fill = None, shade = 1, edges = 0)")
       plwf (z, fill = None, shade = 1, edges = 0)
       [xmin, xmax, ymin, ymax] = draw3 (1)
       palette("gray.gp")
@@ -550,7 +551,7 @@ def run (*itest) :
 
    if len (itest) == 0 or itest [0] == 8 :
 
-      print "Test pl3surf on the sombrero function"
+      print("Test pl3surf on the sombrero function")
       # compute sombrero function
       nc1 = 100
       nv1 = nc1 + 1
@@ -591,7 +592,7 @@ def run (*itest) :
       palette ("gray.gp")
       paws ()
 
-      print "Try new slicing function (slice3mesh) to get color graph"
+      print("Try new slicing function (slice3mesh) to get color graph")
       [nv, xyzv, col] = slice3mesh (nxnynz [0:2], dxdydz [0:2], x0y0z0 [0:2],
          zmult * z, color = zmult * z)
       pl3surf (nv, xyzv, values = col)
@@ -602,24 +603,24 @@ def run (*itest) :
       palette ("rainbow.gp")
       paws ()
 
-      print "Try plzcont -- see if smooth mode is possible"
-      print "plzcont (nv, xyzv)"
+      print("Try plzcont -- see if smooth mode is possible")
+      print("plzcont (nv, xyzv)")
       palette ("heat.gp")
       plzcont (nv, xyzv)
       draw3 (1)
       paws ()
 
-      print "plzcont (nv, xyzv, contours = 20)"
+      print("plzcont (nv, xyzv, contours = 20)")
       plzcont (nv, xyzv, contours = 20)
       draw3 (1)
       paws ()
 
-      print 'plzcont (nv, xyzv, contours = 20, scale = "log")'
+      print('plzcont (nv, xyzv, contours = 20, scale = "log")')
       plzcont (nv, xyzv, contours = 20, scale = "log")
       draw3(1)
       paws ()
 
-      print 'plzcont (nv, xyzv, contours = 20, scale = "normal")'
+      print('plzcont (nv, xyzv, contours = 20, scale = "normal")')
       plzcont (nv, xyzv, contours = 20, scale = "normal")
       draw3(1)
       paws ()
@@ -658,13 +659,13 @@ def run (*itest) :
       z [17:22, 15:18] = z [17:22, 15:18] * 1.2
       z [16, 16] = z [16, 16] * 1.1
       orient3 ()
-      print "plwf (freg, shade = 1, edges = 0)"
+      print("plwf (freg, shade = 1, edges = 0)")
       plwf (freg, shade = 1, edges = 0)
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print "two slice3mesh and two pl3tree"
+      print("two slice3mesh and two pl3tree")
       nxny = numpy.array ( [kmax - 1, lmax - 1])
       x0y0 = numpy.array ( [0., 0.])
       dxdy = numpy.array ( [1., 1.])
@@ -676,37 +677,37 @@ def run (*itest) :
       limits ( )
       paws ()
 
-      print "light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])"
+      print("light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])")
       light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])
       demo5_light (1)
       paws ()
 
-      print "[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg, color = freg)"
+      print("[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg, color = freg)")
       [nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg, color = freg)
       pl3surf (nv, xyzv, values = col)
       draw3 (1)
       palette ("rainbow.gp")
       paws ()
 
-      print 'palette ("rainbow.gp")'
+      print('palette ("rainbow.gp")')
       [nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg, color = z)
       pl3surf (nv, xyzv, values = col)
       draw3 (1)
       paws ()
 
-      print 'palette ("stern.gp")'
+      print('palette ("stern.gp")')
       palette ("stern.gp")
       paws ()
 
-      print "[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, z, color = z)"
+      print("[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, z, color = z)")
       [nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, z, color = z)
       pl3surf (nv, xyzv, values = col)
       orient3(phi=0,theta=0)
       draw3 (1)
       paws ()
 
-      print 'palette ("gray.gp")'
-      print "light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))"
+      print('palette ("gray.gp")')
+      print("light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))")
       set_draw3_ (0)
       palette ("gray.gp")
       light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))

@@ -18,7 +18,7 @@
 
 from numpy import *
 from numpy import min
-from gistC import *
+from .gistC import *
 from gist import *
 import gistfuncs
 
@@ -50,7 +50,7 @@ def run(which=None, time_limit=60):
      number of the movie (1, 2, or 3) you want to watch; the second
      is a time limit on the duration of each movie in seconds (default
      is 60 seconds each)."""
-   import movie
+   from gist import movie
    global f, fdot, dt, x, y, level
 
    # generate a 30-by-30 cell mesh on the [-1,1] square
@@ -89,13 +89,10 @@ def run(which=None, time_limit=60):
      fixedlimits = limits()
      movie.movie(display_plf, time_limit, lims=fixedlimits, timing=1)
      # Note; movie_timing is a global variable in movie.py
-     print movie.movie_timing[3], "frames of filled mesh drumhead completed in",
-     print movie.movie_timing[2], "sec" 
-     print "Rate for filled mesh is",
-     print movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4), 
-     print "frames/(CPU sec),",
-     print movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4),
-     print "frames(wall sec)"
+     print("%d frames of filled mesh drumhead completed in %f sec" % (movie.movie_timing[3], movie.movie_timing[2])) 
+     print("Rate for filled mesh is %f frames/(CPU sec),%f frames(wall sec)" %
+      (movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4),
+        movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4)))
 
    # roll the perspective movie */
    if which==None or which==2:
@@ -104,13 +101,11 @@ def run(which=None, time_limit=60):
      display_plm(0)
      fixedlimits = limits()
      movie.movie(display_plm, time_limit, lims=fixedlimits, timing=1)
-     print movie.movie_timing[3], "frames of wireframe surface drumhead completed in",
-     print movie.movie_timing[2], "sec"
-     print "Rate for filled mesh is",
-     print movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4), 
-     print "frames/(CPU sec),",
-     print movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4),
-     print "frames(wall sec)"
+     print("%d frames of wireframe surface drumhead completed in %f sec",
+      (movie.movie_timing[3],movie.movie_timing[2]))
+     print("Rate for filled mesh is %f frames/(CPU sec), %f frames(wall sec)" %
+      (movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4), 
+        movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4)))
 
    # roll the shaded movie
    if which==None or which==3:
@@ -119,13 +114,11 @@ def run(which=None, time_limit=60):
      display_pl3(0)
      fixedlimits = limits()
      movie.movie(display_pl3, time_limit, lims=fixedlimits, timing=1)
-     print movie.movie_timing[3], "frames of filled surface drumhead completed in",
-     print movie.movie_timing[2], "sec"
-     print "Rate for filled mesh is",
-     print movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4), 
-     print "frames/(CPU sec),",
-     print movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4),
-     print "frames(wall sec)"
+     print("%d frames of filled surface drumhead completed in %f sec", 
+      (movie.movie_timing[3],movie.movie_timing[2]))
+     print("Rate for filled mesh is %f frames/(CPU sec), %f frames(wall sec)" %
+      (movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4), 
+        movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4)))
 
      fma()
      limits()
