@@ -112,6 +112,17 @@
 #include "plug-hlevel.h"
 #include "plug-internals.h"
 
+#if PY_MAJOR_VERSION >= 3
+#define PyString_Check PyUnicode_Check
+#define PyString_FromString PyUnicode_FromString
+#define PyString_AS_STRING(s) PyBytes_AsString(PyUnicode_AsEncodedString(s, "utf-8", "Error"))
+#define PyString_AsString(s) PyBytes_AsString(PyUnicode_AsEncodedString(s, "utf-8", "Error"))
+#define PyInt_Check PyLong_Check
+#define PyInt_AsLong PyLong_AsLong
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_AS_LONG PyLong_AS_LONG
+#endif
+
 static int dummy = 0;
 
 /* We add a component to the default Gist search path, for style and
@@ -211,7 +222,11 @@ static void flush_std(const char *s)
 	PyObject *pstdout, *error_type, *error_value, *error_traceback;
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	pstdout = PySys_GetObject("stdout");
+#if PY_MAJOR_VERSION >= 3
+	fsync(pstdout ? PyObject_AsFileDescriptor(pstdout) : fileno(stdout));
+#else
 	fflush(pstdout ? PyFile_AsFile(pstdout) : stdout);
+#endif
 	PyErr_Restore(error_type, error_value, error_traceback);
 }
 
@@ -9099,8 +9114,8 @@ int set_line_attributes(PyObject * dictionary, GpLineAttribs * attributes)
 		return 0;
 	}
   /*--------------------------------------------------------------------------*/
-	if (PyInt_Check(color)) {
-		long lcolor = PyInt_AsLong(color);
+	if (PyLong_Check(color)) {
+		long lcolor = PyLong_AsLong(color);
 		if (lcolor < 0) {
 			ERRMSG("number for color should be non-negative");
 			return 0;
@@ -9980,7 +9995,22 @@ static struct PyMethodDef gist_methods[] = {
 /* Initialize the module.  This should be the only symbol with
    external linkage. */
 
-void initgistC(void)
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef module_def = {
+	  PyModuleDef_HEAD_INIT,
+	  "gistC",     /* m_name */
+	  gist_module_documentation,  /* m_doc */
+	  -1,                  /* m_size */
+	  gist_methods,    /* m_methods */
+	  NULL,                /* m_reload */
+	  NULL,                /* m_traverse */
+	  NULL,                /* m_clear */
+	  NULL,                /* m_free */
+	};
+PyMODINIT_FUNC PyInit_gistC(void)
+#else
+PyMODINIT_FUNC initgistC(void)
+#endif
 {
 	PyObject *m, *d;
 
@@ -9989,13 +10019,21 @@ void initgistC(void)
 
 	/* initialize numpy */
 	import_array();
-
+#if PY_MAJOR_VERSION >= 3
+  if ((m = PyModule_Create(&module_def)) == NULL)
+    return m;
+#else
 	if ((m = Py_InitModule3("gistC", gist_methods,
 				gist_module_documentation)) == NULL)
 		return;
+#endif
 
 	if (already_initialized)	/* TODO futile */
-		return;
+#if PY_MAJOR_VERSION >= 3
+		return m;
+#else
+    return;
+#endif
 
 	PyModule_AddStringConstant(m, "version", PYGIST_VERSION);
 	PyModule_AddStringConstant(m, "GISTPATH", GISTPATH);
@@ -10064,8 +10102,12 @@ void initgistC(void)
 
 	if (setjmp(pyg_jmpbuf)) {
 		p_pending_events();
-		return;
 	}
+
+#if PY_MAJOR_VERSION >= 3
+  return m;
+#endif
+
 }
 
 static int pyg_on_idle(void)

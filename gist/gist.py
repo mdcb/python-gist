@@ -60,7 +60,7 @@ __all__ = ['winkill', 'pltitle', 'ylimits', 'moush', 'eps', 'xytitles', 'plmk', 
 import sys, os
 import numpy
 from .gistC import *
-import gistfuncs
+from .gistfuncs import zmin_zmax
 #from mesh import * # still experimental, undebugged
 from .shapetest import *
 
@@ -345,7 +345,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
    """
    # 1. Get contour colors
 
-   (vcmin, vcmax) = gistfuncs.zmin_zmax (z, ireg)
+   (vcmin, vcmax) = zmin_zmax (z, ireg)
    if type (contours) == int :
       n = contours
       vc = numpy.zeros (n + 2, numpy.float32)

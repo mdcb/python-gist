@@ -4,7 +4,7 @@
 
 import numpy
 from .gistC import *
-import gistfuncs
+from .gistfuncs import index_sort, array_set
 from .shapetest import *
 from .yorick import *
 
@@ -838,11 +838,11 @@ def sort3d (z, npolys) :
     z = numpy.bincount (nlist, z) / npolys
 
     # sort the polygons from smallest z to largest z
-    lst = gistfuncs.index_sort (z)
+    lst = index_sort (z)
     # next, find the list which sorts the polygon vertices
     # first, find a list vlist such that sort(vlist) is above list
     vlist = numpy.zeros (len (lst), numpy.int32)
-    gistfuncs.array_set (vlist, lst, numpy.arange (len (lst), dtype = numpy.int32))
+    array_set (vlist, lst, numpy.arange (len (lst), dtype = numpy.int32))
     # then reset the nlist values to that pre-sorted order, so that
     # sort(nlist) will be the required vertex sorting list
     nlist = take(vlist, nlist, 0)
@@ -858,7 +858,7 @@ def sort3d (z, npolys) :
     n1max = max (npolys)    # this must never be so large that
                             # numberof(npolys)*nmax > 2e9
     nmax = n1max * numpy.ones (len (nlist), numpy.int32)
-    vlist = gistfuncs.index_sort (nmax * nlist +
+    vlist = index_sort (nmax * nlist +
        numpy.arange (len (nlist), dtype = numpy.int32) % n1max)
     #         primary sort key ^            secondary key  ^
     return [lst, vlist]

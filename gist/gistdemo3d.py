@@ -29,7 +29,7 @@ from .movie import *
 from .slice3 import *
 from .yorick import *
 from gist import *
-import gistfuncs
+from .gistfuncs import span
 
 print("Type gistdemo3d.run() or gistdemo3d.run(i), i = 1, 2, or 3.")
 print("Partway, plots are written to Postscript file; see talk.ps.")
@@ -84,7 +84,7 @@ def run (*itest) :
 
    if len (itest) == 0 or itest [0] == 1 :
       set_draw3_ (0)
-      x = gistfuncs.span (-1, 1, 64, 64)
+      x = span (-1, 1, 64, 64)
       y = numpy.transpose (x)
       z = (x + y) * exp (-6.*(x*x+y*y))
       limits_(square = 1)
@@ -132,7 +132,7 @@ def run (*itest) :
    if len (itest) == 0 or itest [0] == 2 :
 
       set_draw3_ (0)
-      x = gistfuncs.span (-1, 1, 64, 64)
+      x = span (-1, 1, 64, 64)
       y = numpy.transpose (x)
       z = (x + y) * exp (-6.*(x*x+y*y))
       print("Default lighting:  light3()")
@@ -167,10 +167,10 @@ def run (*itest) :
       ny = demo5_n [1]
       nz = demo5_n [2]
       xyz = numpy.zeros ( (3, nx, ny, nz), numpy.float32)
-      xyz [0] = numpy.multiply.outer ( gistfuncs.span (-1, 1, nx), numpy.ones ( (ny, nz), numpy.float32))
+      xyz [0] = numpy.multiply.outer ( span (-1, 1, nx), numpy.ones ( (ny, nz), numpy.float32))
       xyz [1] = numpy.multiply.outer ( numpy.ones (nx, numpy.float32),
-         numpy.multiply.outer ( gistfuncs.span (-1, 1, ny), numpy.ones (nz, numpy.float32)))
-      xyz [2] = numpy.multiply.outer ( numpy.ones ( (nx, ny), numpy.float32), gistfuncs.span (-1, 1, nz))
+         numpy.multiply.outer ( span (-1, 1, ny), numpy.ones (nz, numpy.float32)))
+      xyz [2] = numpy.multiply.outer ( numpy.ones ( (nx, ny), numpy.float32), span (-1, 1, nz))
       r = numpy.sqrt (xyz [0] ** 2 + xyz [1] **2 + xyz [2] **2)
       theta = numpy.arccos (xyz [2] / r)
       phi = numpy.arctan2 (xyz [1] , xyz [0] + numpy.logical_not (r))

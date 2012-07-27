@@ -5,7 +5,7 @@
 
 import numpy
 from .gistC import *
-import gistfuncs
+from .gistfuncs import span, array_set
 
 import sys # FIXME something weird's happening
 
@@ -35,10 +35,10 @@ def nice_levels (z, n = 8) :
     n = int ( ( (cmax - cmin) / unit + 0.5) + 1)
     # FIXME ???
     sys.stdout.flush()
-    levs = gistfuncs.span (cmin, cmax, n)
+    levs = span (cmin, cmax, n)
     _list = numpy.nonzero(numpy.less (numpy.abs (levs), 0.1 * unit))[0]
     if len (_list) > 0 :
-        gistfuncs.array_set (levs, _list, 0.0)
+        array_set (levs, _list, 0.0)
     return levs
 
 def color_bar (minz, maxz, split = 0, ncol = None, ymax=0.85, ymin=0.44, xmin0=0.62, xmax0=0.64, zlabel=None, fontsize=16, font='helvetica', color='black') :
@@ -67,11 +67,11 @@ def color_bar (minz, maxz, split = 0, ncol = None, ymax=0.85, ymin=0.44, xmin0=0
     elif not split :
         # FIXME ???
         sys.stdout.flush()
-        d1=gistfuncs.span (0, 1, ncol)
+        d1=span (0, 1, ncol)
         data=numpy.reshape(d1, (ncol, 1))
         pli (data, xmin0, ymin, xmax0, ymax) # draw bar
     else :
-        pli (numpy.reshape (split_bytscl (gistfuncs.span (0, 1, ncol), 0).astype (numpy.uint8), (ncol, 1)),
+        pli (numpy.reshape (split_bytscl (span (0, 1, ncol), 0).astype (numpy.uint8), (ncol, 1)),
            xmin0, ymin, xmax0, ymax) # draw bar
     pldj (numpy.array ( [xmin0, xmin0]), numpy.array ( [ymin, ymax]), numpy.array ( [xmax0, xmax0]),
           numpy.array ( [ymin, ymax]), color=color)

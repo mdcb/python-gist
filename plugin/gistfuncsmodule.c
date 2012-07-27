@@ -6,6 +6,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if PY_MAJOR_VERSION >= 3
+#define PyString_Check PyUnicode_Check
+#define PyString_FromString PyUnicode_FromString
+#define PyString_AS_STRING(s) PyBytes_AsString(PyUnicode_AsEncodedString(s, "utf-8", "Error"))
+#define PyString_AsString(s) PyBytes_AsString(PyUnicode_AsEncodedString(s, "utf-8", "Error"))
+#define PyInt_Check PyLong_Check
+#define PyInt_AsLong PyLong_AsLong
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_AS_LONG PyLong_AS_LONG
+#endif
+
+
 #define MAX_INTERP_DIMS 6
 
 static PyObject *ErrorObject;
@@ -1172,8 +1184,23 @@ static struct PyMethodDef arr_methods[] = {
 /* Initialization function for the module (*must* be called initarrayfns) */
 
 static char arrayfns_module_documentation[] = "";
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef module_def = {
+	  PyModuleDef_HEAD_INIT,
+	  "gistfuncs",     /* m_name */
+	  arrayfns_module_documentation,  /* m_doc */
+	  -1,                  /* m_size */
+	  arr_methods,    /* m_methods */
+	  NULL,                /* m_reload */
+	  NULL,                /* m_traverse */
+	  NULL,                /* m_clear */
+	  NULL,                /* m_free */
+	};
 
+PyMODINIT_FUNC PyInit_gistfuncs(void)
+#else
 PyMODINIT_FUNC initgistfuncs(void)
+#endif
 {
 	PyObject *m, *d;
 
@@ -1184,13 +1211,22 @@ PyMODINIT_FUNC initgistfuncs(void)
 	import_array();
 
 	/* initialize this module */
-	if ((m = Py_InitModule3("gistfuncs", arr_methods,
+#if PY_MAJOR_VERSION >= 3
+  if ((m = PyModule_Create(&module_def)) == NULL)
+		return m;
+#else
+  if ((m = Py_InitModule3("gistfuncs", arr_methods,
 				arrayfns_module_documentation)) == NULL)
 		return;
+#endif
 
 	/* add symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	ErrorObject = PyErr_NewException("gistfuncs.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
+
+#if PY_MAJOR_VERSION >= 3
+  return m;
+#endif
 
 }

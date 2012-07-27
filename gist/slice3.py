@@ -15,7 +15,7 @@
 
 import numpy
 from .gistC import *
-import gistfuncs
+from .gistfuncs import find_mask, construct3, array_set, interp
 from .shapetest import *
 from .pl3d import *
 from .yorick import *
@@ -603,7 +603,7 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # (mask non-zero if edge is cut by plane)
         below = numpy.less (fs, 0.0)
         # I put the following into C for speed
-        mask = gistfuncs.find_mask (below, _node_edges [i])
+        mask = find_mask (below, _node_edges [i])
         lst = numpy.nonzero(mask)[0]
         edges = numpy.array (lst, copy = 1)
         cells = edges / _no_edges [i]
@@ -1564,9 +1564,9 @@ def _construct3 (itype) :
                                                numpy.bitwise_and (i, 1)]), 0))
     # For some reason the node edges for a cell need to be in different order
     # here than in slice3 to get the correct results. Hence _node_edges3.
-    mask = gistfuncs.find_mask (below, _node_edges3 [itype])
+    mask = find_mask (below, _node_edges3 [itype])
 
-    return gistfuncs.construct3 (mask, itype)
+    return construct3 (mask, itype)
 
 # ------------------------------------------------------------------------
 
@@ -2101,7 +2101,7 @@ def pl3tree (nverts, xyzverts = None, values = None, plane = None,
         # We have vertex-centered values, which for Gist must be
         # averaged over each cell
         lst = numpy.zeros (numpy.sum (nverts,axis=0), numpy.int32)
-        gistfuncs.array_set (lst, numpy.cumsum (nverts,axis=0) [0:-1], numpy.ones (len (nverts), numpy.int32))
+        array_set (lst, numpy.cumsum (nverts,axis=0) [0:-1], numpy.ones (len (nverts), numpy.int32))
         tpc = values.dtype
         values = (numpy.bincount (numpy.cumsum (lst,axis=0), values) / nverts).astype (tpc)
     if plane != None :
@@ -2552,11 +2552,11 @@ def split_palette ( * name) :
     newr = numpy.zeros (200, 'B')
     newg = numpy.zeros (200, 'B')
     newb = numpy.zeros (200, 'B')
-    newr [0:100] = gistfuncs.interp (r [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
+    newr [0:100] = interp (r [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
        numpy.arange (100, dtype = numpy.float32 ) * n / 100).astype (numpy.uint8)
-    newg [0:100] = gistfuncs.interp (g [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
+    newg [0:100] = interp (g [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
        numpy.arange (100, dtype = numpy.float32 ) * n / 100).astype (numpy.uint8)
-    newb [0:100] = gistfuncs.interp (b [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
+    newb [0:100] = interp (b [0:n].astype (numpy.float32), numpy.arange (n, dtype = numpy.float32 ),
        numpy.arange (100, dtype = numpy.float32 ) * n / 100).astype (numpy.uint8)
     newr [100:200] = (numpy.arange (100, dtype = numpy.int32) * 255 / 99).astype (numpy.uint8)
     newg [100:200] = (numpy.arange (100, dtype = numpy.int32) * 255 / 99).astype (numpy.uint8)

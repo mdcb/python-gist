@@ -20,7 +20,7 @@ from numpy import *
 from numpy import min
 from .gistC import *
 from gist import *
-import gistfuncs
+from .gistfuncs import span as g_span
 
 def run(which=None, time_limit=60):
    """Exhibit quadrilateral mesh plots in 3 movies of a drumhead.
@@ -54,7 +54,7 @@ def run(which=None, time_limit=60):
    global f, fdot, dt, x, y, level
 
    # generate a 30-by-30 cell mesh on the [-1,1] square
-   x= gistfuncs.span(-1, 1, 31, 31)
+   x= g_span(-1, 1, 31, 31)
    y= transpose(x)
    # map the square mesh into a mesh on the unit circle
    # this mesh has more nearly equal area cells than a polar

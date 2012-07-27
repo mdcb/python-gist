@@ -14,7 +14,7 @@
 
 import numpy
 from .gistC import bytscl # TODO: numpy
-import gistfuncs
+from .gistfuncs import reverse, span
 from .pl3d import *
 
 def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
@@ -123,15 +123,15 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
       # can be arranged by reversing the order of the elements if
       # necessary.
       if iedge < 0.0 :
-         x = gistfuncs.reverse (x, 0)
-         y = gistfuncs.reverse (y, 0)
+         x = reverse (x, 0)
+         y = reverse (y, 0)
          if fill != None :
-            fill = gistfuncs.reverse (fill, 0)
+            fill = reverse (fill, 0)
       if jedge < 0.0 :
-         x = gistfuncs.reverse (x, 1)
-         y = gistfuncs.reverse (y, 1)
+         x = reverse (x, 1)
+         y = reverse (y, 1)
          if fill != None :
-            fill = gistfuncs.reverse (fill, 1)
+            fill = reverse (fill, 1)
       xmax = maxelt_ (x)
       xmin = minelt_ (x)
       ymax = maxelt_ (y)
@@ -278,8 +278,8 @@ def xyz_wf (z, y, x, scale = 1.0) :
    if y == None or x == None :
       if x != None or y != None :
          raise _Xyz_wfError("either give y,x both or neither")
-      x = gistfuncs.span (0, ny - 1, ny, nx)
-      y = numpy.transpose (gistfuncs.span (0, nx - 1, nx, ny))
+      x = span (0, ny - 1, ny, nx)
+      y = numpy.transpose (span (0, nx - 1, nx, ny))
    elif numpy.shape (x) != numpy.shape (z) or numpy.shape (y) != numpy.shape (z) :
       raise _Xyz_wfError("x, y, and z must all have same dimensions")
    xyscl = max (maxelt_ (x) - minelt_ (x),
