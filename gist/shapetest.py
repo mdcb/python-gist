@@ -5,23 +5,23 @@
 
 import numpy
 
-def is_scalar (x) :
-    if type (x) == str : return 1
-    try :
-        y = len (x)
-    except (TypeError, AttributeError) :
+def is_scalar(x):
+    if type(x) == str: return 1
+    try:
+        y = len(x)
+    except (TypeError, AttributeError):
         return 1
     return 0
 
 # This routine should be able to tell you the size of any object:
-def no_of_dims (x) :
-    if x == None : return 0
-    if isinstance(x, numpy.ndarray) : return len (x.shape)
-    if isinstance(x, (list, tuple)) : return 1
+def no_of_dims(x):
+    if x == None: return 0
+    if isinstance(x, numpy.ndarray): return len(x.shape)
+    if isinstance(x, (list, tuple)): return 1
     # I don't know if there are any other possibilities.
-    for i in range (10) :
-        if is_scalar (x) : return i
-        try :
+    for i in range(10):
+        if is_scalar(x): return i
+        try:
             x = x[0]
         except (IndexError, TypeError):
             return i
@@ -31,16 +31,16 @@ def no_of_dims (x) :
 # It returns a list rather than a tuple; and if it is
 # applied to a list, it returns a list each entry of which
 # tells the shape of the corresponding list entry, recursively.
-def rshape (x) :
-    ndim = no_of_dims (x)
-    if ndim == 0 : return 0
+def rshape(x):
+    ndim = no_of_dims(x)
+    if ndim == 0: return 0
     s = []
-    if type (x) in (list,tuple):
-        for i in range (len (x)) :
-            s.append (rshape (x [0]))
-            x = x [1:]
+    if type(x) in (list,tuple):
+        for i in range(len(x)):
+            s.append(rshape(x[0]))
+            x = x[1:]
     else : # an array or ???
-        for i in range ( ndim ) :
-            s.append (len (x))
+        for i in range (ndim):
+            s.append(len(x))
             x = x[0]
     return s

@@ -2,9 +2,9 @@
 Installation
 ------------------------------------------------------------------------
 
-git clone https://github.com/mdcb/python-gist.git
+git clone git://github.com/mdcb/python-gist.git 
 cd python-gist
-git clone https://github.com/dhmunro/yorick.git
+git clone git://github.com/dhmunro/yorick.git
 
 - distutil style:
 sudo python setup.py install
@@ -12,6 +12,14 @@ sudo python setup.py install
 - rpm style:
 python setup.py bdist_rpm
 sudo yum install -y dist/python-gist-*.`uname -m`.rpm
+
+OSX
+---
+export ARCHFLAGS="-arch x86_64"
+setup.cfg -> 
+  xft_patch = False
+
+
 
 ------------------------------------------------------------------------
 Authors and Contributors

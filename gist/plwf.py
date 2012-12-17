@@ -6,7 +6,7 @@
 
 #
 #  PLWF.PY
-#  Simple "painter's algorithm"-class routine for making 3-D wire frames
+#  Simple 'painter's algorithm'-class routine for making 3-D wire frames
 #  and related models.
 #
 #  $Id: plwf.py 655 2007-09-07 20:17:39Z mbec $
@@ -14,22 +14,22 @@
 
 import numpy
 from .gistC import bytscl # TODO: numpy
-from .gistfuncs import reverse, span
+from .gistF import reverse
 from .pl3d import *
 
 def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
    ecolor =  None, ewidth = None, cull = None, scale = None, cmax = None,
    clear = 1, ireg = None) :
 
-   """
+   '''
    plwf (z)
    or plwf (z, y, x)
 
      plots a 3-D wire frame of the given Z array, which must have the
      same dimensions as the mesh (X, Y).  If X and Y are not given, they
      default to the first and second indices of Z, respectively.
-     The drawing order of the zones is determined by a simple "painter's
-     algorithm", which works fairly well if the mesh is reasonably near
+     The drawing order of the zones is determined by a simple 'painter's
+     algorithm', which works fairly well if the mesh is reasonably near
      rectilinear, but can fail even then if the viewpoint is chosen to
      produce extreme fisheye perspective effects.  Look at the resulting
      plot carefully to be sure the algorithm has correctly rendered the
@@ -44,8 +44,8 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
                        colors, you may set to 0 to supress the edges
              ecolor, ewidth  -- color and width of edges
              cull   -- default is 1 (cull back surfaces), but if you want
-                       to see the "underside" of the model, set to 0
-             scale  -- by default, Z is scaled to "reasonable" maximum
+                       to see the 'underside' of the model, set to 0
+             scale  -- by default, Z is scaled to 'reasonable' maximum
                        and minimum values related to the scale of (X,Y).
                        This keyword alters the default scaling factor, in
                        the sense that scale=2.0 will produce twice the
@@ -57,13 +57,13 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
                        interactively
 
    SEE ALSO: lightwf, plm, plf, orient3, light3, fma3, window3
-   """
+   '''
 
    _draw3 = get_draw3_ ( )
    _square = get_square_ ( )
    [_xfactor, _yfactor] = get_factors_ ( )
 
-   if (type (z) == ListType) :
+   if (type (z) == list) :
       xyz = z [0]
       fill = z [1]
       shade = z [2]
@@ -169,42 +169,42 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
             else: plm (y, x)
       elif ecolor != None and ewidth != None and cmax != None :
          if ireg != None: plf (fill, y, x, ireg, edges = edges, ecolor = ecolor,
-              ewidth = ewidth, cmin = 0.0, cmax = cmax, legend = "")
+              ewidth = ewidth, cmin = 0.0, cmax = cmax, legend = '')
          else: plf (fill, y, x, edges = edges, ecolor = ecolor,
-              ewidth = ewidth, cmin = 0.0, cmax = cmax, legend = "")
+              ewidth = ewidth, cmin = 0.0, cmax = cmax, legend = '')
       elif ecolor != None and ewidth != None :
          if ireg != None: plf (fill, y, x, ireg, edges = edges, ewidth = ewidth,
-              cmin = 0.0, ecolor = ecolor, legend = "")
+              cmin = 0.0, ecolor = ecolor, legend = '')
          else: plf (fill, y, x, edges = edges, ewidth = ewidth,
-              cmin = 0.0, ecolor = ecolor, legend = "")
+              cmin = 0.0, ecolor = ecolor, legend = '')
       elif ecolor != None and cmax != None :
          if ireg != None: plf (fill, y, x, ireg, edges = edges, ecolor = ecolor,
-              cmin = 0.0, cmax = cmax, legend = "")
+              cmin = 0.0, cmax = cmax, legend = '')
          else: plf (fill, y, x, edges = edges, ecolor = ecolor,
-              cmin = 0.0, cmax = cmax, legend = "")
+              cmin = 0.0, cmax = cmax, legend = '')
       elif ewidth != None and cmax != None :
          if ireg != None: plf (fill, y, x, ireg, edges = edges,  ewidth = ewidth,
-              cmin = 0.0, cmax = cmax, legend = "")
+              cmin = 0.0, cmax = cmax, legend = '')
          else: plf (fill, y, x, edges = edges,  ewidth = ewidth,
-              cmin = 0.0, cmax = cmax, legend = "")
+              cmin = 0.0, cmax = cmax, legend = '')
       elif ecolor != None :
          if ireg != None: plf (fill, y, x, ireg, edges = edges, ecolor = ecolor,
-              cmin = 0.0, legend = "")
+              cmin = 0.0, legend = '')
          else: plf (fill, y, x, edges = edges, ecolor = ecolor,
-              cmin = 0.0, legend = "")
+              cmin = 0.0, legend = '')
       elif ewidth != None :
          if ireg != None: plf (fill, y, x, ireg, edges = edges, ewidth = ewidth,
-              cmin = 0.0, legend = "")
+              cmin = 0.0, legend = '')
          else: plf (fill, y, x, edges = edges, ewidth = ewidth,
-              cmin = 0.0, legend = "")
+              cmin = 0.0, legend = '')
       elif cmax != None :
          if ireg != None: plf (fill, y, x, ireg, edges = edges,
-              cmin = 0.0, cmax = cmax, legend = "")
+              cmin = 0.0, cmax = cmax, legend = '')
          else: plf (fill, y, x, edges = edges,
-              cmin = 0.0, cmax = cmax, legend = "")
+              cmin = 0.0, cmax = cmax, legend = '')
       else :
-         if ireg != None: plf (fill, y, x, ireg, edges = edges, cmin = 0.0, legend = "")
-         else: plf (fill, y, x, edges = edges, cmin = 0.0, legend = "")
+         if ireg != None: plf (fill, y, x, ireg, edges = edges, cmin = 0.0, legend = '')
+         else: plf (fill, y, x, edges = edges, cmin = 0.0, legend = '')
       return [xmin, xmax, ymin, ymax]
 
    xyz = xyz_wf (z, y, x, scale = scale)
@@ -216,11 +216,12 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
       call_idler ( ) # This will traverse and execute the drawing list
                      # if the default idler has been set.
 
-_LightwfError = "LightwfError"
+class _LightwfError(Exception):
+    pass
 
 def lightwf (cmax) :
 
-   """
+   '''
    lightwf (cmax)
      Sets the cmax= parameter interactively, assuming the current
      3D display list contains the result of a previous plwf call.
@@ -229,28 +230,29 @@ def lightwf (cmax) :
      keyword to light3.
 
    SEE ALSO: plwf, light3
-   """
+   '''
 
    _draw3_list = get_draw3_list_ ()
    _draw3_n = get_draw3_n_ ()
    _list = _draw3_list [_draw3_n:]
    if _list [0] != plwf :
-      raise _LightwfError("current 3D display list is not a plwf")
+      raise _LightwfError('current 3D display list is not a plwf')
    _list [1] [7] = cmax
    undo3_set_ (lightwf, _list)
 
 
-_Xyz_wfError = "Xyz_wfError"
+class _Xyz_wfError(Exception):
+    pass
 
 def xyz_wf (z, y, x, scale = 1.0) :
 
-   """
+   '''
    xyz_wf (z, [y, x] [,scale = 1.0])
       returns a 3-by-ni-by-nj array whose 0th entry is x, 1th entry
       is y, and 2th entry is z. z is ni-by-nj. x and y, if present,
       must be the same shape. If not present, integer ranges will
       be used to create an equally spaced coordinate grid in x and y.
-      The function which scales the "topography" of z(x,y) is
+      The function which scales the 'topography' of z(x,y) is
       potentially useful apart from plwf.
       For example, the xyz array used by plwf can be converted from
       a quadrilateral mesh plotted using plf to a polygon list plotted
@@ -269,19 +271,19 @@ def xyz_wf (z, y, x, scale = 1.0) :
       The resulting array xyz is 3-by-(4*(nj-1)*(ni-1)).
       xyz[0:3,4*i:4*(i+1)] are the clockwise coordinates of the
       vertices of cell number i.
-   """
+   '''
 
    if len (numpy.shape (z)) < 2 :
-      raise _Xyz_wfError("impossible dimensions for z array")
+      raise _Xyz_wfError('impossible dimensions for z array')
    nx = numpy.shape (z) [0]
    ny = numpy.shape (z) [1]
    if y == None or x == None :
       if x != None or y != None :
-         raise _Xyz_wfError("either give y,x both or neither")
-      x = span (0, ny - 1, ny, nx)
-      y = numpy.transpose (span (0, nx - 1, nx, ny))
+         raise _Xyz_wfError('either give y,x both or neither')
+      x = numpy.tile(numpy.linspace (0, ny - 1, ny), nx).reshape(nx,ny)
+      y = numpy.transpose (numpy.tile(numpy.linspace (0, nx - 1, nx), ny).reshape(ny,nx))
    elif numpy.shape (x) != numpy.shape (z) or numpy.shape (y) != numpy.shape (z) :
-      raise _Xyz_wfError("x, y, and z must all have same dimensions")
+      raise _Xyz_wfError('x, y, and z must all have same dimensions')
    xyscl = max (maxelt_ (x) - minelt_ (x),
                 maxelt_ (y) - minelt_ (y))
    if scale != None:

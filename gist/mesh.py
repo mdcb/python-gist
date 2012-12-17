@@ -28,33 +28,33 @@ import unittest
 savedMesh = None
 
 class InputError ( Exception ):
-   """
+   '''
    Used for input errors in these function calls.
-   """
+   '''
 
 class Mesh:
-   """
+   '''
    Saves mesh information:  x, y as double array and ireg as an 
    int array.
-   """
+   '''
    def __init__ ( self, x=None, y=None, ireg=None, triangle=None ):
 
       try:
          self.x = numpy.array ( x, dtype=numpy.float32, copy=0 )
       except:
-         raise TypeError("Could not cast x to numpy ndarray")
+         raise TypeError('Could not cast x to numpy ndarray')
 
       if not ( numpy.rank(self.x) == 2 and 
                numpy.shape(self.x)[0] >=2 and numpy.shape(self.x)[1] >= 2 ):
-         raise TypeError("x must be 2D")
+         raise TypeError('x must be 2D')
 
       try:
          self.y = numpy.array ( y, dtype=numpy.float32, copy=0 )
       except:
-         raise TypeError("Could not cast y to numpy ndarray")
+         raise TypeError('Could not cast y to numpy ndarray')
       if not ( numpy.rank(self.y) == 2 and 
                numpy.shape(self.y)[0] >=2 and numpy.shape(self.y)[1] >= 2 ):
-         raise TypeError("y must be 2D")
+         raise TypeError('y must be 2D')
 
       if ireg is None:
          self.ireg = numpy.zeros ( numpy.shape(self.x), numpy.int32 )
@@ -63,10 +63,10 @@ class Mesh:
          try:
             self.ireg = numpy.array ( ireg, dtype=numpy.int32, copy=0 )
          except:
-            raise TypeError("Could not cast ireg to numpy ndarray")
+            raise TypeError('Could not cast ireg to numpy ndarray')
          if not ( numpy.rank(self.ireg) == 2 and 
                   numpy.shape(self.ireg)[0] >=2 and numpy.shape(self.ireg)[1] >= 2 ):
-            raise TypeError("ireg must be 2D")
+            raise TypeError('ireg must be 2D')
 
       if triangle is None:
          self.triangle = numpy.zeros ( numpy.shape(self.x), numpy.int32 )
@@ -74,46 +74,46 @@ class Mesh:
          try:
             self.triangle = numpy.array ( triangle, dtype=numpy.int32, copy=0 )
          except:
-            raise TypeError("Could not cast triangle to numpy ndarray")
+            raise TypeError('Could not cast triangle to numpy ndarray')
          if not ( numpy.rank(self.triangle) == 2 and
                   numpy.shape(self.triangle)[0] >=2 and numpy.shape(self.triangle)[1] >= 2 ):
-            raise TypeError("triangle must be 2D")
+            raise TypeError('triangle must be 2D')
 
       self.shape = numpy.shape(self.x) 
 
    def display ( self ):
-      print(("mesh.x\n", self.x))
-      print(("mesh.y\n", self.y))
-      print(("mesh.ireg\n", self.ireg))
-      print(("mesh.triangle\n", self.triangle))
+      print(('mesh.x\n', self.x))
+      print(('mesh.y\n', self.y))
+      print(('mesh.ireg\n', self.ireg))
+      print(('mesh.triangle\n', self.triangle))
 
    def setReg ( self, ireg ):
 
       try:
          self.ireg = numpy.array ( ireg, dtype=numpy.int32, copy=0 )
       except:
-         raise TypeError("Could not cast ireg to numpy ndarray")
+         raise TypeError('Could not cast ireg to numpy ndarray')
 
       if not ( numpy.rank(self.ireg) == 2 and
                numpy.shape(self.ireg)[0] >=2 and numpy.shape(self.ireg)[1] >= 2 ):
-         raise TypeError("ireg must be 2D")
+         raise TypeError('ireg must be 2D')
 
       if self.shape != numpy.shape ( self.ireg ):
-         raise InputError("ireg has incompatible shape.")
+         raise InputError('ireg has incompatible shape.')
       
    def setTriangle ( self, triangle ):
 
       try:
          self.triangle = numpy.array ( triangle, dtype=numpy.int32, copy=0 )
       except:
-         raise TypeError("Could not cast triangle to numpy ndarray")
+         raise TypeError('Could not cast triangle to numpy ndarray')
 
       if not ( numpy.rank(self.triangle) == 2 and
                numpy.shape(self.triangle)[0] >=2 and numpy.shape(self.triangle)[1] >= 2 ):
-         raise TypeError("triangle must be 2D")
+         raise TypeError('triangle must be 2D')
 
       if self.shape != numpy.shape (self.triangle):
-         raise InputError("triangle has incompatible shape.")
+         raise InputError('triangle has incompatible shape.')
 
    def clear ( self ):
       self.x = None
@@ -122,7 +122,7 @@ class Mesh:
       self.triangle = None
 
 def plmesh ( y=None, x=None, ireg=None, triangle=None, mesh=None ):
-   """
+   '''
    Return a reference to the default mesh saved 
 
    mesh = plmesh ( y, x, ireg, triangle=tri_array )  or
@@ -145,7 +145,7 @@ def plmesh ( y=None, x=None, ireg=None, triangle=None, mesh=None ):
       If Y is supplied, X must be supplied, and vice-versa.
 
    SEE ALSO: plm, plc, plv, plf, plfp
-   """
+   '''
    global savedMesh
 
    existMesh = False 
@@ -157,12 +157,12 @@ def plmesh ( y=None, x=None, ireg=None, triangle=None, mesh=None ):
 
    if x is not None and y is None or \
       x is None and y is not None:
-      raise InputError("If x is supplied, y must be supplied, and vice versa")
+      raise InputError('If x is supplied, y must be supplied, and vice versa')
 
    if mesh is None:
 
       if x is None and y is None:
-         print("Warning: using obsolete format; specify mesh or (y,x).")
+         print('Warning: using obsolete format; specify mesh or (y,x).')
          mesh = savedMesh
          existMesh = True
       else:
@@ -172,10 +172,10 @@ def plmesh ( y=None, x=None, ireg=None, triangle=None, mesh=None ):
 
       existMesh = True
       if not ( x is None and y is None ):
-         print("Warning: provided both (y,x) and mesh; will use mesh")
+         print('Warning: provided both (y,x) and mesh; will use mesh')
 
    if savedMesh is None:
-      raise InputError("No mesh has been specfied.")
+      raise InputError('No mesh has been specfied.')
 
    if existMesh == True:
 #     .. Allow ireg and triangle of an existing mesh to be modified
@@ -190,7 +190,7 @@ def plmesh ( y=None, x=None, ireg=None, triangle=None, mesh=None ):
    return savedMesh 
 
 def plc ( z, y=None, x=None, ireg=None, levs=None, mesh=None, **keywords ):
-   """
+   '''
    plc ( z, y, x, levs=z_values )  or
    plc ( z, y, x, ireg, levs=z_values ) or
    plc ( z, levs=z_values, mesh=myMesh )  or
@@ -212,7 +212,7 @@ def plc ( z, y=None, x=None, ireg=None, levs=None, mesh=None, **keywords ):
 
    SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh
              limits, logxy, ylimits, fma, hcp
-   """
+   '''
    global savedMesh
    _z = numpy.array ( z, numpy.float32, copy=0 )
 
@@ -220,13 +220,13 @@ def plc ( z, y=None, x=None, ireg=None, levs=None, mesh=None, **keywords ):
 
       if x is None and y is None and ireg is None:
          if savedMesh is None:
-            raise InputError("No mesh specified.")
+            raise InputError('No mesh specified.')
          else:
-            print("Warning: using obsolete format; specify mesh or (y,x).")
+            print('Warning: using obsolete format; specify mesh or (y,x).')
             mesh = savedMesh
       else:
 #        .. Use the passed in mesh over the default
-         assert x is not None and y is not None, "x and y need to be set"
+         assert x is not None and y is not None, 'x and y need to be set'
          if ireg is None:
             ireg = numpy.zeros ( numpy.shape(_z), numpy.int32 )
             ireg[1:,1:] = 1
@@ -239,11 +239,11 @@ def plc ( z, y=None, x=None, ireg=None, levs=None, mesh=None, **keywords ):
 #        .. Use mesh argument
          pass
       else:
-         print("Warning: provided both (y,x) and mesh; will use mesh")
+         print('Warning: provided both (y,x) and mesh; will use mesh')
  
 #  .. Check the dimensions of mesh
    if numpy.shape(_z) != mesh.shape:
-      raise TypeError("input mesh does not match dimensions of x")
+      raise TypeError('input mesh does not match dimensions of x')
 
    if levs is None:
 #     .. Default is 8 evenly spaced contours
@@ -263,7 +263,7 @@ def plc ( z, y=None, x=None, ireg=None, levs=None, mesh=None, **keywords ):
    gist.plc( _z, mesh.y, mesh.x, mesh.ireg, _levels )
 
 def plf ( z, y=None, x=None, ireg=None, mesh=None, **keywords ):
-   """
+   '''
    Plot a filled mesh. z has the same shape as x and y. 
 
    plf ( z, y, x )  or
@@ -294,18 +294,18 @@ def plf ( z, y=None, x=None, ireg=None, mesh=None, **keywords ):
    KEYWORDS: legend, hide, region, top, cmin, cmax, edges, ecolor, ewidth
 
    SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh,
-             limits, logxy, ylimits, fma, hcp, palette, bytscl, histeq_scale
-   """ 
+             limits, logxy, ylimits, fma, hcp, palette, bytscl
+   ''' 
    global savedMesh
    _z = numpy.array ( z, numpy.float32, copy=0 )
 
    if mesh is None:
 
       if x is None and y is None and ireg is None:
-         print("Warning: using obsolete format; specify mesh or (y,x).")
+         print('Warning: using obsolete format; specify mesh or (y,x).')
          mesh = savedMesh
       else:
-         assert x is not None and y is not None, "x and y need to be set"
+         assert x is not None and y is not None, 'x and y need to be set'
          if ireg is None:
             ireg = numpy.zeros ( numpy.shape(_z), numpy.int32 )
             ireg[1:,1:] = 1
@@ -317,11 +317,11 @@ def plf ( z, y=None, x=None, ireg=None, mesh=None, **keywords ):
 #        .. Use mesh argument
          pass
       else:
-         print("Warning: provided both (y,x) and mesh; will use mesh")
+         print('Warning: provided both (y,x) and mesh; will use mesh')
  
 #  .. Check the dimensions of mesh
    if numpy.shape(_z) != mesh.shape:
-      raise TypeError("input mesh does not match dimensions of x")
+      raise TypeError('input mesh does not match dimensions of x')
 
    print((mesh.x))
    print((mesh.y))
@@ -329,7 +329,7 @@ def plf ( z, y=None, x=None, ireg=None, mesh=None, **keywords ):
    gist.plf( _z, mesh.y, mesh.x, mesh.ireg )
 
 def plm ( y=None, x=None, ireg=None, mesh=None ):
-   """
+   '''
    plm ( y, x, boundary=0/1, inhibit=0/1/2 )  or
    plm ( y, x, ireg, boundary=0/1, inhibit=0/1/2 )  or
    plm ( boundary=0/1, inhibit=0/1/2, mesh=myMesh )
@@ -356,16 +356,16 @@ def plm ( y=None, x=None, ireg=None, mesh=None ):
 
     SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh,
               limits, logxy, ylimits, fma, hcp
-   """
+   '''
    global savedMesh
 
    if mesh is None:
 
       if x is None and y is None and ireg is None:
-         print("Warning: using obsolete format; specify mesh or (y,x).")
+         print('Warning: using obsolete format; specify mesh or (y,x).')
          mesh = savedMesh
       else:
-         assert x is not None and y is not None, "x and y need to be set"
+         assert x is not None and y is not None, 'x and y need to be set'
          _x = numpy.array ( x, numpy.float32 )
          if ireg is None:
             ireg = numpy.zeros ( numpy.shape(_x), numpy.int32 )
@@ -378,7 +378,7 @@ def plm ( y=None, x=None, ireg=None, mesh=None ):
 #        .. Use mesh argument
          pass
       else:
-         print("Warning: provided both (y,x) and mesh; will use mesh")
+         print('Warning: provided both (y,x) and mesh; will use mesh')
  
    print((mesh.x))
    print((mesh.y))
@@ -386,7 +386,7 @@ def plm ( y=None, x=None, ireg=None, mesh=None ):
    gist.plm( mesh.y, mesh.x, mesh.ireg ) 
 
 def plv ( vy, vx, y=None, x=None, ireg=None, mesh=None, **keywords ):
-   """
+   '''
    plv ( vy, vx, y, x, scale=dt )  or
    plv ( vy, vx, y, x, ireg, scale=dt )  or
    plv ( vy, vx, scale=dt, mesh=myMesh )  or
@@ -410,21 +410,21 @@ def plv ( vy, vx, y=None, x=None, ireg=None, mesh=None, **keywords ):
 
    SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh, pledit,
              limits, logxy, ylimits, fma, hcp
-   """ 
+   ''' 
    global savedMesh
    _vx = numpy.array ( vx, numpy.float32, copy=0 )
    _vy = numpy.array ( vy, numpy.float32, copy=0 )
 
    if numpy.shape(_vx) != numpy.shape(_vy):
-      raise InputError("Shapes of vx and vy are not the same.")
+      raise InputError('Shapes of vx and vy are not the same.')
 
    if mesh is None:
 
       if x is None and y is None and ireg is None:
-         print("Warning: using obsolete format; specify mesh or (y,x).")
+         print('Warning: using obsolete format; specify mesh or (y,x).')
          mesh = savedMesh
       else:
-         assert x is not None and y is not None, "x and y need to be set"
+         assert x is not None and y is not None, 'x and y need to be set'
          if ireg is None:
             ireg = numpy.zeros ( numpy.shape(x), numpy.int32 )
             ireg[1:,1:] = 1
@@ -436,11 +436,11 @@ def plv ( vy, vx, y=None, x=None, ireg=None, mesh=None, **keywords ):
 #        .. Use mesh argument
          pass
       else:
-         print("Warning: provided both (y,x) and mesh; will use mesh")
+         print('Warning: provided both (y,x) and mesh; will use mesh')
  
 #  .. Check the dimensions of mesh
    if numpy.shape(_vx) != mesh.shape:
-      raise TypeError("input mesh does not match dimensions of x")
+      raise TypeError('input mesh does not match dimensions of x')
 
    print((mesh.x)) 
    print((mesh.y)) 
@@ -458,19 +458,19 @@ class TestPLMESH ( unittest.TestCase ):
 
    def testPLMESH ( self ):
 
-      print("... plmesh ( self.y, self.x, self.ireg )")
+      print('... plmesh ( self.y, self.x, self.ireg )')
       myMesh = plmesh ( self.y, self.x, self.ireg )
 
-      print("... plmesh ( self.y, self.x, mesh=myMesh )")
+      print('... plmesh ( self.y, self.x, mesh=myMesh )')
       myMesh = plmesh ( self.y, self.x, mesh=myMesh )
 
-      print("... plmesh ( self.y, self.x )")
+      print('... plmesh ( self.y, self.x )')
       myMesh = plmesh ( self.y, self.x )
 
-      print("... plmesh ( ireg=self.ireg )")
+      print('... plmesh ( ireg=self.ireg )')
       myMesh = plmesh ( ireg=self.ireg, triangle=self.triangle )
 
-      print("... plmesh ()")
+      print('... plmesh ()')
       myMesh = plmesh ()
 
    def tearDown ( self ):
@@ -485,11 +485,11 @@ class TestPLM ( unittest.TestCase ):
       self.m = Mesh ( self.x, self.y, self.ireg )
 
    def testPLM ( self ):
-      print("plm ( self.y, self.x, self.ireg )")
+      print('plm ( self.y, self.x, self.ireg )')
       plm ( self.y, self.x, self.ireg )
-      print("plm ( mesh = self.m )")
+      print('plm ( mesh = self.m )')
       plm ( mesh = self.m )
-      print("plm ( self.y, self.x, mesh = self.m )")
+      print('plm ( self.y, self.x, mesh = self.m )')
       plm ( self.y, self.x, mesh = self.m )
 
    def tearDown ( self ):
@@ -506,13 +506,13 @@ class TestPLC ( unittest.TestCase ):
       self.m = Mesh ( self.x, self.y, self.ireg )
 
    def testPLC ( self ):
-      print("plmesh ( self.y, self.x, self.ireg )")
+      print('plmesh ( self.y, self.x, self.ireg )')
       plmesh ( self.y, self.x, self.ireg )
-      print("plc ( self.z, self.y, self.x )")
+      print('plc ( self.z, self.y, self.x )')
       plc ( self.z, self.y, self.x )
-      print("plc ( self.z, mesh = self.m, levs = self.levels )")
+      print('plc ( self.z, mesh = self.m, levs = self.levels )')
       plc ( self.z, mesh = self.m, levs = self.levels )
-      print("plc ( self.z, levs = self.levels )")
+      print('plc ( self.z, levs = self.levels )')
       plc ( self.z, levs = self.levels )
 
    def tearDown ( self ):
@@ -529,13 +529,13 @@ class TestPLF ( unittest.TestCase ):
       self.m = Mesh ( self.x, self.y, self.ireg )
 
    def testPLF ( self ):
-      print("plmesh ( self.y, self.x, self.ireg )")
+      print('plmesh ( self.y, self.x, self.ireg )')
       plmesh ( self.y, self.x, self.ireg )
-      print("plf ( self.z, self.y, self.x )")
+      print('plf ( self.z, self.y, self.x )')
       plf ( self.z, self.y, self.x )
-      print("plf ( self.z, mesh = self.m )")
+      print('plf ( self.z, mesh = self.m )')
       plf ( self.z, mesh = self.m )
-      print("plf ( self.z )")
+      print('plf ( self.z )')
       plf ( self.z )
 
    def tearDown ( self ):
@@ -552,17 +552,17 @@ class TestPLV ( unittest.TestCase ):
       self.m = Mesh ( self.x, self.y, self.ireg )
 
    def testPLV ( self ):
-      print("plmesh ( self.y, self.x, self.ireg )")
+      print('plmesh ( self.y, self.x, self.ireg )')
       plmesh ( self.y, self.x, self.ireg )
-      print("plv ( self.vy, self.vx, self.y, self.x )")
+      print('plv ( self.vy, self.vx, self.y, self.x )')
       plv ( self.vy, self.vx, self.y, self.x )
-      print("plv ( self.vy, self.vx, mesh = self.m, scale=.5 )")
+      print('plv ( self.vy, self.vx, mesh = self.m, scale=.5 )')
       plv ( self.vy, self.vx, mesh = self.m, scale=.5 )
-      print("plv ( self.vy, self.vx )")
+      print('plv ( self.vy, self.vx )')
       plv ( self.vy, self.vx )
 
    def tearDown ( self ):
       del self.m
 
-if (__name__=="__main__"):
+if (__name__=='__main__'):
    unittest.main()

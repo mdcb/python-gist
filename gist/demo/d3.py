@@ -1,9 +1,6 @@
-## Automatically adapted for numpy Jul 30, 2006 by numeric2numpy.py
-
-# $Id: gistdemo3d.py 651 2007-09-07 17:10:08Z mbec $
 #  ---------------------------------------------------------------------
 #
-#  NAME:     gistdemo3d.py
+#  NAME:     demo3d.py
 #
 #  PURPOSE:  Demonstrate 3D functions in gist.
 #
@@ -23,20 +20,21 @@
 # All rights reserved.  See Legal.htm for full text and disclaimer.
 
 import numpy
-from .plwf import *
-from .pl3d import *
-from .movie import *
-from .slice3 import *
-from .yorick import *
-from gist import *
-from .gistfuncs import span
+from ..gistY import *
+from ..plwf import *
+from ..pl3d import *
+from ..Mplot import movie
+from ..slice3 import *
+from ..yorick import *
 
-print("Type gistdemo3d.run() or gistdemo3d.run(i), i = 1, 2, or 3.")
-print("Partway, plots are written to Postscript file; see talk.ps.")
+__all__=['run']
 
-window3 (hcp = "talk.ps", dump = 1)
+# d3.run()
+# Move the mouse to the graphcis window in-between test
 
-palette ("gray.gp")
+window3 ()
+
+palette ('gray.gp')
 
 demo5_n = 20 * numpy.ones (3,dtype=int)
 
@@ -61,13 +59,12 @@ def demo5_light (i) :
    draw3 ( not making_movie )
    return 1
 
-def paws ( ) :
-		# was 'raw_input' ...
-    i = eval(input ("Type in any string to continue; ^C to return to prompt. "))
-    return
+def paws () :
+   try: raw_input ('Type in any string to continue; ^C to return to prompt. ')
+   except: input ('Type in any string to continue; ^C to return to prompt. ')
 
 def run (*itest) :
-   """run() or run(i)
+   '''run() or run(i)
      Run examples of use of pl3d.i, plwf.i, and slice3.i.  With
      argument I = 1, 2, or 3, run that particular demonstration.
      Read the source code to understand the details of how the
@@ -79,50 +76,50 @@ def run (*itest) :
      function
      run (3) demonstrates the slice3, slice2, and pl3tree functions,
      as well as changing the orientation of the 3D object
-   """
+   '''
    global making_movie
 
    if len (itest) == 0 or itest [0] == 1 :
       set_draw3_ (0)
-      x = span (-1, 1, 64, 64)
+      x = numpy.tile(numpy.linspace(-1, 1, 64), 64).reshape(64,64)
       y = numpy.transpose (x)
-      z = (x + y) * exp (-6.*(x*x+y*y))
+      z = (x + y) * numpy.exp (-6.*(x*x+y*y))
       limits_(square = 1)
-      print("Plot wire frame: plwf (z, y, x)")
+      print('Plot wire frame: plwf (z, y, x)')
       orient3 ( )
       light3 ( )
       plwf (z, y, x)
       [xmin, xmax, ymin, ymax] = draw3(1) # not necessary interactively
       limits (xmin, xmax, ymin, ymax)
-      plt("opaque wire mesh", .30, .42)
+      plt('opaque wire mesh', .30, .42)
       paws ( )
 
       print('plwf(z,y,x,shade=1,ecolor="red")')
-      plwf(z,y,x,shade=1,ecolor="red")
+      plwf(z,y,x,shade=1,ecolor='red')
       [xmin, xmax, ymin, ymax] = draw3(1) # not necessary interactively
       limits (xmin, xmax, ymin, ymax)
       paws()
 
-      print("plwf(z,y,x,shade=1,edges=0)")
+      print('plwf(z,y,x,shade=1,edges=0)')
       plwf(z,y,x,shade=1,edges=0)
       [xmin, xmax, ymin, ymax] = draw3(1) # not necessary interactively
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print("light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))")
+      print('light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))')
       light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))
       [xmin, xmax, ymin, ymax] = draw3(1)
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print("light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))")
+      print('light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))')
       light3 ( diffuse=.5, specular=1., sdir=numpy.array([1,.5,1]))
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ( )
 
-      print("light3 ( ambient=.1,diffuse=.1,specular=1.,")
-      print("   sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))")
+      print('light3 ( ambient=.1,diffuse=.1,specular=1.,')
+      print('   sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))')
       light3 ( ambient=.1,diffuse=.1,specular=1.,
              sdir=numpy.array([[0,0,-1],[1,.5,1]]),spower=numpy.array([4,2]))
       [xmin, xmax, ymin, ymax] = draw3(1)
@@ -132,10 +129,10 @@ def run (*itest) :
    if len (itest) == 0 or itest [0] == 2 :
 
       set_draw3_ (0)
-      x = span (-1, 1, 64, 64)
+      x = numpy.tile(numpy.linspace (-1, 1, 64), 64).reshape(64,64)
       y = numpy.transpose (x)
-      z = (x + y) * exp (-6.*(x*x+y*y))
-      print("Default lighting:  light3()")
+      z = (x + y) * numpy.exp (-6.*(x*x+y*y))
+      print('Default lighting:  light3()')
       orient3 ( )
       light3 ( )
       plwf (z,y,x,shade=1,edges=0)
@@ -143,16 +140,16 @@ def run (*itest) :
       limits (xmin, xmax, ymin, ymax)
       paws( )
 
-      print("light3(diffuse=.2,specular=1)")
+      print('light3(diffuse=.2,specular=1)')
       light3(diffuse=.2,specular=1)
       limits_(square = 1)
       [xmin, xmax, ymin, ymax] = draw3(1) # not necessary interactively
       limits (xmin, xmax, ymin, ymax)
       paws()
 
-      print("movie(demo5_light, lims = [xmin, xmax, ymin, ymax])")
-      print("demo5_light calls:")
-      print("light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))")
+      print('movie(demo5_light, lims = [xmin, xmax, ymin, ymax])')
+      print('demo5_light calls:')
+      print('light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))')
       making_movie = 1
       movie(demo5_light, lims = [xmin, xmax, ymin, ymax])
       making_movie = 0
@@ -161,89 +158,83 @@ def run (*itest) :
       paws()
       light3()
 
-   if len (itest) == 0 or itest [0] == 3 :
+# XXX - fails
+#   if len (itest) == 0 or itest [0] == 3 :
+#
+#      nx = demo5_n [0]
+#      ny = demo5_n [1]
+#      nz = demo5_n [2]
+#      xyz = numpy.zeros ( (3, nx, ny, nz), numpy.float32)
+#      xyz [0] = numpy.multiply.outer ( numpy.linspace (-1, 1, nx), numpy.ones ( (ny, nz), numpy.float32))
+#      xyz [1] = numpy.multiply.outer ( numpy.ones (nx, numpy.float32),
+#         numpy.multiply.outer ( numpy.linspace (-1, 1, ny), numpy.ones (nz, numpy.float32)))
+#      xyz [2] = numpy.multiply.outer ( numpy.ones ( (nx, ny), numpy.float32), numpy.linspace (-1, 1, nz))
+#      r = numpy.sqrt (xyz [0] ** 2 + xyz [1] **2 + xyz [2] **2)
+#      theta = numpy.arccos (xyz [2] / r)
+#      phi = numpy.arctan2 (xyz [1] , xyz [0] + numpy.logical_not (r))
+#      y32 = numpy.sin (theta) ** 2 * numpy.cos (theta) * numpy.cos (2 * phi)
+#      m3 = mesh3 (xyz, funcs = [r * (1. + y32)])
+#      del r, theta, phi, xyz, y32
+#
+#      print(('   test uses ' + repr((nx - 1) * (ny - 1) * (nz - 1)) + ' cells'))
+#
+#      [nv, xyzv, dum] = slice3 (m3, 1, None, None, value = .50)
+#          # (inner isosurface)
+#      [nw, xyzw, dum] = slice3 (m3, 1, None, None, value = 1.)
+#          # (outer isosurface)
+#      pxy = plane3 ( numpy.array ([0, 0, 1], numpy.float32 ), numpy.zeros (3, numpy.float32))
+#      pyz = plane3 ( numpy.array ([1, 0, 0], numpy.float32 ), numpy.zeros (3, numpy.float32))
+#      [np, xyzp, vp] = slice3 (m3, pyz, None, None, 1)
+#          # (pseudo-colored slice)
+#      [np, xyzp, vp] = slice2 (pxy, np, xyzp, vp)
+#          # (cut slice in half)
+#      [nv, xyzv, d1, nvb, xyzvb, d2] = \
+#          slice2x (pxy, nv, xyzv, None)
+#      [nv, xyzv, d1] = \
+#          slice2 (- pyz, nv, xyzv, None)
+#          # (...halve one of those halves)
+#      [nw, xyzw, d1, nwb, xyzwb, d2] = \
+#          slice2x ( pxy , nw, xyzw, None)
+#          # (split outer in halves)
+#      [nw, xyzw, d1] = \
+#          slice2 (- pyz, nw, xyzw, None)
+#
+#      fma ()
+#      print('Generate palette for pl3tree:  split_palette ("earth.gp")')
+#      split_palette ('earth.gp')
+#      print('gnomon -- turn on gnomon')
+#      gnomon (1)
+#
+#      print('pl3tree with 1 slicing plane, 2 isosurfaces')
+#      clear3 ()
+#      # Make sure we don't draw till ready
+#      set_draw3_ (0)
+#      pl3tree (np, xyzp, vp, pyz)
+#      pl3tree (nvb, xyzvb)
+#      pl3tree (nwb, xyzwb)
+#      pl3tree (nv, xyzv)
+#      pl3tree (nw, xyzw)
+#      orient3 ()
+#      light3 (diffuse = .2, specular = 1)
+#      limits ()
+#      limits (square=1)
+#      demo5_light (1)
+#      paws ()
+#
+#      print('spin3 animated rotation, use rot3 or orient3 for one frame')
+#      # don't want limits to autoscale during animation
+#      lims = limits ( )
+#      spin3 ()
+#      limits ( ) # back to autoscaling
+#      demo5_light (1)
+#      paws ()
+#
+#      light3 ()
+#      gnomon (0)
+#      limits (square = 1)
+#      palette ('gray.gp')
 
-      nx = demo5_n [0]
-      ny = demo5_n [1]
-      nz = demo5_n [2]
-      xyz = numpy.zeros ( (3, nx, ny, nz), numpy.float32)
-      xyz [0] = numpy.multiply.outer ( span (-1, 1, nx), numpy.ones ( (ny, nz), numpy.float32))
-      xyz [1] = numpy.multiply.outer ( numpy.ones (nx, numpy.float32),
-         numpy.multiply.outer ( span (-1, 1, ny), numpy.ones (nz, numpy.float32)))
-      xyz [2] = numpy.multiply.outer ( numpy.ones ( (nx, ny), numpy.float32), span (-1, 1, nz))
-      r = numpy.sqrt (xyz [0] ** 2 + xyz [1] **2 + xyz [2] **2)
-      theta = numpy.arccos (xyz [2] / r)
-      phi = numpy.arctan2 (xyz [1] , xyz [0] + numpy.logical_not (r))
-      y32 = numpy.sin (theta) ** 2 * numpy.cos (theta) * numpy.cos (2 * phi)
-      m3 = mesh3 (xyz, funcs = [r * (1. + y32)])
-      del r, theta, phi, xyz, y32
-
-      print(("   test uses " + repr((nx - 1) * (ny - 1) * (nz - 1)) + " cells"))
-      elapsed = [0., 0., 0.]
-      elapsed = timer_ (elapsed)
-      elapsed0 = elapsed
-
-      [nv, xyzv, dum] = slice3 (m3, 1, None, None, value = .50)
-          # (inner isosurface)
-      [nw, xyzw, dum] = slice3 (m3, 1, None, None, value = 1.)
-          # (outer isosurface)
-      pxy = plane3 ( numpy.array ([0, 0, 1], numpy.float32 ), numpy.zeros (3, numpy.float32))
-      pyz = plane3 ( numpy.array ([1, 0, 0], numpy.float32 ), numpy.zeros (3, numpy.float32))
-      [np, xyzp, vp] = slice3 (m3, pyz, None, None, 1)
-          # (pseudo-colored slice)
-      [np, xyzp, vp] = slice2 (pxy, np, xyzp, vp)
-          # (cut slice in half)
-      [nv, xyzv, d1, nvb, xyzvb, d2] = \
-          slice2x (pxy, nv, xyzv, None)
-      [nv, xyzv, d1] = \
-          slice2 (- pyz, nv, xyzv, None)
-          # (...halve one of those halves)
-      [nw, xyzw, d1, nwb, xyzwb, d2] = \
-          slice2x ( pxy , nw, xyzw, None)
-          # (split outer in halves)
-      [nw, xyzw, d1] = \
-          slice2 (- pyz, nw, xyzw, None)
-
-      elapsed = timer_ (elapsed)
-      timer_print ("slicing time", elapsed - elapsed0)
-
-      fma ()
-      print('Generate palette for pl3tree:  split_palette ("earth.gp")')
-      split_palette ("earth.gp")
-      print("gnomon -- turn on gnomon")
-      gnomon (1)
-
-      print("pl3tree with 1 slicing plane, 2 isosurfaces")
-      clear3 ()
-      # Make sure we don't draw till ready
-      set_draw3_ (0)
-      pl3tree (np, xyzp, vp, pyz)
-      pl3tree (nvb, xyzvb)
-      pl3tree (nwb, xyzwb)
-      pl3tree (nv, xyzv)
-      pl3tree (nw, xyzw)
-      orient3 ()
-      light3 (diffuse = .2, specular = 1)
-      limits ()
-      limits (square=1)
-      demo5_light (1)
-      paws ()
-      hcp ()
-
-      print("spin3 animated rotation, use rot3 or orient3 for one frame")
-      # don't want limits to autoscale during animation
-      lims = limits ( )
-      spin3 ()
-      limits ( ) # back to autoscaling
-      demo5_light (1)
-      paws ()
-
-      light3 ()
-      gnomon (0)
-      limits (square = 1)
-      palette ("gray.gp")
-
-#  .. PR is not available.  Comment out this section.
+# XXX - PR is what?
 #   if len (itest) == 0 or itest [0] == 4 :
 #      from PR import *
 #      f = PR ('./bills_plot')
@@ -269,7 +260,7 @@ def run (*itest) :
 #      set_draw3_ (0)
 #      [np, xyzp, vp] = slice3 (m3, pyz, None, None, 1)
 #      pl3tree (np, xyzp, vp, pyz, split = 0)
-#      palette ("rainbow.gp")
+#      palette ('rainbow.gp')
 #      orient3 ()
 #      demo5_light (1)
 #      paws ()
@@ -288,7 +279,7 @@ def run (*itest) :
 #          slice2 (- pyz, nvj, xyzvj, cvj)
 #
 #      fma ()
-#      print "gnomon -- turn on gnomon"
+#      print 'gnomon -- turn on gnomon'
 #      gnomon (1)
 #      clear3 ()
 #      # Make sure we don't draw till ready
@@ -300,11 +291,11 @@ def run (*itest) :
 #      orient3 ()
 #      light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])
 #      limits (square=1)
-#      palette ("gray.gp")
+#      palette ('gray.gp')
 #      demo5_light (1)
 #      paws ()
 #      
-#      print "spin3 animated rotation, use rot3 or orient3 for one frame"
+#      print 'spin3 animated rotation, use rot3 or orient3 for one frame'
 #      # don't want limits to autoscale during animation
 #      spin3 ()
 #      limits ( ) # back to autoscaling
@@ -313,7 +304,7 @@ def run (*itest) :
 #
 #      light3 ()
 #      gnomon (0)
-#      palette ("gray.gp")
+#      palette ('gray.gp')
 #
 #      draw3 ( 1 )
 #      paws ()
@@ -330,7 +321,7 @@ def run (*itest) :
 #      orient3 ()
 #      light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])
 #      limits (square=1)
-#      palette ("heat.gp")
+#      palette ('heat.gp')
 #      demo5_light (1)
 #      paws ()
 #      spin3 ()
@@ -339,7 +330,8 @@ def run (*itest) :
 #      paws ()
 #      demo5_light (1)
 #      paws ()
-#
+
+# XXX - PR is what?
 #   if len (itest) == 0 or itest [0] == 5 :
 #      # Try bert's data
 #      from PR import PR
@@ -353,11 +345,11 @@ def run (*itest) :
 #      [nv, xyzv, dum] = slice3 (m3, 1, None, None, value = 6.5)
 #      fma ()
 #      clear3 ()
-#      print "gnomon -- turn on gnomon"
+#      print 'gnomon -- turn on gnomon'
 #      gnomon (1)
 #      # Make sure we don't draw till ready
 #      set_draw3_ (0)
-#      palette ("rainbow.gp")
+#      palette ('rainbow.gp')
 #      pl3tree (nv, xyzv)
 #      orient3 ()
 #      light3 (diffuse = .2, specular = 1)
@@ -367,10 +359,12 @@ def run (*itest) :
 #      spin3 ()
 #      demo5_light (1)
 #      paws ()
+
+# XXX - PR is what?
 #   if len (itest) == 0 or itest [0] == 6 :
 #      # Try Bill's irregular mesh
 #      from PR import PR
-#      f = PR ("ball.s0001")
+#      f = PR ('ball.s0001')
 #      ZLss = f.ZLstruct_shapesize
 #      ZLsc = f.ZLstruct_shapecnt
 #      ZLsn = f.ZLstruct_nodelist
@@ -380,7 +374,7 @@ def run (*itest) :
 #      c = f.W_vel_data
 #      # Now we need to convert this information to avs-style data
 #      istart = 0 # beginning index into ZLstruct_nodelist
-#      NodeError = "NodeError"
+#      class NodeError(exception): pass
 #      ntet = 0
 #      nhex = 0
 #      npyr = 0
@@ -422,8 +416,8 @@ def run (*itest) :
 #            nhex = ZLsc [i]
 #            istart = istart + ZLss [i] * ZLsc [i]
 #         else :
-#            raise NodeError, `ZLss[i]` + "is an incorrect number of nodes."
-
+#            raise NodeError, `ZLss[i]` + 'is an incorrect number of nodes.'
+#
 #      m3 = mesh3 (x, y, z, funcs = [c], verts = [nz_tet, nz_pyr, nz_prism,
 #         nz_hex])
 #      [nv, xyzv, cv] = slice3 (m3, 1, None, None, 1, value = .9 * max (c) )
@@ -437,7 +431,7 @@ def run (*itest) :
 #      set_draw3_ (0)
 #      [np, xyzp, vp] = slice3 (m3, pyz, None, None, 1)
 #      pl3tree (np, xyzp, vp, pyz, split = 0)
-#      palette ("rainbow.gp")
+#      palette ('rainbow.gp')
 #      orient3 ()
 #      limits (square=1)
 #      demo5_light (1)
@@ -460,7 +454,7 @@ def run (*itest) :
 #          slice2 (- pyz, nvjj, xyzvjj, cvjj)
 #
 #      fma ()
-#      print "gnomon -- turn on gnomon"
+#      print 'gnomon -- turn on gnomon'
 #      gnomon (1)
 #      clear3 ()
 #      # Make sure we don't draw till ready
@@ -474,65 +468,66 @@ def run (*itest) :
 #      orient3 ()
 #      light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])
 #      limits (square=1)
-#      palette ("gray.gp")
+#      palette ('gray.gp')
 #      demo5_light (1)
 #      paws ()
-#      palette ("heat.gp")
+#      palette ('heat.gp')
 #      paws ()
 
    if len (itest) == 0 or itest [0] == 7 :
 
-      print("Test plwf on the sombrero function")
+      print('Test plwf on the sombrero function')
       # compute sombrero function
       x = numpy.arange (-20, 21, dtype= numpy.float32)
       y = numpy.arange (-20, 21, dtype= numpy.float32)
       z = numpy.zeros ( (41, 41), numpy.float32)
-      r = numpy.sqrt (add.outer ( x ** 2, y **2)) + 1e-6
+      r = numpy.sqrt (numpy.add.outer ( x ** 2, y **2)) + 1e-6
       z = numpy.sin (r) / r
       fma ()
       clear3 ()
       gnomon (0)
       # Make sure we don't draw till ready
       set_draw3_ (0)
-      palette ("rainbow.gp")
+      palette ('rainbow.gp')
       limits (square=1)
       orient3 ()
       light3 ()
-      plwf (z, fill = z, ecolor = "black")
+      plwf (z, fill = z, ecolor = 'black')
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print("Try smooth contours, log mode:")
+      print('Try smooth contours, log mode:')
       print('plzcont (nv, xyzv, contours = 20, scale = "normal")')
       [nv, xyzv, dum] = slice3mesh (x, y, z)
       zmult = max (max (abs (x)), max (abs (y)))
-      plzcont (nv, xyzv, contours = 20, scale = "normal")
+      
+      plzcont (nv, xyzv, contours = 20, scale = 'normal')
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
       print('plzcont (nv, xyzv, contours = 20, scale = "lin", edges=1)')
-      plzcont (nv, xyzv, contours = 20, scale = "lin", edges=1)
+      plzcont (nv, xyzv, contours = 20, scale = 'lin', edges=1)
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
       print('plwf (z, fill = z, shade = 1, ecolor = "black")')
-      plwf (z, fill = z, shade = 1, ecolor = "black")
+      plwf (z, fill = z, shade = 1, ecolor = 'black')
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print("plwf (z, fill = z, shade = 1, edges = 0)")
+      print('plwf (z, fill = z, shade = 1, edges = 0)')
       plwf (z, fill = z, shade = 1, edges = 0)
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print("light3(diffuse=.2,specular=1)")
-      print("demo5_light calls:")
-      print("light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))")
+      print('light3(diffuse=.2,specular=1)')
+      print('demo5_light calls:')
+      print('light3 (sdir = numpy.array ( [numpy.cos(theta), .25, numpy.sin(theta)], numpy.float32))')
       light3(diffuse=.2,specular=1)
       making_movie = 1
       movie(demo5_light, lims = [xmin, xmax, ymin, ymax])
@@ -541,17 +536,17 @@ def run (*itest) :
       demo5_light(1)
       paws ()
 
-      print("plwf (z, fill = None, shade = 1, edges = 0)")
+      print('plwf (z, fill = None, shade = 1, edges = 0)')
       plwf (z, fill = None, shade = 1, edges = 0)
       [xmin, xmax, ymin, ymax] = draw3 (1)
-      palette("gray.gp")
+      palette('gray.gp')
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
 
    if len (itest) == 0 or itest [0] == 8 :
 
-      print("Test pl3surf on the sombrero function")
+      print('Test pl3surf on the sombrero function')
       # compute sombrero function
       nc1 = 100
       nv1 = nc1 + 1
@@ -566,9 +561,9 @@ def run (*itest) :
       # using mesh3. The way I am going to do that is to define
       # a function on the 3d mesh so that the sombrero function
       # is its 0-isosurface.
-      z0 = min (ravel (z))
+      z0 = min (numpy.ravel (z))
       z0 = z0 - .05 * abs (z0)
-      maxz = max (ravel (z))
+      maxz = max (numpy.ravel (z))
       maxz = maxz + .05 * abs (maxz)
       zmult = max (max (abs (x)), max (abs (y)))
       dz = (maxz - z0)
@@ -589,10 +584,10 @@ def run (*itest) :
       pl3surf (nv, xyzv)
       lim = draw3 (1)
       limits (lim [0], lim [1], 1.5*lim [2], 1.5*lim [3])
-      palette ("gray.gp")
+      palette ('gray.gp')
       paws ()
 
-      print("Try new slicing function (slice3mesh) to get color graph")
+      print('Try new slicing function (slice3mesh) to get color graph')
       [nv, xyzv, col] = slice3mesh (nxnynz [0:2], dxdydz [0:2], x0y0z0 [0:2],
          zmult * z, color = zmult * z)
       pl3surf (nv, xyzv, values = col)
@@ -600,28 +595,28 @@ def run (*itest) :
       dif = 0.5 * (lim [3] - lim [2])
       limits (lim [0], lim [1], lim [2] - dif, lim [3] + dif)
 
-      palette ("rainbow.gp")
+      palette ('rainbow.gp')
       paws ()
 
-      print("Try plzcont -- see if smooth mode is possible")
-      print("plzcont (nv, xyzv)")
-      palette ("heat.gp")
+      print('Try plzcont -- see if smooth mode is possible')
+      print('plzcont (nv, xyzv)')
+      palette ('heat.gp')
       plzcont (nv, xyzv)
       draw3 (1)
       paws ()
 
-      print("plzcont (nv, xyzv, contours = 20)")
+      print('plzcont (nv, xyzv, contours = 20)')
       plzcont (nv, xyzv, contours = 20)
       draw3 (1)
       paws ()
 
       print('plzcont (nv, xyzv, contours = 20, scale = "log")')
-      plzcont (nv, xyzv, contours = 20, scale = "log")
+      plzcont (nv, xyzv, contours = 20, scale = 'log')
       draw3(1)
       paws ()
 
       print('plzcont (nv, xyzv, contours = 20, scale = "normal")')
-      plzcont (nv, xyzv, contours = 20, scale = "normal")
+      plzcont (nv, xyzv, contours = 20, scale = 'normal')
       draw3(1)
       paws ()
 
@@ -659,13 +654,13 @@ def run (*itest) :
       z [17:22, 15:18] = z [17:22, 15:18] * 1.2
       z [16, 16] = z [16, 16] * 1.1
       orient3 ()
-      print("plwf (freg, shade = 1, edges = 0)")
+      print('plwf (freg, shade = 1, edges = 0)')
       plwf (freg, shade = 1, edges = 0)
       [xmin, xmax, ymin, ymax] = draw3 (1)
       limits (xmin, xmax, ymin, ymax)
       paws ()
 
-      print("two slice3mesh and two pl3tree")
+      print('two slice3mesh and two pl3tree')
       nxny = numpy.array ( [kmax - 1, lmax - 1])
       x0y0 = numpy.array ( [0., 0.])
       dxdy = numpy.array ( [1., 1.])
@@ -677,16 +672,16 @@ def run (*itest) :
       limits ( )
       paws ()
 
-      print("light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])")
+      print('light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])')
       light3 (ambient = 0, diffuse = .5, specular = 1, sdir = [0, 0, -1])
       demo5_light (1)
       paws ()
 
-      print("[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg, color = freg)")
+      print('[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg, color = freg)')
       [nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, freg, color = freg)
       pl3surf (nv, xyzv, values = col)
       draw3 (1)
-      palette ("rainbow.gp")
+      palette ('rainbow.gp')
       paws ()
 
       print('palette ("rainbow.gp")')
@@ -696,10 +691,10 @@ def run (*itest) :
       paws ()
 
       print('palette ("stern.gp")')
-      palette ("stern.gp")
+      palette ('stern.gp')
       paws ()
 
-      print("[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, z, color = z)")
+      print('[nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, z, color = z)')
       [nv, xyzv, col] = slice3mesh (nxny, dxdy, x0y0, z, color = z)
       pl3surf (nv, xyzv, values = col)
       orient3(phi=0,theta=0)
@@ -707,9 +702,9 @@ def run (*itest) :
       paws ()
 
       print('palette ("gray.gp")')
-      print("light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))")
+      print('light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))')
       set_draw3_ (0)
-      palette ("gray.gp")
+      palette ('gray.gp')
       light3 ( diffuse=.1, specular=1., sdir=numpy.array([0,0,-1]))
       pl3surf (nv, xyzv)
       draw3 (1)
@@ -718,7 +713,6 @@ def run (*itest) :
 #     spin3 ()
 #     paws ()
 
-   hcp_finish ()
 
 
 if __name__ == '__main__':

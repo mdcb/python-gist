@@ -462,7 +462,7 @@ diff -rau yorick-cvs.virgin/play/x11/textout.c yorick-cvs/play/x11/textout.c
 +  x_display *xdpy = s->xdpy;
 +  
 +  /* intercept request for xft font here */
-+  if (!xftfont || xftfont=="") xftfont=p_font2xftfont(font);
++  if (!xftfont || !strcmp(xftfont,"")) xftfont=p_font2xftfont(font);
 +  if (xftfont && strlen(xftfont)) {
 +    p_xftfont(xdpy, pixsize, orient, xftfont);
 +    xdpy->use_xft = 1;

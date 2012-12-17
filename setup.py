@@ -13,9 +13,6 @@ from distutils.command.build import build
 from distutils import log
 import numpy.distutils.system_info # pkg_config
 
-x11_info = numpy.distutils.system_info.get_info('x11')
-xft_info = numpy.distutils.system_info.get_info('xft')
-
 gistsource = glob.glob('yorick/gist/*.c')
 gistsource.pop(gistsource.index('yorick/gist/browser.c'))
 gistsource.pop(gistsource.index('yorick/gist/bench.c'))
@@ -69,7 +66,7 @@ version=version.strip('"')
 gistdata_path = os.path.join(distutils.sysconfig.get_python_lib(1),'gist/gistdata') # 'gist' is pkg.name
 gistdata_path = gistdata_path.replace('\\',r'\\\\')
 
-define_macros.append(('GISTPATH', '\\"%s\\"' % gistdata_path ))
+define_macros.append(('GISTPATH', '\\"%s:~/.gist\\"' % gistdata_path ))
 define_macros.append(('PYGIST_VERSION',  '\\"%s\\"' % version))
 define_macros.append(('STAND_ALONE',     None                )) # for yorick/play/any/numfmt.c
 define_macros.append(('YLAPACK_NOALIAS', None                ))
@@ -81,6 +78,7 @@ data_files = [(gistdata_path, gist_data),]
 
 extra_compile_args.append('-O2')
 
+x11_info = numpy.distutils.system_info.get_info('x11')
 
 library_dirs = x11_info.get('library_dirs',[])
 
@@ -88,10 +86,13 @@ dirs = [ 'yorick/gist', 'yorick/play', 'yorick/play/unix', 'yorick/regexp', 'yor
 include_dirs = [os.path.join(patch_work_dir,x) for x in dirs]
 include_dirs.extend(['plugin'])
 include_dirs.extend(x11_info.get('include_dirs',[]))
-include_dirs.extend(xft_info.get('include_dirs'))
+
 
 libraries = x11_info.get('libraries',['X11'])
-libraries.extend(xft_info.get('libraries'))
+
+if sys.platform == 'darwin':
+  import numpy
+  include_dirs.extend([numpy.get_include()])
 
 # sources
 sources = unixsource + x11source + anysource + gistsource
@@ -101,12 +102,10 @@ sources.append('plugin/gistCmodule.c')
 
 class patch_cmd(Command):
   description = 'apply patches prior to build'
-  
   #user_options = [('name=', 'n', 'option name abreviated by n'),]
-  
   boolean_options = ['xft_patch','zeroborder_patch']
   #negative_opt = {'no-patch-bool-flag': 'patch-bool-flag'}
-
+  
   def initialize_options(self):
     self.xft_patch = True
     self.zeroborder_patch = True
@@ -123,9 +122,14 @@ class patch_cmd(Command):
     self.copy_tree('yorick', patchdir)
     log.info('applying patches')
     if self.xft_patch:
-      os.system('cd %s && patch -N -p1 < ../../patch/xft.patch' % patchdir)
-      for ext in self.distribution.ext_modules:
-        ext.define_macros.append(('HAVE_XFT', None))
+      xft_info = numpy.distutils.system_info.get_info('xft')
+      if xft_info:
+        global include_dirs, libraries
+        libraries.extend(xft_info.get('libraries',[]))
+        include_dirs.extend(xft_info.get('include_dirs',[]))
+        os.system('cd %s && patch -N -p1 < ../../patch/xft.patch' % patchdir)
+        for ext in self.distribution.ext_modules:
+          ext.define_macros.append(('HAVE_XFT', None))
     if self.zeroborder_patch: os.system('cd %s && patch -N -p1 < ../../patch/yorick-cvs-pwin-border.patch' % patchdir)
 
 class mkconfig_cmd(Command):
@@ -140,7 +144,7 @@ class mkconfig_cmd(Command):
   def run(self):
     log.info('making config')
     patchdir=os.path.join(patch_work_dir,'yorick')
-    os.system('cd %s; gmake clean config;' % patchdir)
+    os.system('cd %s; make clean config;' % patchdir)
     log.info('parse config')
     libraries=[]
     define_macros=[]
@@ -220,7 +224,7 @@ setup(
         extra_compile_args = extra_compile_args,
         ),
      Extension(
-        name='gist.gistfuncs',
+        name='gist.gistF',
         sources=['plugin/gistfuncsmodule.c'],
         include_dirs=include_dirs,
         #undef_macros=undef_macros,
@@ -231,8 +235,8 @@ setup(
         extra_compile_args = extra_compile_args,
         ),
      ],
-  packages = ['gist'],
-  package_dir = {'gist': 'gist'},
+  packages = ['gist','gist.demo'],
+  package_dir = { 'gist': 'gist', 'gist.demo': 'gist/demo' },
   data_files=data_files,
   )
 

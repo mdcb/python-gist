@@ -4,7 +4,7 @@
 
 import numpy
 from .gistC import *
-from .gistfuncs import index_sort, array_set
+from .gistF import index_sort, array_set
 from .shapetest import *
 from .yorick import *
 
@@ -17,7 +17,7 @@ from .yorick import *
 #     Copyright (c) 1997.  The Regents of the University of California.
 #                   All rights reserved.
 
-"""
+'''
    General overview of module pl3d:
 
    (1) Viewing transform machinery.  Arguably the simplest model
@@ -40,7 +40,7 @@ from .yorick import *
          Move the object by the specified amounts.
 
        setz3 (zcamera)
-         The "camera" is located at (0,0,zcamera) in the viewer's
+         The 'camera' is located at (0,0,zcamera) in the viewer's
          coordinate system, looking in the minus-z direction.
          Initially, zcamera is very large, and the magnification
          factor is correspondingly large, giving an isometric view.
@@ -61,17 +61,17 @@ from .yorick import *
        gnomon (on_off)
          Toggle the gnomon (a simple display showing the orientation
          of the xyz axes of the object).
-"""
+'''
 
 #  ------------------------------------------------------------------------
 
 
 def set_draw3_ ( n ) :
 
-    """
+    '''
     set_draw3_ ( 0 | 1 ) is used to set the global draw3_,
     which controls whether the function draw3 actually shows a drawing.
-    """
+    '''
 
     global _draw3
     _draw3 = n
@@ -88,12 +88,12 @@ def setrot3_ (x) :
 
 def rot3 (xa = 0., ya = 0., za = 0.) :
 
-    """
+    '''
     rot3 (xa, ya, za)
     rotate the current 3D plot by XA about viewer's x-axis,
     YA about viewer's y-axis, and ZA about viewer's z-axis.
     SEE ALSO: orient3, mov3, aim3, setz3, undo3, save3, restore3, light3
-    """
+    '''
 
     x = numpy.array ([1.,0.,0.], numpy.float32)
     y = numpy.array ([0.,1.,0.], numpy.float32)
@@ -104,56 +104,57 @@ def rot3 (xa = 0., ya = 0., za = 0.) :
     # n. b. matrixMultiply has the unfortunate effect of destroying
     # the matrix that calls it.
     gr3 = numpy.array (getrot3_ (), copy = 1)
-    setrot3_ (numpy.transpose (dot (numpy.transpose (gr3), numpy.array ( [x, y, z]))))
+    setrot3_ (numpy.transpose (numpy.dot (numpy.transpose (gr3), numpy.array ( [x, y, z]))))
 
 def rot3_ (a, x, y) :
     ca = numpy.cos (a)
     sa = numpy.sin (a)
-    return [multiply (ca, x) + multiply (sa, y), multiply (-sa, x) + multiply (ca, y)]
+    return [numpy.multiply (ca, x) + numpy.multiply (sa, y), numpy.multiply (-sa, x) + numpy.multiply (ca, y)]
 
 def mov3 ( xa = 0., ya = 0., za = 0. ) :
 
-    """
+    '''
     mov3 ( [xa [, ya [, za]]])
     move the current 3D plot by XA along the viewer's x axis,
     YA along the viewer's y axis, and ZA along the viewer's z axis.
     SEE ALSO: rot3, orient3, setz3, undo3, save3, restore3, light3
-    """
+    '''
 
-    gr = dot (numpy.transpose (gr), numpy.transpose (xa))
+    gr = numpy.dot (numpy.transpose (gr), numpy.transpose (xa))
     setorg3_ ( getorg3_ () - gr)
 
 def aim3 ( xa = 0., ya = 0., za = 0. ) :
 
-    """
+    '''
     aim3 ( [xa [, ya [, za]]])
     move the current 3D plot to put the point (XA, YA, ZA) in object
     coordinates at the point (0, 0, 0) -- the aim point -- in the
     viewer's coordinates. If any of the XA, YA, or ZA is nil, it defaults
     SEE ALSO: mov3, rot3, orient3, setz3, undo3, save3, restore3, light3
-    """
+    '''
 
     setorg3_ (x)
 
-_ZcError = "ZcError"
+class _ZcError(Exception):
+    pass
 
 def setz3 ( zc = None ) :
 
-    """
+    '''
     setz3 ( [zc] )
     Set the camera position to z = ZC (x = y = 0) in the viewer's coordinate
     system. If zc is None, set the camera to infinity (default).
     SEE ALSO: rot3, orient3, undo3, save3, restore3, light3
-    """
+    '''
 
     if not is_scalar (zc) :
-        raise _ZcError("camera position must be scalar.")
+        raise _ZcError('camera position must be scalar.')
 
     setzc3_ (zc)
 
 def orient3 ( ** kw ) :
 
-    """
+    '''
     orient3 ( [phi = val1, theta = val2] )
     Set the orientation of the object to (PHI, THETA). Orientations
     are a subset of the possible rotation matrices in which the z axis
@@ -169,7 +170,7 @@ def orient3 ( ** kw ) :
     not have a vertical z axis, in which case THETA returns to its
     default.
     Unlike rot3, orient3 is not a cumulative operation.
-    """
+    '''
     # Notes with regard to global variables: (ZCM 2/21/97)
     # _orient3_phi, _orient3_theta, the default orientation angles,
     #    are known and referred to only in this routine. I have started
@@ -189,38 +190,38 @@ def orient3 ( ** kw ) :
     except :
         _orient3_phi = - numpy.pi / 4.
 
-    if "phi" in kw and kw ["phi"] == None :
-        kw ["phi"] = _orient3_phi
-    if "theta" in kw and kw ["theta"] == None :
-        kw ["theta"] = _orient3_theta
-    if "phi" not in kw and "theta" not in kw :
+    if 'phi' in kw and kw ['phi'] == None :
+        kw ['phi'] = _orient3_phi
+    if 'theta' in kw and kw ['theta'] == None :
+        kw ['theta'] = _orient3_theta
+    if 'phi' not in kw and 'theta' not in kw :
         phi = _orient3_phi
         theta = _orient3_theta
-    elif "phi" not in kw or "theta" not in kw :
+    elif 'phi' not in kw or 'theta' not in kw :
         gr3 = numpy.array (getrot3_ (), copy = 1)
-        z = dot (numpy.transpose (gr3), numpy.array ( [0., 0., 1.]))
+        z = numpy.dot (numpy.transpose (gr3), numpy.array ( [0., 0., 1.]))
         if abs (z [0]) > 1.e-6 :
             # object z-axis not aligned with viewer y-axis
-            if "theta" not in kw :
+            if 'theta' not in kw :
                 theta = _orient3_theta
-                phi = kw ["phi"]
+                phi = kw ['phi']
             else :
                 phi = _orient3_phi
-                theta = kw ["theta"]
-        elif "theta" not in kw :
-            phi = kw ["phi"]
+                theta = kw ['theta']
+        elif 'theta' not in kw :
+            phi = kw ['phi']
             if (abs (z [1]) < 1.e-6) :
                 theta = _orient3_theta
             else :
                 theta = numpy.arctan2 (z [2], z [1])
         else :
-            theta = kw ["theta"]
+            theta = kw ['theta']
             y = numpy.array ( [0., z [2], -z [1]])
-            x = dot (numpy.transpose (gr3), numpy.array ( [1., 0., 0.]))
-            phi = numpy.arctan2 (sum (y * x,axis=0), x [0])
+            x = numpy.dot (numpy.transpose (gr3), numpy.array ( [1., 0., 0.]))
+            phi = numpy.arctan2 (numpy.sum (y * x,axis=0), x [0])
     else :
-        phi = kw ["phi"]
-        theta = kw ["theta"]
+        phi = kw ['phi']
+        theta = kw ['theta']
 
     x = numpy.array ( [1., 0., 0.],  numpy.float32)
     y = numpy.array ( [0., 1., 0.],  numpy.float32)
@@ -233,25 +234,25 @@ import copy
 
 def save3 ( ) :
 
-    """
+    '''
     view = save3 ( )
       Save the current 3D viewing transformation and lighting.
       Actually, this doesn't save anything; it returns a copy
       of the current 3D viewing transformation and lighting, so
       that the user can put it aside somewhere.
     SEE ALSO: restore3, rot3, mov3, aim3, light3
-    """
+    '''
 
     return _draw3_list [0:_draw3_n]
 
 def restore3 ( view = None ) :
 
-    """
+    '''
     restore3 ( view )
     Restore a previously saved 3D viewing transformation and lighting.
     If view is missing, rotate object to viewer's coordinate system.
     SEE ALSO: restore3, rot3, mov3, aim3, light3
-    """
+    '''
 
     global _draw3_list, _draw3_view, _light3_list, _draw3_n
 
@@ -263,13 +264,18 @@ def restore3 ( view = None ) :
     _draw3_list = view [0:_draw3_n] + _draw3_list [_draw3_n:]
     undo3_set_ (restore3, old)
 
-_AmbientError = "AmbientError"
-_DiffuseError = "DiffuseError"
-_LightingError = "LightingError"
+class _AmbientError(Exception):
+    pass
+
+class _DiffuseError(Exception):
+    pass
+
+class _LightingError(Exception):
+    pass
 
 def light3 ( * kw, ** kwds ) :
 
-    """
+    '''
     light3 (ambient=a_level,
                      diffuse=d_level,
                      specular=s_level,
@@ -303,47 +309,47 @@ def light3 ( * kw, ** kwds ) :
 
     EXAMPLES:
       light3 ( diffuse=.1, specular=1., sdir=[0,0,-1])
-        (dramatic "tail lighting" effect)
+        (dramatic 'tail lighting' effect)
       light3 ( diffuse=.5, specular=1., sdir=[1,.5,1])
-        (classic "over your right shoulder" lighting)
+        (classic 'over your right shoulder' lighting)
       light3 ( ambient=.1,diffuse=.1,specular=1.,
               sdir=[[0,0,-1],[1,.5,1]],spower=[4,2])
         (two light sources combining previous effects)
     SEE ALSO: rot3, save3, restore3
-    """
+    '''
 
     global _draw3_list, _draw3_nv
     if len (kw) > 0 : kwds = kw [0]
     old = _draw3_list [_draw3_nv:] [0:5]
     flags = 0
-    if "ambient" in kwds and kwds ["ambient"] != None :
-        ambient = kwds ["ambient"]
+    if 'ambient' in kwds and kwds ['ambient'] != None :
+        ambient = kwds ['ambient']
         if not is_scalar (ambient) :
-            raise _AmbientError("ambient light level must be scalar.")
+            raise _AmbientError('ambient light level must be scalar.')
         flags = flags | 1
         _draw3_list [_draw3_nv] = ambient
-    if "diffuse" in kwds and kwds ["diffuse"] != None :
-        diffuse = kwds ["diffuse"]
+    if 'diffuse' in kwds and kwds ['diffuse'] != None :
+        diffuse = kwds ['diffuse']
         if not is_scalar (diffuse) :
-            raise _DiffuseError("diffuse light level must be scalar.")
+            raise _DiffuseError('diffuse light level must be scalar.')
         flags = flags | 2
         _draw3_list [_draw3_nv + 1 ] = diffuse
 
-    if "specular" in kwds and kwds ["specular"] != None :
-        specular = kwds ["specular"]
+    if 'specular' in kwds and kwds ['specular'] != None :
+        specular = kwds ['specular']
         flags = flags | 4
     else :
         specular = _draw3_list [_draw3_nv + 2]
-    if "spower" in kwds and kwds ["spower"] != None :
-        spower = kwds ["spower"]
+    if 'spower' in kwds and kwds ['spower'] != None :
+        spower = kwds ['spower']
         flags = flags | 8
     else :
         spower = _draw3_list [_draw3_nv + 3]
-    if "sdir" in kwds and kwds ["sdir"] != None :
-        sdir = kwds ["sdir"]
+    if 'sdir' in kwds and kwds ['sdir'] != None :
+        sdir = kwds ['sdir']
         dims = numpy.shape (sdir)
         if dims == 0 or len (dims) == 2 and dims [1] != 3 :
-            raise _LightingError("lighting direction must be 3 vector or ns-by-3 array.")
+            raise _LightingError('lighting direction must be 3 vector or ns-by-3 array.')
         flags = flags | 16
     else :
         sdir = _draw3_list [_draw3_nv + 4]
@@ -362,7 +368,7 @@ def light3_ (arg) :
 
 def get3_light (xyz, * nxyz) :
 
-    """
+    '''
     get3_light(xyz, nxyz)
        or get3_light(xyz)
 
@@ -378,10 +384,10 @@ def get3_light (xyz, * nxyz) :
       light3 function.
 
       SEE ALSO: light3, set3_object, get3_normal, get3_centroid
-      """
+      '''
 
     global _draw3_list, _draw3_nv
-    lst = _draw3_lst [_draw3_nv:]
+    lst = _draw3_list [_draw3_nv:]
     ambient = lst [0]
     diffuse = lst [1]
     specular = lst [2]
@@ -401,7 +407,7 @@ def get3_light (xyz, * nxyz) :
     else :
         view = numpy.array ( [0., 0., zc],  numpy.float32) - get3_centroid (xyz, nxyz [0])
         m1 = \
-           numpy.sqrt ( sum (view * view,axis=0))
+           numpy.sqrt ( numpy.sum (view * view,axis=0))
         if m1 == 0. : m1 = 1.
         view = view / m1
 
@@ -409,28 +415,28 @@ def get3_light (xyz, * nxyz) :
        normal [2, ...] * view [2]
     light = ambient + diffuse * abs (nv)
     if specular != 0. :
-        sv = numpy.transpose (numpy.transpose (sdir) / numpy.sqrt (sum (numpy.transpose (sdir*sdir),axis=0)))
-        sv = dot (sv, view)
+        sv = numpy.transpose (numpy.transpose (sdir) / numpy.sqrt (numpy.sum (numpy.transpose (sdir*sdir),axis=0)))
+        sv = numpy.dot (sv, view)
         if len (numpy.shape (sdir)) == 1 :
-            sn = sum(numpy.array([sdir[0]*normal[0],sdir[1]*normal[1],
+            sn = numpy.sum(numpy.array([sdir[0]*normal[0],sdir[1]*normal[1],
                             sdir[2]*normal[2]]),axis=0)
             ####### I left out the specular_hook stuff.
-            m1 = maximum (sn * nv -0.5 * sv + 0.5, 1.e-30)
+            m1 = numpy.maximum (sn * nv -0.5 * sv + 0.5, 1.e-30)
             m1 = m1 ** spower
             light = light + (specular * m1)
         elif len (numpy.shape (sdir)) >= 2 :
             # multiple light sources
             nsrc = len (numpy.shape (sdir))
             for i in range (nsrc) :
-                sn = sum(numpy.array([sdir[i,0]*normal[0],sdir[i,1]*normal[1],
+                sn = numpy.sum(numpy.array([sdir[i,0]*normal[0],sdir[i,1]*normal[1],
                             sdir[i,2]*normal[2]]),axis=0)
-                m1 = maximum (sn * nv -0.5 * sv [i] + 0.5, 1.e-30) ** spower [i]
+                m1 = numpy.maximum (sn * nv -0.5 * sv [i] + 0.5, 1.e-30) ** spower [i]
                 light = light + specular * m1
     return light
 
 def get3_normal (xyz, *nxyz) :
 
-    """
+    '''
       get3_normal(xyz, nxyz)
           or get3_normal(xyz)
 
@@ -445,12 +451,12 @@ def get3_normal (xyz, *nxyz) :
       The normals are constructed from the cross product of the lines
       joining the midpoints of two edges which as nearly quarter the
       polygon as possible (the medians for a quadrilateral).  No check
-      is made that these not be parallel; the returned "normal" is
+      is made that these not be parallel; the returned 'normal' is
       [0,0,0] in that case.  Also, if the polygon vertices are not
-      coplanar, the "normal" has no precisely definable meaning.
+      coplanar, the 'normal' has no precisely definable meaning.
 
       SEE ALSO: get3_centroid, get3_light
-      """
+      '''
 
     if len (nxyz) == 0 :
         # if no polygon list is given, assume xyz is 2D mesh
@@ -466,13 +472,13 @@ def get3_normal (xyz, *nxyz) :
         # (reduces to above medians for quads)
         # (2) compute midpoints of first three sides
         n2 = (nxyz [0] + 1) / 2
-        c0 = (take(xyz, frst, 0) + take(xyz, frst + 1, 0)) / 2.
+        c0 = (numpy.take(xyz, frst, 0) + numpy.take(xyz, frst + 1, 0)) / 2.
         i = frst + n2 - 1
-        c1 = (take(xyz, i, 0) + take(xyz, i + 1, 0)) / 2.
+        c1 = (numpy.take(xyz, i, 0) + numpy.take(xyz, i + 1, 0)) / 2.
         i = n2 / 2
-        c2 = (take(xyz, frst + i, 0) + take(xyz, frst + (i + 1) % nxyz [0], 0)) / 2.
-        i = minimum (i + n2, nxyz [0]) - 1
-        c3 = (take(xyz, frst + i, 0) + take(xyz, frst + (i + 1) % nxyz [0], 0)) / 2.
+        c2 = (numpy.take(xyz, frst + i, 0) + numpy.take(xyz, frst + (i + 1) % nxyz [0], 0)) / 2.
+        i = numpy.minimum (i + n2, nxyz [0]) - 1
+        c3 = (numpy.take(xyz, frst + i, 0) + numpy.take(xyz, frst + (i + 1) % nxyz [0], 0)) / 2.
         m1 = c1 - c0
         m2 = c3 - c2
 
@@ -493,14 +499,14 @@ def get3_normal (xyz, *nxyz) :
         n3 = m1 [:, 1] * m2 [:, 0] - \
                                m1 [:, 0] * m2 [:, 1]
     m1 = numpy.sqrt (n1 ** 2 + n2 **2 + n3 **2)
-    m1 = m1 + equal (m1, 0.0)
+    m1 = m1 + numpy.equal (m1, 0.0)
     normal = numpy.array([n1 / m1, n2 / m1, n3 / m1])
 
     return normal
 
 def get3_centroid (xyz, * nxyz) :
 
-    """
+    '''
       get3_centroid(xyz, *nxyz)
           or get3_centroid(xyz)
 
@@ -516,7 +522,7 @@ def get3_centroid (xyz, * nxyz) :
       of each polygon.
 
       SEE ALSO: get3_normal, get3_light
-    """
+    '''
     
 
     if len (nxyz) == 0 :
@@ -537,11 +543,12 @@ def get3_centroid (xyz, * nxyz) :
         centroid = centroid / fnxyz
     return centroid
 
-_Get3Error = "Get3Error"
+class _Get3Error(Exception):
+    pass
 
 def get3_xy (xyz, *flg) :
 
-    """
+    '''
       get3_xy (xyz)
           or get3_xy(xyz, 1)
 
@@ -560,7 +567,7 @@ def get3_xy (xyz, *flg) :
       I believe that x, y, and z can be either 1d or 2d, so this
       routine is written in two cases.
 
-    """
+    '''
 
     # rotate and translate to viewer's coordinate system
     shp = numpy.shape (xyz)
@@ -574,60 +581,61 @@ def get3_xy (xyz, *flg) :
         zz = numpy.ravel (xyz [2])
         tmpxyz = numpy.array ( [xx, yy, zz])
         gr3 = numpy.array (getrot3_ (), copy = 1)
-        tmpxyz = dot (numpy.transpose (gr3),
+        tmpxyz = numpy.dot (numpy.transpose (gr3),
            tmpxyz - numpy.array ( [ [go3_ [0]], [go3_ [1]], [go3_ [2]]]))
-##    xx = numpy.transpose (numpy.reshape (ravel (tmpxyz [0]), (k,l)))
-##    yy = numpy.transpose (numpy.reshape (ravel (tmpxyz [1]), (k,l)))
-##    zz = numpy.transpose (numpy.reshape (ravel (tmpxyz [2]), (k,l)))
-        xx = (numpy.reshape (ravel (tmpxyz [0]), (k,l)))
-        yy = (numpy.reshape (ravel (tmpxyz [1]), (k,l)))
-        zz = (numpy.reshape (ravel (tmpxyz [2]), (k,l)))
+##    xx = numpy.transpose (numpy.reshape (numpy.ravel (tmpxyz [0]), (k,l)))
+##    yy = numpy.transpose (numpy.reshape (numpy.ravel (tmpxyz [1]), (k,l)))
+##    zz = numpy.transpose (numpy.reshape (numpy.ravel (tmpxyz [2]), (k,l)))
+        xx = (numpy.reshape (numpy.ravel (tmpxyz [0]), (k,l)))
+        yy = (numpy.reshape (numpy.ravel (tmpxyz [1]), (k,l)))
+        zz = (numpy.reshape (numpy.ravel (tmpxyz [2]), (k,l)))
         tmpxyz = numpy.array ( [xx, yy, zz])
     elif len (shp) == 2:
         go3_ = getorg3_ ()
         lm = numpy.array (getrot3_ (), copy = 1)
         rm = (xyz - numpy.array ( [ go3_ [0], go3_ [1], go3_ [2]]))
-        tmpxyz = dot (rm, lm)
+        tmpxyz = numpy.dot (rm, lm)
     else:
-        raise _Get3Error("xyz has a bad numpy.shape: " + repr(shp))
+        raise _Get3Error('xyz has a bad numpy.shape: ' + repr(shp))
 
     # do optional perspective projection
     zc = getzc3_ ()
     if zc != None :
         if len (shp) == 2 :
             z = tmpxyz [:, 2]
-            zc = maximum (zc - z, 1.e-35)     # protect behind camera, avoid zero divide
+            zc = numpy.maximum (zc - z, 1.e-35)     # protect behind camera, avoid zero divide
             tmpxyz [:, 0] = tmpxyz [:, 0] / zc
             tmpxyz [:, 1] = tmpxyz [:, 1] / zc
             if len (flg) != 0 and flg [0] != 0 :
                 tmpxyz [:, 2] = tmpxyz [:, 2] / zc
         elif len (shp) == 3 :
             z = tmpxyz [:,:, 2]
-            zc = maximum (zc - z, 1.e-35)     # protect behind camera, avoid zero divide
+            zc = numpy.maximum (zc - z, 1.e-35)     # protect behind camera, avoid zero divide
             tmpxyz [:,:, 0] = tmpxyz [:,:, 0] / zc
             tmpxyz [:,:, 1] = tmpxyz [:,:, 1] / zc
             if len (flg) != 0 and flg [0] != 0 :
                 tmpxyz [:,:, 2] = tmpxyz [:,:, 2] / zc
     return tmpxyz
 
-_UndoError = "UndoError"
+class _UndoError(Exception):
+    pass
 
 _in_undo3 = 0
 _undo3_list = []
 
 def undo3 (n = 1) :
 
-    """
+    '''
       undo3 ()
           or undo3 (n)
       Undo the effects of the last N (default 1) rot3, orient3, mov3, aim3,
       setz3, or light3 commands.
-    """
+    '''
 
     global _in_undo3, _undo3_list
     n = 2 * n
     if n < 0 or n > len (_undo3_list) :
-        raise _UndoError("not that many items in undo list")
+        raise _UndoError('not that many items in undo list')
     _in_undo3 = 1     # flag to skip undo3_set_
     # perhaps should save discarded items in a redo list?
     use_list = undo3_list [-n:]
@@ -644,7 +652,7 @@ def undo3 (n = 1) :
 
 def set3_object (fnc, arg) :
 
-    """
+    '''
       set3_object (drawing_function, [arg1,arg2,...])
 
       set up to trigger a call to draw3, adding a call to the
@@ -670,7 +678,7 @@ def set3_object (fnc, arg) :
         set3_object (drawing_function, [arg1,arg2,...])
 
     SEE ALSO: get3_xy, get3_light, sort3d
-    """
+    '''
 
     global _draw3_list
     _draw3_list = _draw3_list + [fnc, arg]
@@ -734,10 +742,10 @@ def _draw3_idler ( ) :
     # he/she can write his/her own idler. (ZCM 7/1/97)
     global _default_gnomon
     orient3 ()
-    if current_window () == -1 :
+    if win_current () == -1 :
         window3 (0)
     else :
-        window3 (current_window ())
+        window3 (win_current ())
     gnomon (_default_gnomon)
     lims = draw3 (1)
     if lims == None :
@@ -763,47 +771,29 @@ def has_multiple_components () :
     return _multiple_components
 
 def draw3_trigger ( ) :
-    "arrange to call draw3 when everything else is finished"
+    'arrange to call draw3 when everything else is finished'
     global _draw3_changes
     global _draw3_idler
     set_idler ( _draw3_idler )
     _draw3_changes = 1
 
 def clear3 ( ) :
-    "clear3 ( ) : Clear the current 3D display list."
+    'clear3 ( ) : Clear the current 3D display list.'
     global _draw3_list, _draw3_n
     _draw3_list [_draw3_n:] = []
     set_multiple_components (0)
 
 def window3 ( * n , **kw ) :
+    '''
+    window3 () or window3 (n)
+    initialize style='nobox.gs' window for 3D graphics
+    '''
+    window (*n, wait=1, style='nobox.gs', legends=0, **kw)
 
-    """
-    window3 ( ) or window3 (n)
-    initialize style="nobox.gs" window for 3D graphics
-    """
-
-    if "dump" in kw :
-        dump = kw ["dump"]
-    else :
-        dump = 0
-    if "hcp" in kw :
-        if len (n) == 0 :
-            window (wait=1, style="nobox.gs", legends=0, hcp=kw ["hcp"],
-               dump = dump)
-            hcpon ()
-        else :
-            window (n [0], wait=1, style="nobox.gs", legends=0, hcp=kw ["hcp"],
-               dump = dump)
-            hcpon ()
-    else :
-        if len (n) == 0 :
-            window (wait=1, style="nobox.gs", legends=0)
-        else :
-            window (n [0], wait=1, style="nobox.gs", legends=0)
 
 def sort3d (z, npolys) :
 
-    """
+    '''
     sort3d(z, npolys)
       given Z and NPOLYS, with len(Z)==sum(npolys,axis=0), return
       a 2-element list [LIST, VLIST] such that Z[VLIST] and NPOLYS[LIST] are
@@ -826,7 +816,7 @@ def sort3d (z, npolys) :
       are more nearly correct algorithms than this, but they are much
       slower.
     SEE ALSO: get3_xy
-    """
+    '''
 
     # first compute z, the z-centroid of every poly
     # get a list the same length as x, y, or z which is 1 for each
@@ -845,7 +835,7 @@ def sort3d (z, npolys) :
     array_set (vlist, lst, numpy.arange (len (lst), dtype = numpy.int32))
     # then reset the nlist values to that pre-sorted order, so that
     # sort(nlist) will be the required vertex sorting list
-    nlist = take(vlist, nlist, 0)
+    nlist = numpy.take(vlist, nlist, 0)
     # the final hitch is to ensure that the vertices within each polygon
     # remain in their initial order (sort scrambles equal values)
     # since the vertices of a polygon can be cyclically permuted,
@@ -882,12 +872,11 @@ def limits_ (square = 0, yfactor = 1., xfactor = 1.) :
 
 def draw3 (called_as_idler = 0, lims = None) :
 
-    """
+    '''
        draw3 (called_as_idler = 0, lims = None):
     Draw the current 3d display list.
     Ordinarily triggered automatically when the drawing changes.
-    """
-
+    '''
     global _draw3, _draw3_changes, _draw3_list, _draw3_n, _gnomon
     if _draw3_changes :
         if called_as_idler :
@@ -929,7 +918,7 @@ def draw3 (called_as_idler = 0, lims = None) :
             _gnomon_draw ( )
         _draw3_changes = None
         set_draw3_ (0)
-        return lims
+        return [float(o) for o in lims]
 #     _draw3 = 0
 
 try :
@@ -1005,7 +994,7 @@ set_default_gnomon (0)
 
 def gnomon (* on, ** kw) :
 
-    """
+    '''
     gnomon ()
        or gnomon (onoff)
       Toggle the gnomon display. If on is present and non-zero,
@@ -1021,7 +1010,7 @@ def gnomon (* on, ** kw) :
       coordinate system is right-handed, and (2) If the tip of an
       axis projects into the screen, its label is drawn in opposite
       polarity to the other text in the screen.
-    """
+    '''
 
 #    (ZCM 4/4/97) Add keyword argument chr to allow specification
 #    of the axis labels.
@@ -1036,10 +1025,10 @@ def gnomon (* on, ** kw) :
         _gnomon = 0
     if old != _gnomon :
         draw3_trigger ()
-    if "chr" in kw :
-        chr = kw ["chr"]
+    if 'chr' in kw :
+        chr = kw ['chr']
     else :
-        chr = ["X", "Y", "Z"]
+        chr = ['X', 'Y', 'Z']
 
 def _gnomon_draw ( ) :
     global chr
@@ -1052,8 +1041,8 @@ def _gnomon_draw ( ) :
     s1 = numpy.shape ( xyz1 )
     s2 = numpy.shape ( xyz2 )
     xyz = numpy.zeros ( (s2 [1], s2 [0], s1 [1] ), numpy.float32)
-    xyz [0, :, :] = dot (numpy.transpose (xyz1), xyz2 [:, 0, :])
-    xyz [1, :, :] = dot (numpy.transpose (xyz1), xyz2 [:, 1, :])
+    xyz [0, :, :] = numpy.dot (numpy.transpose (xyz1), xyz2 [:, 0, :])
+    xyz [1, :, :] = numpy.dot (numpy.transpose (xyz1), xyz2 [:, 1, :])
     xyz = .0013 * _gnomon_scale * xyz
     x1 = xyz [0:2, 0, 0:3]
     y1 = xyz [0:2, 1, 0:3]
@@ -1066,7 +1055,7 @@ def _gnomon_draw ( ) :
     if ( wid < 0.5 ) : wid = 0.
     savesys = plsys (0)
     pldj (x0 + _gnomon_x, y0 + _gnomon_y, x1 + _gnomon_x, y1 + _gnomon_y,
-          width = wid, type = 1, legend = "")
+          width = wid, type = 1, legend = '')
     plsys (savesys)
 
     # Compute point size of labels (1/3 of axis length)
@@ -1078,7 +1067,7 @@ def _gnomon_draw ( ) :
         y1 = y1 * 21. / _gnomon_scale
     # label positions: first find shortest axis
     xy = numpy.sqrt (x1 * x1 + y1 * y1)
-    xysum = add.reduce (xy)
+    xysum = numpy.add.reduce (xy)
     i = argmin (xy,axis=-1)          # mnx (xy)
     jk = [ [1, 2], [2, 0], [0, 1]] [i]
     j = jk [0]
@@ -1148,7 +1137,7 @@ def _gnomon_draw ( ) :
     try :
         dum = chr
     except :
-        chr = ["X", "Y", "Z"]
+        chr = ['X', 'Y', 'Z']
     gnomon_text_ (chr [i], x [i], y [i], pts, z1 [i] < 1.e-6)
     gnomon_text_ (chr [j], x [j], y [j], pts, z1 [j] < 1.e-6)
     gnomon_text_ (chr [k], x [k], y [k], pts, z1 [k] < 1.e-6)
@@ -1168,36 +1157,32 @@ except :
 
 def gnomon_text_ (chr, x, y, pts, invert) :
     # pts = 8, 10, 12, 14, 18, or 24
-    col = "fg"
+    col = 'fg'
     if invert :
         savesys = plsys (0)
         print(('savesys',savesys))
         plg (numpy.array ( [y, y]), numpy.array ( [x, x]), type = 1, width = 2.2 * pts,
-             color = col, marks = 0, legend = "")
+             color = col, marks = 0, legend = '')
         plsys (savesys)
-        col = "bg"
-    plt (chr, x, y, justify = "CH", color = col, height = pts,
-         font = "helvetica", opaque = 0)
-
-from .movie import *
+        col = 'bg'
+    plt (chr, x, y, justify = 'CH', color = col, height = pts,
+         font = 'helvetica', opaque = 0)
 
 g_nframes = 30
 
-def spin3 (nframes = 30, axis = numpy.array ([-1, 1, 0],  numpy.float32), tlimit = 60.,
-   dtmin = 0.0, bracket_time = numpy.array ([2., 2.],  numpy.float32), lims = None,
-   timing = 0, angle = 2. * numpy.pi) :
+def spin3 (nframes = 30, axis = numpy.array ([-1, 1, 0],  numpy.float32), 
+   dtmin = 0.0, lims = None, angle = 2. * numpy.pi) :
 
-    """
+    '''
     spin3 ( ) or spin3 (nframes) os spin3 (nframes, axis)
       Spin the current 3D display list about AXIS over NFRAMES.  Keywords
-      tlimit= the total time allowed for the movie in seconds (default 60),
       dtmin= the minimum allowed interframe time in seconds (default 0.0),
-      bracket_time= (as for movie function in movie.i), timing = 1 if
-      you want timing measured and printed out, 0 if not.
 
       The default AXIS is [-1,1,0] and the default NFRAMES is 30.
     SEE ALSO: rot3
-    """
+    '''
+
+    from Mplot import movie
 
     # Note on global variables (ZCM 2/21/97):
     # I see no better way of sharing these between spin3 and _spin3
@@ -1216,7 +1201,7 @@ def spin3 (nframes = 30, axis = numpy.array ([-1, 1, 0],  numpy.float32), tlimit
     inc = axis [0] == axis [1] == 0
     _phi = numpy.arctan2 (axis [1], axis [0] + inc)
     orig = save3 ( )
-    movie (_spin3, tlimit, dtmin, bracket_time, lims, timing = 0)
+    movie (_spin3, dtmin, lims)
     restore3 (orig)
 
 def _spin3 (i) :

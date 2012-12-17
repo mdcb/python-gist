@@ -1,10 +1,7 @@
-## Automatically adapted for numpy Jul 30, 2006 by numeric2numpy.py
-
 #!/usr/bin/env python
-#  $Id: gistdemomovie.py 651 2007-09-07 17:10:08Z mbec $
 #  ---------------------------------------------------------------------
 #
-#  NAME:     gistdemomovie.py
+#  NAME:     demomovie.py
 #
 #  PURPOSE:  Mesh plotting demo
 #  Adapted from demo2.i for yorick by Michiel de Hoon
@@ -17,26 +14,34 @@
 #                   All rights reserved.
 
 from numpy import *
-from numpy import min
-from .gistC import *
-from gist import *
-from .gistfuncs import span as g_span
+from ..gistY import *
+from ..gistC import *
+from ..Mplot import movie
 
-def run(which=None, time_limit=60):
-   """Exhibit quadrilateral mesh plots in 3 movies of a drumhead.
+# movie.run()
+# Move the mouse to the graphcis window in-between test
+
+__all__=['run']
+
+def paws () :
+   try: raw_input ('Type in any string to continue; ^C to return to prompt. ')
+   except: input ('Type in any string to continue; ^C to return to prompt. ')
+
+def run(which=None):
+   '''Exhibit quadrilateral mesh plots in 3 movies of a drumhead.
      The drumhead is initially stationary, but has a bump near one
      edge.  Yorick is solving a 2D wave equation to compute the
      evolution of this bump.
 
-     The first movie is a filled mesh plot with color "proportional"
+     The first movie is a filled mesh plot with color 'proportional'
      to the height of the surface of the drum.  A few well chosen
      contour levels (here 3) add a lot to a filled mesh plot.
 
-     The second movie is a "3D" perspective plot of the height of the
+     The second movie is a '3D' perspective plot of the height of the
      drumhead.  In this movie, the mesh lines are drawn, which is
      slightly confusing since the cells are not all the same shape.
 
-     The second movie is a "3D" shaded plot of the height of the
+     The second movie is a '3D' shaded plot of the height of the
      drumhead.  Yorick computes surface shading based on the angle
      of each cell from a light source.
 
@@ -49,12 +54,11 @@ def run(which=None, time_limit=60):
      There are two optional arguments to demo2: the first is the
      number of the movie (1, 2, or 3) you want to watch; the second
      is a time limit on the duration of each movie in seconds (default
-     is 60 seconds each)."""
-   from gist import movie
+     is 60 seconds each).'''
    global f, fdot, dt, x, y, level
 
    # generate a 30-by-30 cell mesh on the [-1,1] square
-   x= g_span(-1, 1, 31, 31)
+   x= tile(linspace(-1, 1, 31), 31).reshape(31,31)
    y= transpose(x)
    # map the square mesh into a mesh on the unit circle
    # this mesh has more nearly equal area cells than a polar
@@ -73,55 +77,43 @@ def run(which=None, time_limit=60):
    ydz= y[1:,1:]+y[:-1,1:]-y[1:,:-1]-y[:-1,:-1]
    yzd= y[1:,1:]-y[:-1,1:]+y[1:,:-1]-y[:-1,:-1]
 
-   dt= 0.1875*sqrt(min(min(abs(xdz*yzd - xzd*ydz))))
+   dt= 0.1875/5.*sqrt(min(abs(xdz*yzd - xzd*ydz).ravel()))
 
-   window(0, wait=1, style="nobox.gs")
-   palette("heat.gp")
+   window(0, wait=1, style='nobox.gs')
+   palette('heat.gp')
    limits(-1, 1, -1, 1)
 
    # roll the filled mesh movie
    if which==None or which==1:
+     print('- filled mesh movie')
      fc= (f[1:,1:]+f[:-1,1:]+f[1:,:-1]+f[:-1,:-1]) / 4.
      cmin= cmax= max([max(abs(row)) for row in fc])
      cmin= -cmin
      level= cmax/4.
      display_plf(0)
      fixedlimits = limits()
-     movie.movie(display_plf, time_limit, lims=fixedlimits, timing=1)
-     # Note; movie_timing is a global variable in movie.py
-     print("%d frames of filled mesh drumhead completed in %f sec" % (movie.movie_timing[3], movie.movie_timing[2])) 
-     print("Rate for filled mesh is %f frames/(CPU sec),%f frames(wall sec)" %
-      (movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4),
-        movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4)))
+     movie(display_plf, lims=fixedlimits)
+     paws ()
 
    # roll the perspective movie */
    if which==None or which==2:
+     print('- perspective movie')
      f[:,:]= f0
      limits(-1,1,-1,1)
      display_plm(0)
      fixedlimits = limits()
-     movie.movie(display_plm, time_limit, lims=fixedlimits, timing=1)
-     print("%d frames of wireframe surface drumhead completed in %f sec",
-      (movie.movie_timing[3],movie.movie_timing[2]))
-     print("Rate for filled mesh is %f frames/(CPU sec), %f frames(wall sec)" %
-      (movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4), 
-        movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4)))
+     movie(display_plm, lims=fixedlimits)
+     paws ()
 
    # roll the shaded movie
    if which==None or which==3:
+     print('- shaded movie')
      f[:,:]= f0
      limits(-1,1,-1,1)
      display_pl3(0)
      fixedlimits = limits()
-     movie.movie(display_pl3, time_limit, lims=fixedlimits, timing=1)
-     print("%d frames of filled surface drumhead completed in %f sec", 
-      (movie.movie_timing[3],movie.movie_timing[2]))
-     print("Rate for filled mesh is %f frames/(CPU sec), %f frames(wall sec)" %
-      (movie.movie_timing[3]/(movie.movie_timing[0]-movie.movie_timing[4]+1.0e-4), 
-        movie.movie_timing[3]/(movie.movie_timing[2]-movie.movie_timing[4]+1.0e-4)))
+     movie(display_pl3, lims=fixedlimits)
 
-     fma()
-     limits()
 
 def display_plf(i):
    # display first
@@ -140,16 +132,16 @@ def display_plf(i):
    fs[:,1:-1] = fs[:,1:-1]/2.
    fs[1:-1,:] = fs[1:-1,:]/2.
 
-   plc(fs, levs=[0.], marks=0, color="green", type="solid")
-   plc(f,  levs=[level], marks=0, color="black", type="dash")
-   plc(f,  levs=[-level], marks=0, color="green", type="dash")
+   plc(fs, levs=[0.], marks=0, color='green', type='solid')
+   plc(f,  levs=[level], marks=0, color='black', type='dash')
+   plc(f,  levs=[-level], marks=0, color='green', type='dash')
 
    # then take a step forward in time
    lf= laplacian(f, y,x)
    fdot = fdot + lf*dt
    f[1:-1,1:-1] = f[1:-1,1:-1] + fdot*dt
 
-   return i<200
+   return i<1000
 
 def display_plm(i):
   global fdot
@@ -173,7 +165,7 @@ def display_pl3(i):
   fdot = fdot + lf*dt
   f[1:-1,1:-1] = f[1:-1,1:-1] + fdot*dt
 
-  return i<200
+  return i<1000
 
 def laplacian(f, y,x):
    # There are many ways to form the Laplacian as a finite difference.
