@@ -92,8 +92,8 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
       xyzc = get3_xy(xyzc, 1)
 
       # compute mean i-edge and j-edge vector z-components
-      iedge = avg_ (xyzc [2, :, -1] - xyzc [2, :, 0])
-      jedge = avg_ (xyzc [2, -1] - xyzc [2, 0])
+      iedge = numpy.mean (xyzc [2, :, -1] - xyzc [2, :, 0])
+      jedge = numpy.mean (xyzc [2, -1] - xyzc [2, 0])
 
       # compute shading if necessary
       if (shade) :
@@ -132,10 +132,10 @@ def plwf (z, y = None, x = None, fill = None, shade = 0, edges = 1,
          y = reverse (y, 1)
          if fill != None :
             fill = reverse (fill, 1)
-      xmax = maxelt_ (x)
-      xmin = minelt_ (x)
-      ymax = maxelt_ (y)
-      ymin = minelt_ (y)
+      xmax = numpy.max (x)
+      xmin = numpy.min (x)
+      ymax = numpy.max (y)
+      ymin = numpy.min (y)
       if _xfactor != 1. :
          xmax = xmax + (_xfactor - 1) * (xmax - xmin) / 2.0
          xmin = xmin - (_xfactor - 1) * (xmax - xmin) / 2.0
@@ -284,16 +284,16 @@ def xyz_wf (z, y, x, scale = 1.0) :
       y = numpy.transpose (numpy.tile(numpy.linspace (0, nx - 1, nx), ny).reshape(ny,nx))
    elif numpy.shape (x) != numpy.shape (z) or numpy.shape (y) != numpy.shape (z) :
       raise _Xyz_wfError('x, y, and z must all have same dimensions')
-   xyscl = max (maxelt_ (x) - minelt_ (x),
-                maxelt_ (y) - minelt_ (y))
+   xyscl = max (numpy.ptp(x),
+                numpy.ptp(y))
    if scale != None:
       xyscl = xyscl * scale
-   dz = maxelt_ (z) - minelt_ (z)
+   dz = numpy.ptp(z)
    zscl= dz + (dz == 0.0)
    if zscl :
       z = z * 0.5 * xyscl /zscl
-   xbar = avg_ (x)
-   ybar = avg_ (y)
-   zbar = avg_ (z)
+   xbar = numpy.mean (x)
+   ybar = numpy.mean (y)
+   zbar = numpy.mean (z)
    xyz = numpy.array ( [x - xbar, y - ybar, z - zbar], numpy.float32)
    return (xyz)

@@ -60,8 +60,8 @@ def demo5_light (i) :
    return 1
 
 def paws () :
-   try: raw_input ('Type in any string to continue; ^C to return to prompt. ')
-   except: input ('Type in any string to continue; ^C to return to prompt. ')
+   try: raw_input ('<Return> to continue ...\n')
+   except: input ('<Return> to continue ...\n')
 
 def run (*itest) :
    '''run() or run(i)

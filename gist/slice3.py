@@ -16,10 +16,12 @@
 import numpy
 from .gistC import *
 from .gistF import find_mask, construct3, array_set, interp
-from .shapetest import *
 from .pl3d import *
 from .yorick import *
 import collections
+
+def is_scalar(x):
+    return len(numpy.shape(x)) == 0
 
 #
  # Caveats:
@@ -688,7 +690,8 @@ def slice3 (m3, fslice, nverts, xyzverts, * args, ** kw) :
         # now pattern jumps by 4 between cells, smaller jumps within cells
         # get the list of places where a new value begins, and form a
         # new pattern with values that increment by 1 between each plateau
-        pattern = dif_ (pattern, 0)
+        # pattern = dif_ (pattern, 0)
+        pattern = pattern[1:] - pattern[:-1]
         nz = numpy.nonzero(pattern)[0]
         lst = numpy.zeros (len (nz) + 1, numpy.int32)
         lst [1:] = nz + 1

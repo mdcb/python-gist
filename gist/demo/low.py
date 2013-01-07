@@ -24,6 +24,10 @@ from ..gistC import *
 
 __all__=['run']
 
+def paws () :
+  try: raw_input ('<Return> to continue ...\n')
+  except: input ('<Return> to continue ...\n')
+
 def grtest():
 
   print('\n\n         Pygist Comprehensive Graphics Test\n')
@@ -31,56 +35,56 @@ def grtest():
   print('Each frame will be described at the terminal.')
   print('Compare what you see with the description, then')
   print('hit <RETURN> to see the next test, or q <RETURN> to quit.\n')
-  if quitnow(): return
+  paws()
   pldefault(marks=1, width=0, type=1, style='work.gs', dpi=100)
   winkill(0)
   print('Test 1:  Commands: window (0, wait=1, dpi=75); plg([0, 1])')
   window (0, wait=1, dpi=75)
   plg([0, 1])
   print('A small (75 dpi) window with line marked A from (1,0) to (2,1).')
-  if quitnow(): return
+  paws()
   winkill(0)
 
   print('Test 2:  Commands: plg([0,1])')
   plg([0,1])
   print('A large (100 dpi) window with line marked A from (1,0) to (2,1).')
-  if quitnow(): return
+  paws()
   unzoom()
 
   print('Test 3:  Commands: plg([1, 0])')
   plg([1, 0])
   print('Added line marked B from (1,1) to (2,0) to previous plot.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   print('Test 4:  Commands: logxy(1, 0)')
   logxy(1, 0)
   print('X axis now a log scale.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   print('Test 5:  Commands: logxy(0, 0)')
   logxy(0, 0)
   print('X axis back to linear scale.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   print('Test 6:  Commands: limits(1.2, 1.8, 0.2, 0.8)')
   limits(1.2, 1.8, 0.2, 0.8)
   print('Limits changed to 1.2<x<1.8, 0.2<y<0.8.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   ylimits(0.4, 0.6)
   print('Test 7:  Commands: ylimits(0.4, 0.6)')
   print('Limits changed to 1.2<x<1.8, 0.4<y<0.6.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   limits()
   print('Test 8:  Commands: limits')
   print('Limits back to extreme values (1,0) to (2,1).')
-  if quitnow(): return
+  paws()
   unzoom()
 
   fma()
@@ -94,14 +98,13 @@ def grtest():
   print('In each case, the point where you press the mouse button will')
   print('be translated to the point where you release the mouse button.')
   print('To zoom one axis only, click over the tick marks on that axis.')
-  sts = quitnow()
+  paws()
   unzoom()
-  if (sts): return
 
   pledit(marks=0, width=6, type='dash')
   print('Test 10  Commands: pledit(marks=0, width=6, type=\'dash\')')
   print('Marker A on sine curve disappears, curve becomes bold dashed.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   fma()
@@ -112,7 +115,7 @@ def grtest():
     plg( r*sin(x), r*cos(x), marks=0, color=-4-i, legend = s)
   print('Test 11:  Commands: plg(r*sin(x), r*cos(x), color=-4-i)')
   print('A set of nested cardioids in the primary and secondary colors.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   pltitle ( 'Cardioids' )
@@ -123,7 +126,7 @@ def grtest():
   plt(\'Colored nested cardioids\',-2.,-3.,orient=1,opaque=1,tosys=1); plq()')
   print('Adds the title above the upper tick marks.')
   print('Also prints legends for the six curves at the terminal (plq).')
-  if quitnow(): return
+  paws()
   unzoom()
 
   print('Test 13:  Commands: pledit(color=\'fg\', type=0, marker=i)')
@@ -131,7 +134,7 @@ def grtest():
   pledit(6, color='fg', type=0, marker='A')
   print('Changes the colors to foreground, types to no lines.')
   print('Markers are point, plus, asterisk, O, X, A.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   print('Test 14:  Commands: pledit(marks=0, type=i)')
@@ -139,7 +142,7 @@ def grtest():
   pledit(6, color='fg', type=1, width=4)
   print('Changes line types to solid, dash, dot, dashdot, dashdotdot.')
   print('Outermost cardioid becomes a thick, solid line.')
-  if quitnow(): return
+  paws()
   unzoom()
 
   fma()
@@ -153,7 +156,7 @@ def grtest():
   print('Test 15:  Commands: plm(y, x)')
   print('Quadrilateral mesh -- round with bites out of its sides.')
   plm (yy, xx)
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
 
@@ -161,7 +164,7 @@ def grtest():
   plmesh(yy, xx)
   plv(x+.5, y-.5)
   print('Velocity vectors.  Try zooming and panning with mouse.')
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
 
@@ -174,21 +177,21 @@ def grtest():
   plm (boundary=1, type=2)
   print('Contours A-H, with mesh boundary dashed.')
   print('Contours I-P, with mesh boundary dashed.')
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
 
   print('Test 18:  Commands: plf(z);  plfc(.); plc(z,.)')
   z = mag(x+.5,y-.5)
   plf(z)
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
   
   plfc(z,yy,xx,ireg,contours=array([0.5, 1.0, 1.5]))
   plc(z, marks=0, type=2, color='bg', levs=[0.5, 1.0, 1.5])
   print('Filled mesh (color only) with three dashed contours overlayed.')
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
 
@@ -198,7 +201,7 @@ def grtest():
   z = mag(x+.5,y-.5)
   plf(z)
   plc(z, marks=0, type=2, color='bg', levs=[0.5, 1.0, 1.5])
-  if quitnow(): return
+  paws()
   fma ()
   plfc(z,yy,xx,ireg,contours=array([0.5, 1.0, 1.5]))
   plc(z, marks=0, type=2, color='bg', levs=[0.5, 1.0, 1.5])
@@ -206,7 +209,7 @@ def grtest():
   for i in range(6):
     palette (pal[i])
     print(('Palette name: ', pal[i]))
-    if quitnow(): return
+    paws()
 
   palette('earth.gp')
   fma()
@@ -221,7 +224,7 @@ def grtest():
     plc (mag(x+.5,y-.5), marks=1)
     plm (boundary=1, type=2)
     print(('Style name: ', pal[i]))
-    if quitnow(): return
+    paws()
 
   window(style='work.gs')
   fma()
@@ -235,7 +238,7 @@ def grtest():
   funky = cos(r)**2 * cos(3*theta)
   pli(funky)
   print('Cell array image (color only).  Three cycles in theta, r.')
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
 
@@ -247,7 +250,7 @@ def grtest():
   pltitle('Seventeen Pointed Stars')
   limits(square = 1)
   print('All 17 pointed stars.')
-  if quitnow(): return
+  paws()
   limits(square = 0)
   fma()
   unzoom()
@@ -295,7 +298,7 @@ def grtest():
   pltitle ( 'Three rows of three polygons' )
   limits()
   print('Three rows of three polygons.')
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
 
@@ -309,7 +312,7 @@ def grtest():
   plh (data, labels = aminoacids, color = colors) 
   ylimits(0,10.0)
   pltitle ('Amino acid abundance (%) in SwissProt v. 36')
-  if quitnow(): return
+  paws()
   fma()
   unzoom()
 
@@ -336,7 +339,7 @@ def grtest():
   plt('NewCenturySchlbk-Italic',0,19,tosys=1,height=20,font=18)
   plt('NewCenturySchlbk-BoldItalic',0,20,tosys=1,height=20,font=19)
   limits(0,2,0,22)
-  if quitnow(): return
+  paws()
   fma()
   window(style='work.gs')
   unzoom()
@@ -345,19 +348,13 @@ def grtest():
   print('First run without animation mode')
   print('Second run with animation mode')
   print('Press RETURN to continue')
-  if quitnow(): return
+  paws()
   lissajous(0)
   print('Press RETURN to continue')
-  if quitnow(): return
+  paws()
   lissajous(1)
-  if quitnow(): return
+  paws()
   unzoom()
-
-def quitnow(prompt=''):
-  try: s=raw_input(prompt)
-  except: s=input(prompt)
-  if s == 'q': return 1
-  return 0
 
 def lissajous(animation):
 

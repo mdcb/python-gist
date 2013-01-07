@@ -24,8 +24,8 @@ from ..Mplot import movie
 __all__=['run']
 
 def paws () :
-   try: raw_input ('Type in any string to continue; ^C to return to prompt. ')
-   except: input ('Type in any string to continue; ^C to return to prompt. ')
+   try: raw_input ('<Return> to continue ...\n')
+   except: input ('<Return> to continue ...\n')
 
 def run(which=None):
    '''Exhibit quadrilateral mesh plots in 3 movies of a drumhead.

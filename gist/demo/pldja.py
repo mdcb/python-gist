@@ -1,9 +1,7 @@
 import numpy
 import gist
 
-print('Type demopldja.run()')
-
-def run():
+def run(arrow_scales=True):
   gist.fma()
 
   # generate a random field
@@ -24,8 +22,6 @@ def run():
 
   arrow_a = numpy.pi/6.
   arrow_len = .5
-  arrow_scales=False
-  arrow_scales=True
 
   slo=(Y2-Y1)/(X2-X1)
   ang=numpy.arctan(slo)

@@ -5,9 +5,7 @@
 import numpy
 from .gistC import *
 from .gistF import index_sort, array_set
-from .shapetest import *
 from .yorick import *
-
 
 #  PL3D.PY
 #  Viewing transforms and other aids for 3D plotting.
@@ -1115,8 +1113,8 @@ def _gnomon_draw ( ) :
     d = 0.0013 * pts
     if xyi < d :
         # just center it in correct quadrant
-        jk = sign_ (xi * xj + yi * yj)
-        yi = sign_ (xi * xk + yi * yk)
+        jk = numpy.sign (xi * xj + yi * yj) or 1
+        yi = numpy.sign (xi * xk + yi * yk) or 1
         xi = jk * xj + yi * xk
         yi = jk * yj + yi * yk
         jk = numpy.sqrt (xi * xi + yi * yi)
@@ -1216,3 +1214,10 @@ def _spin3 (i) :
     # fixme, gistC does not cast numpy.float64 to float
     limits (float(lims [0]), float(lims [1]), float(lims [2]), float(lims [3]))
     return 1
+
+#--
+
+def is_scalar(x):
+    return len(numpy.shape(x)) == 0
+
+

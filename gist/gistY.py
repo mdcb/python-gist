@@ -33,7 +33,6 @@ import numpy
 from .gistC import *
 from .gistF import zmin_zmax
 #from mesh import * # still experimental, undebugged
-from .shapetest import *
 
 # dpi=75  -> 450 pix
 # dpi=100 -> 600 pix
@@ -433,7 +432,7 @@ def plfc (z, y, x, ireg, contours = 8, colors = None, region = 0,
    plmesh (y, x, ireg, triangle = triangle)
    for i in range (n + 1) :
       [nc, yc, xc] = contour (numpy.array ( [vc [i], vc [i + 1]]), z)
-      if (is_scalar(nc) and nc == 0 or nc is None) :
+      if nc == 0 or nc is None:
          continue
       plfp ( (numpy.ones (len (nc)) * colors [i]).astype(numpy.uint8),
          yc, xc, nc, edges = 0)
