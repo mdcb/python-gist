@@ -26,7 +26,7 @@
 #  ---------------------------------------------------------------------
 
 # 'eps'
-__all__ = ['hcp', 'winkill', 'pltitle', 'ylimits', 'moush', 'xytitles', 'plmk', 'plmk_default', 'plfc', 'plh' ]
+__all__ = ['hcp', 'winkill', 'pltitle', 'ylimits', 'moush', 'xytitles', 'plmk', 'plmk_default', 'plfc', 'plh', 'repl' ]
 
 import sys, os
 import numpy
@@ -540,4 +540,14 @@ def plh (y, x=None, width=1, hide=0, color=None, labels=None, height=None):
             x = left + scale * ((barx[i][0]+barx[i][-1])/2. - barx[0][0])
             plt(labels[i],x,y,justify='CT')
 
+def repl ():
+   '''
+   repl()
+
+   brings you back to the repl interactive mode.
+   '''
+   try: import os; execfile(os.environ['PYTHONSTARTUP'])
+   except: import os; exec(compile(open(os.environ['PYTHONSTARTUP']).read(), 'PYTHONSTARTUP', 'exec'))
+   import code
+   code.interact(local=locals(),banner='')
 
