@@ -1,7 +1,10 @@
 # Gist winscape.gs drawing style
 
 # work.gs on a 2x1 window.
-# A single coordinate system on a portrait page
+# coordinate system on a portrait page
+#   1 = full frame
+#   2,3 = bottom/top
+#   4,5,6 = 3x 1/3
 # Legends: two columns below viewport, contours in single column to right
 
 # See the header file gist.h for a more complete description of the
@@ -83,6 +86,7 @@ default = {
     frameStyle= { color= -2,  type= 1,  width= 1.0 }}}
 
 # The one coordinate system matches the default template exactly
+# system 1
 system= { legend= "System 0" }
 
 legends= {
@@ -96,3 +100,166 @@ clegends= {
   textStyle= { color= -2,  font= 0x00,  height= 0.0156,
     orient= 0,  alignH= 1,  alignV= 1,  opaque= 0 },
   nchars= 14,  nlines= 28,  nwrap= 1 }
+
+
+# system 2
+system = {
+  viewport= { 0.1200, 0.730 , 0.454, 0.620 },
+
+  ticks= {
+
+    horiz= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.395,  yOver= 0.370 },
+
+    vert= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.150,  yOver= 0.370 },
+
+    frame= 0,
+    frameStyle= { color= -2,  type= 1,  width= 1.0 }}}
+
+# system 3
+system = {
+
+  viewport= { 0.1200, 0.730 , 0.683, 0.849 },
+
+  ticks= {
+
+    horiz= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.395,  yOver= 0.370 },
+
+    vert= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.150,  yOver= 0.370 },
+
+    frame= 0,
+    frameStyle= { color= -2,  type= 1,  width= 1.0 }}}
+
+
+
+# system 4
+system = {
+
+  viewport= { 0.1200, 0.730 , 0.444, 0.548 },
+
+  ticks= {
+
+    horiz= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.395,  yOver= 0.370 },
+
+    vert= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.150,  yOver= 0.370 },
+
+    frame= 0,
+    frameStyle= { color= -2,  type= 1,  width= 1.0 }}}
+
+# system 5
+system = {
+
+  viewport= { 0.1200, 0.730 , 0.594, 0.698 },
+
+  ticks= {
+
+    horiz= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.395,  yOver= 0.370 },
+
+    vert= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.150,  yOver= 0.370 },
+
+    frame= 0,
+    frameStyle= { color= -2,  type= 1,  width= 1.0 }}}
+
+# system 6
+system = {
+
+  viewport= { 0.1200, 0.730 , 0.745, 0.849 },
+
+  ticks= {
+
+    horiz= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.395,  yOver= 0.370 },
+
+    vert= {
+      nMajor= 7.5,  nMinor= 50.0,  logAdjMajor= 1.2,  logAdjMinor= 1.2,
+      nDigits= 6,  gridLevel= 1,  flags= 0x033,
+      tickOff= 0.0007,  labelOff= 0.0182,
+      tickLen= { 0.0143, 0.0091, 0.0052, 0.0026, 0.0013 },
+      tickStyle= { color= -2,  type= 1,  width= 1.0 },
+      gridStyle= { color= -2,  type= 3,  width= 1.0 },
+      textStyle= { color= -2,  font= 0x08,  height= 0.010,
+        orient= 0,  alignH= 0,  alignV= 0,  opaque= 0 },
+      xOver= 0.150,  yOver= 0.370 },
+
+    frame= 0,
+    frameStyle= { color= -2,  type= 1,  width= 1.0 }}}
+
