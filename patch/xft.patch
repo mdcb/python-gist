@@ -670,10 +670,7 @@ diff -rau yorick-cvs.virgin/play/x11/textout.c yorick-cvs/play/x11/textout.c
 +  XftDrawDestroy( xftdraw );
 +}
 +
-+char *
-+p_font2xftfont(int font)
-+{
-+  char *xftfonts[20] =
++static char *xftfonts[] =
 +    {"Courier",
 +     "Courier:weight=255",
 +     "Courier:slant=1",
@@ -694,7 +691,10 @@ diff -rau yorick-cvs.virgin/play/x11/textout.c yorick-cvs/play/x11/textout.c
 +     "New Century Schoolbook:weight=255",
 +     "New Century Schoolbook:slant=1",
 +     "New Century Schoolbook:weight=255:slant=1"};
-+  if (font<0 || font>19) return "";
++char *
++p_font2xftfont(int font)
++{ static char *font0 = "";
++  if (font<0 || font>=sizeof(xftfonts)/sizeof(xftfonts[0])) return font0;
 +  return xftfonts[font];
 +}
 +

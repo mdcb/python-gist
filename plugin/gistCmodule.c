@@ -92,6 +92,7 @@
 #include "Python.h"
 #include "pyfpe.h"
 
+#define NPY_NO_DEPRECATED_API 7 // deprecated clean against numpy 1.7
 #include "numpy/arrayobject.h"
 
 #include <stdio.h>
@@ -142,12 +143,12 @@ static char * defaultPrompts[2] =
  * anything other than GpReal == double is untested.)
  */
 #ifndef SINGLE_P
-#define Py_GpReal PyArray_DOUBLE
+#define Py_GpReal NPY_DOUBLE
 #else
-#define Py_GpReal PyArray_FLOAT
+#define Py_GpReal NPY_FLOAT
 #endif
 
-#define Py_GpColor PyArray_UBYTE
+#define Py_GpColor NPY_UBYTE
 
 static PyObject * GistError;
 
@@ -196,8 +197,6 @@ static void clearMemList(void);
                        clearMemList(); \
                        return ERRSS(errstr); \
                  }}
-#define DECL_ZERO(type, var) type var = 0
-#define DECREF_AND_ZERO(p) do{Py_XDECREF(p);p=0;}while(0)
 
 /* (DHM) proper Python printing to stdout and stderr */
 #define TO_STDOUT PySys_WriteStdout
@@ -251,23 +250,6 @@ static int pyg_puts(const char * s)
   return 0;
 }
 
-/* %%%%%%%% */
-/* Macros defining most of my uses of a PyArrayObject.  */
-
-/* The number of dimensions of the array. */
-#define A_NDIM(a) (((PyArrayObject *)a)->nd)
-
-/* The length of the ith dimension of the array. */
-#define A_DIM(a,i) (((PyArrayObject *)a)->dimensions[i])
-
-/* The total number of elements in the array. */
-#define A_SIZE(a) PyArray_Size((PyObject *)a)
-
-/* The type number of the array. */
-#define A_TYPE(a) (int)(((PyArrayObject *)a)->descr->type_num)
-
-/* The pointer to the array data. */
-#define A_DATA(a) (((PyArrayObject *)a)->data)
 
 /* Object is non-null and a PyArrayObject */
 #define isARRAY(a) ((a) && ( (PyObject *)a != Py_None) && PyArray_Check((PyArrayObject *)a))
@@ -296,9 +278,9 @@ static int pyg_puts(const char * s)
   PyArray_FromDimsAndData(ndim,dim,type,data)), \
   (cast)PyErr_NoMemory ())
 /* Array owns its data so if DECREF'ed, its data will be freed */
-#define SET_OWN(op) ( (PyArrayObject *) op)->flags |= NPY_OWNDATA
+#define SET_OWN(op) PyArray_ENABLEFLAGS((PyArrayObject *)op,NPY_ARRAY_OWNDATA);
 /* Array does not own its data so if DECREF'ed, its data will not be freed */
-#define UNSET_OWN(op) ( (PyArrayObject *) op)->flags &= ~NPY_OWNDATA
+#define UNSET_OWN(op) PyArray_CLEARFLAGS((PyArrayObject *)op,NPY_ARRAY_OWNDATA);
 /* Create a block of memory */
 #define NEW_MEM(mem,n,type,cast) \
   TRY(addToMemList((void *)(mem=(type *)malloc(n*sizeof(type)))), \
@@ -780,6 +762,7 @@ static long setkw_color(PyObject * v, unsigned long * t, char * kw);
 static long setkw_double(PyObject * v, double * t, char * kw);
 static long setkw_fonttype(PyObject * v, int * t, char * kw);
 static long setkw_integer(PyObject * v, int * t, char * kw);
+static long setkw_long(PyObject * v, long * t, char * kw);
 static long setkw_justify(PyObject * v, int * t, char * kw);
 static long setkw_linetype(PyObject * v, int * t, char * kw);
 static long setkw_string(PyObject * v, char ** t, char * kw);
@@ -839,8 +822,8 @@ static void pyg_got_alarm(void * context);
  * "nc" to designate the number of rows and columns in the arrays. The
  * following correspondence generally is true:
  *
- *      iMax == nc == A_DIM(array, 1)
- *      jMax == nr == A_DIM(array, 0)
+ *      iMax == nc == PyArray_DIM((PyArrayObject *)array, 1)
+ *      jMax == nr == PyArray_DIM((PyArrayObject *)array, 0)
  */
 static struct
 {
@@ -897,6 +880,8 @@ static jmp_buf pyg_jmpbuf;
 static void pyg_abort_hook(void);
 static void pyg_abort_hook(void)
 {
+  longjmp(pyg_jmpbuf, 1);
+  printf ("got pyg_abort_hook! p_signalling %d\n", p_signalling);
   longjmp(pyg_jmpbuf, 1);
 }
 
@@ -2336,12 +2321,12 @@ static PyObject * contour(PyObject * self, PyObject * args, PyObject * kd)
   TRY(PyArg_ParseTuple(args, "OO", &olevels, &zop),
       ERRSS("contour: unable to parse arguments."));
 
-  GET_ARR(zap, zop, PyArray_DOUBLE, 2, PyObject *);
-  dims[0] = A_DIM(zap, 0);
-  dims[1] = A_DIM(zap, 1);
+  GET_ARR(zap, zop, NPY_DOUBLE, 2, PyObject *);
+  dims[0] = PyArray_DIM((PyArrayObject *)zap, 0);
+  dims[1] = PyArray_DIM((PyArrayObject *)zap, 1);
 
-  if (dims[0] != A_DIM(pyMsh.y, 0)
-      || dims[1] != A_DIM(pyMsh.y, 1))
+  if (dims[0] != PyArray_DIM((PyArrayObject *)pyMsh.y, 0)
+      || dims[1] != PyArray_DIM((PyArrayObject *)pyMsh.y, 1))
     {
       return
         ERRSS
@@ -2352,7 +2337,7 @@ static PyObject * contour(PyObject * self, PyObject * args, PyObject * kd)
   if (!pyMsh.triangle)
     TRY(pyMsh.triangle =
           (PyArrayObject *) PyArray_SimpleNew(2, dims,
-              PyArray_SHORT),
+              NPY_SHORT),
         ERRSS("contour: unable to create triangle array."));
 
   /* LLC:
@@ -2385,9 +2370,9 @@ static PyObject * contour(PyObject * self, PyObject * args, PyObject * kd)
   /* Figure out the contour levels */
   if (isARRAY(olevels))
     {
-      GET_ARR(alevels, olevels, PyArray_DOUBLE, 1, PyObject *);
-      lev = (double *)A_DATA(alevels);
-      nlevels = A_SIZE(alevels);
+      GET_ARR(alevels, olevels, NPY_DOUBLE, 1, PyObject *);
+      lev = (double *)PyArray_DATA(alevels);
+      nlevels = PyArray_SIZE(alevels);
 
       if (nlevels > 2)
         {
@@ -2419,7 +2404,7 @@ static PyObject * contour(PyObject * self, PyObject * args, PyObject * kd)
       return ERRSS("contour: levels argument is wrong type.");
     }
 
-  z = (double *)A_DATA(zap);
+  z = (double *)PyArray_DATA(zap);
   ntotal = (nlevels == 2) ?
            GcInit2(&mesh, gistD.region, z, levels, 30L, &nparts) :
            GcInit1(&mesh, region, z, levels[0], &nparts);
@@ -2445,13 +2430,13 @@ static PyObject * contour(PyObject * self, PyObject * args, PyObject * kd)
   /* create three arrays and their data, make sure DECREF'able */
   npt = (int)nparts;
   NEW_MEM(np, npt, long, PyObject *);
-  RET_ARR(anp, 1, &npt, PyArray_LONG, (char *)np, PyObject *);
+  RET_ARR(anp, 1, &npt, NPY_LONG, (char *)np, PyObject *);
   SET_OWN(anp);
   NEW_MEM(xcp, ntotal, double, PyObject *);
-  RET_ARR(axcp, 1, &ntotal, PyArray_DOUBLE, (char *)xcp, PyObject *);
+  RET_ARR(axcp, 1, &ntotal, NPY_DOUBLE, (char *)xcp, PyObject *);
   SET_OWN(axcp);
   NEW_MEM(ycp, ntotal, double, PyObject *);
-  RET_ARR(aycp, 1, &ntotal, PyArray_DOUBLE, (char *)ycp, PyObject *);
+  RET_ARR(aycp, 1, &ntotal, NPY_DOUBLE, (char *)ycp, PyObject *);
   SET_OWN(aycp);
 
   i = GcTrace(np, xcp, ycp);
@@ -2911,7 +2896,7 @@ static PyObject * animate(PyObject * self, PyObject * args)
 
   if (!PyArg_ParseTuple(args, "|i", &i))
     {
-      return ERRSS("Animate takes zero or one argument.");
+      return ERRSS("animate takes zero or one argument.");
     }
 
   PyFPE_START_PROTECT("animate", return 0)
@@ -2968,7 +2953,7 @@ static PyObject * rgb_read(PyObject * self, PyObject * args)
   TRY(result =
         (PyArrayObject *) PyArray_SimpleNew(3, dims, NPY_UBYTE),
       ERRSS("rgb_read: unable to create return array."));
-  pdata = (unsigned char *)A_DATA(result);
+  pdata = (unsigned char *)PyArray_DATA(result);
 
   RGB_READER(ghDevices[n].display, pdata, &nx, &ny);
 
@@ -3002,7 +2987,7 @@ static PyObject * win_xid(PyObject * self, PyObject * args)
 
   /* printf ("GhXid(%d) = %d\n",n,GhXid(n)); */
 
-  return PyInt_FromLong(GhXid(n));
+  return PyLong_FromLong(GhXid(n));
 }
 
 // /*  -------------------------------------------------------------------- */
@@ -3123,9 +3108,9 @@ static PyObject * bytscl(PyObject * self, PyObject * args, PyObject * kd)
     }
 
   TRY(addToArrayList((PyObject *)(zap = (PyArrayObject *) PyArray_ContiguousFromObject
-                                        (zop, PyArray_DOUBLE, 1, 0))), (PyObject *) PyErr_NoMemory());
-  z = (double *)A_DATA(zap);
-  len = A_SIZE(zap);
+                                        (zop, NPY_DOUBLE, 1, 0))), (PyObject *) PyErr_NoMemory());
+  z = (double *)PyArray_DATA(zap);
+  len = PyArray_SIZE(zap);
 
   BUILD_KWT(kd, bsKeys, kwt);
   TRY(GrabByteScale
@@ -3133,9 +3118,9 @@ static PyObject * bytscl(PyObject * self, PyObject * args, PyObject * kd)
        (int *)0, 0, len + 1, 2L, 1), (PyObject *) NULL);
   TRY(zc =
         PushColors(z, len, zmin, zmax, scale, offset), (PyObject *) NULL);
-  NEW_ARR(zcap, zap->nd, zap->dimensions, Py_GpColor, PyObject *);
+  NEW_ARR(zcap, PyArray_NDIM((PyArrayObject *)zap), PyArray_DIMS(zap), Py_GpColor, PyObject *);
   Py_DECREF(zap);
-  zc1 = (GpColor *) A_DATA(zcap);
+  zc1 = (GpColor *) PyArray_DATA(zcap);
 
   for (i = 0; i < len; i++)
     { zc1[i] = zc[i]; }
@@ -3172,11 +3157,8 @@ static PyObject * win_current(PyObject * self, PyObject * args)
 static char * expand_pathname(const char * name)
 {
   PyObject * m, *d, *xpnduser, *xpndvars;
-  DECL_ZERO(PyObject *, p1);
-  DECL_ZERO(PyObject *, p2);
-  DECL_ZERO(PyObject *, p3);
-  DECL_ZERO(PyObject *, p4);
-  char * path, *errstr = (char *)NULL, *name2, *name3;
+  PyObject *p1 = NULL, *p2 = NULL, *p3 = NULL, *p4 = NULL;
+  char * path, *errstr = NULL, *name2, *name3;
 
   if (!name)
     { return 0; }
@@ -3223,10 +3205,10 @@ static char * expand_pathname(const char * name)
   if (path)
     { (void)strcpy(path, name3); }
 
-  DECREF_AND_ZERO(p1);
-  DECREF_AND_ZERO(p2);
-  DECREF_AND_ZERO(p3);
-  DECREF_AND_ZERO(p4);
+  Py_XDECREF(p1);
+  Py_XDECREF(p2);
+  Py_XDECREF(p3);
+  Py_XDECREF(p4);
   return path;
 
 errexit:
@@ -3234,10 +3216,10 @@ errexit:
   if (!PyErr_Occurred())
     { ERRSS(errstr ? errstr : "error in expand_path"); }
 
-  DECREF_AND_ZERO(p1);
-  DECREF_AND_ZERO(p2);
-  DECREF_AND_ZERO(p3);
-  DECREF_AND_ZERO(p4);
+  Py_XDECREF(p1);
+  Py_XDECREF(p2);
+  Py_XDECREF(p3);
+  Py_XDECREF(p4);
   return 0;
 }
 
@@ -3274,14 +3256,14 @@ static PyObject * pyg_fma(PyObject * self, PyObject * args)
  */
 static void get_mesh(GaQuadMesh * m)
 {
-  m->iMax = A_DIM(pyMsh.y, 1);
-  m->jMax = A_DIM(pyMsh.y, 0);
-  m->y = (double *)A_DATA(pyMsh.y);
-  m->x = (double *)A_DATA(pyMsh.x);
-  m->reg = (int *)A_DATA(pyMsh.reg);
+  m->iMax = PyArray_DIM((PyArrayObject *)pyMsh.y, 1);
+  m->jMax = PyArray_DIM((PyArrayObject *)pyMsh.y, 0);
+  m->y = (double *)PyArray_DATA(pyMsh.y);
+  m->x = (double *)PyArray_DATA(pyMsh.x);
+  m->reg = (int *)PyArray_DATA(pyMsh.reg);
 
   if (isARRAY(pyMsh.triangle))
-    { m->triangle = (short *)A_DATA(pyMsh.triangle); }
+    { m->triangle = (short *)PyArray_DATA(pyMsh.triangle); }
 
   else
     { m->triangle = 0; }	/* Gist will provide a default in this case. */
@@ -3949,22 +3931,22 @@ static PyObject * mesh_loc(PyObject * self, PyObject * args)
     {
       TRY(addToArrayList((PyObject *)(y0ap = (PyArrayObject *)
                                              PyArray_ContiguousFromObject
-                                             (y0op, PyArray_DOUBLE, 1, 0))),
+                                             (y0op, NPY_DOUBLE, 1, 0))),
           (PyObject *) PyErr_NoMemory());
-      n = A_SIZE(y0ap);
+      n = PyArray_SIZE(y0ap);
       TRY(addToArrayList((PyObject *)(x0ap = (PyArrayObject *)
                                              PyArray_ContiguousFromObject
-                                             (x0op, PyArray_DOUBLE, 1, 0))),
+                                             (x0op, NPY_DOUBLE, 1, 0))),
           (PyObject *) PyErr_NoMemory());
 
-      if (n != A_SIZE(x0ap))
+      if (n != PyArray_SIZE(x0ap))
         {
           clearArrayList();
           return ERRSS("(y0, x0) must be same size");
         }
 
-      y0 = (double *)A_DATA(y0ap);
-      x0 = (double *)A_DATA(x0ap);
+      y0 = (double *)PyArray_DATA(y0ap);
+      x0 = (double *)PyArray_DATA(x0ap);
     }
 
   else if (PyFloat_Check(y0op))
@@ -3982,8 +3964,8 @@ static PyObject * mesh_loc(PyObject * self, PyObject * args)
         ERRSS("(y0, x0) must be floating point scalars or arrays.");
     }
 
-  NEW_ARR(rap, 1, &n, PyArray_LONG, PyObject *);
-  zone = (long *)A_DATA(rap);
+  NEW_ARR(rap, 1, &n, NPY_LONG, PyObject *);
+  zone = (long *)PyArray_DATA(rap);
 
   for (i = 0; i < n; i++)
     zone[i] =
@@ -4027,28 +4009,28 @@ static PyObject * mfit(PyObject * self, PyObject * args)
   TRY(PyArg_ParseTuple
       (args, "OOOOOd", &oalpha, &ox, &oxcplot, &oy, &oycplot,
        &rsqmqd), ERRSS("mfit: unable to parse arguments."));
-  GET_ARR(aalpha, oalpha, PyArray_DOUBLE, 1, PyObject *);
-  GET_ARR(ax, ox, PyArray_DOUBLE, 1, PyObject *);
-  GET_ARR(axcplot, oxcplot, PyArray_DOUBLE, 1, PyObject *);
-  GET_ARR(ay, oy, PyArray_DOUBLE, 1, PyObject *);
-  GET_ARR(aycplot, oycplot, PyArray_DOUBLE, 1, PyObject *);
+  GET_ARR(aalpha, oalpha, NPY_DOUBLE, 1, PyObject *);
+  GET_ARR(ax, ox, NPY_DOUBLE, 1, PyObject *);
+  GET_ARR(axcplot, oxcplot, NPY_DOUBLE, 1, PyObject *);
+  GET_ARR(ay, oy, NPY_DOUBLE, 1, PyObject *);
+  GET_ARR(aycplot, oycplot, NPY_DOUBLE, 1, PyObject *);
   /* There is no other error checking, really. It is intended that
    * this routine be called only from Python code, not by the user. */
-  nzcplot = A_DIM(aalpha, 0);
-  nxcplot = A_DIM(axcplot, 0);
+  nzcplot = PyArray_DIM((PyArrayObject *)aalpha, 0);
+  nxcplot = PyArray_DIM((PyArrayObject *)axcplot, 0);
   dims[0] = nxcplot;
-  nycplot = A_DIM(aycplot, 0);
+  nycplot = PyArray_DIM((PyArrayObject *)aycplot, 0);
   dims[1] = nycplot;
-  x = (double *)A_DATA(ax);
-  y = (double *)A_DATA(ay);
-  xcplot = (double *)A_DATA(axcplot);
-  ycplot = (double *)A_DATA(aycplot);
-  alpha = (double *)A_DATA(aalpha);
+  x = (double *)PyArray_DATA(ax);
+  y = (double *)PyArray_DATA(ay);
+  xcplot = (double *)PyArray_DATA(axcplot);
+  ycplot = (double *)PyArray_DATA(aycplot);
+  alpha = (double *)PyArray_DATA(aalpha);
   TRY(azcplot =
         (PyArrayObject *) PyArray_SimpleNew(2, dims,
-            PyArray_DOUBLE),
+            NPY_DOUBLE),
       ERRSS("mfit: unable to create return array."));
-  zcplot = (double *)A_DATA(azcplot);
+  zcplot = (double *)PyArray_DATA(azcplot);
   l = 0;
 
   for (i = 0; i < nxcplot; i++)
@@ -4254,24 +4236,24 @@ static PyObject * palette(PyObject * self, PyObject * args, PyObject * kd)
     case 4:		/* (red, green, blue, gray) given */
       TRY(grayop = PyTuple_GetItem(args, 3), (PyObject *) NULL);
       GET_ARR(grayap, grayop, Py_GpColor, 1, PyObject *);
-      ngray = A_SIZE(grayap);
-      gray = (GpColor *) A_DATA(grayap);
+      ngray = PyArray_SIZE(grayap);
+      gray = (GpColor *) PyArray_DATA(grayap);
 
       /* Fall through. */
     case 3:		/* (red, green, blue) given */
       TRY(PyArg_ParseTuple(args, "OOO", &rop, &gop, &bop),
           (PyObject *) NULL);
       GET_ARR(rap, rop, Py_GpColor, 1, PyObject *);
-      nred = A_SIZE(rap);
-      red = (GpColor *) A_DATA(rap);
+      nred = PyArray_SIZE(rap);
+      red = (GpColor *) PyArray_DATA(rap);
 
       GET_ARR(gap, gop, Py_GpColor, 1, PyObject *);
-      ngreen = A_SIZE(gap);
-      green = (GpColor *) A_DATA(gap);
+      ngreen = PyArray_SIZE(gap);
+      green = (GpColor *) PyArray_DATA(gap);
 
       GET_ARR(bap, bop, Py_GpColor, 1, PyObject *);
-      nblue = A_SIZE(bap);
-      blue = (GpColor *) A_DATA(bap);
+      nblue = PyArray_SIZE(bap);
+      blue = (GpColor *) PyArray_DATA(bap);
 
       /* Check for matched array sizes and set nColors. */
       len_match = (nred == ngreen && nred == nblue);
@@ -4545,17 +4527,17 @@ static PyObject * plc(PyObject * self, PyObject * args, PyObject * kd)
       return ERRSS("No current mesh - set (y, x) first");
     }
 
-  GET_ARR(zap, zop, PyArray_DOUBLE, 2, PyObject *);
-  jMax = A_DIM(zap, 0);
-  iMax = A_DIM(zap, 1);
+  GET_ARR(zap, zop, NPY_DOUBLE, 2, PyObject *);
+  jMax = PyArray_DIM((PyArrayObject *)zap, 0);
+  iMax = PyArray_DIM((PyArrayObject *)zap, 1);
 
-  if (A_DIM(pyMsh.y, 0) != jMax || A_DIM(pyMsh.y, 1) != iMax)
+  if (PyArray_DIM((PyArrayObject *)pyMsh.y, 0) != jMax || PyArray_DIM((PyArrayObject *)pyMsh.y, 1) != iMax)
     {
       clearArrayList();
       return ERRSS("Z array must match (y, x) mesh arrays in shape");
     }
 
-  z = (double *)A_DATA(zap);
+  z = (double *)PyArray_DATA(zap);
   get_mesh(&mesh);
 
   if (mesh.iMax != iMax || mesh.jMax != jMax)
@@ -4602,9 +4584,9 @@ static PyObject * plc(PyObject * self, PyObject * args, PyObject * kd)
       PyArrayObject * lap;
       double * lev;
 
-      GET_ARR(lap, kwt[14], PyArray_DOUBLE, 1, PyObject *);
-      lev = (double *)A_DATA(lap);
-      nLevels = A_SIZE(lap);
+      GET_ARR(lap, kwt[14], NPY_DOUBLE, 1, PyObject *);
+      lev = (double *)PyArray_DATA(lap);
+      nLevels = PyArray_SIZE(lap);
       levels = p_malloc(sizeof(double) * nLevels);
 
       for (i = 0; i < nLevels; i++)
@@ -4751,10 +4733,13 @@ static PyObject * pldefault(PyObject * self, PyObject * args, PyObject * kd)
   if (kd == NULL)
     {
       // getter
-      // XXX work in progress
+      // XXX more ... work in progress
       PyObject * retval = PyDict_New();
       PyDict_SetItemString(retval,"height", PyInt_FromLong((int)(gistA.t.height / ONE_POINT))); // font height
-      PyDict_SetItemString(retval,"dpi", PyInt_FromLong(defaultDPI)); // dpi
+      PyDict_SetItemString(retval,"dpi", PyInt_FromLong(defaultDPI));
+      PyDict_SetItemString(retval,"type", PyInt_FromLong(gistA.l.type));
+      PyDict_SetItemString(retval,"marks", PyInt_FromLong(gistA.dl.marks));
+      // PyDict_SetItemString(retval,"marker", PyInt_FromLong(gistA.m.type)); // yorick GhSetLines says "never a default marker"
       return retval;
     }
 
@@ -4941,15 +4926,15 @@ static PyObject * pldj(PyObject * self, PyObject * args, PyObject * kd)
     TRY(addToArrayList((PyObject *)(ap[i] = (PyArrayObject *)
                                             PyArray_ContiguousFromObject(op
                                                 [i],
-                                                PyArray_DOUBLE,
+                                                NPY_DOUBLE,
                                                 1,
                                                 0))),
         (PyObject *) PyErr_NoMemory());
 
-  n = A_SIZE(ap[0]);
+  n = PyArray_SIZE(ap[0]);
 
   for (i = 1; i < 4; i++)
-    if (A_SIZE(ap[i]) != n)
+    if (PyArray_SIZE(ap[i]) != n)
       {
         clearArrayList();
         return
@@ -4974,7 +4959,7 @@ static PyObject * pldj(PyObject * self, PyObject * args, PyObject * kd)
   SETKW(kwt[4], gistA.l.width, setkw_double, pldjKeys[4]);
 
   for (i = 0; i < 4; i++)
-    { d[i] = (double *)A_DATA(ap[i]); }
+    { d[i] = (double *)PyArray_DATA(ap[i]); }
 
   curElement = -1;
   PyFPE_START_PROTECT("pldj", return 0)
@@ -5258,9 +5243,9 @@ static PyObject * pledit(PyObject * self, PyObject * args, PyObject * kd)
           return ERRSS("levs = in pledit allowed only for plc");
         }
 
-      GET_ARR(lap, kwt[27], PyArray_DOUBLE, 1, PyObject *);
-      lev = (double *)A_DATA(lap);
-      nLevels = A_SIZE(lap);
+      GET_ARR(lap, kwt[27], NPY_DOUBLE, 1, PyObject *);
+      lev = (double *)PyArray_DATA(lap);
+      nLevels = PyArray_SIZE(lap);
 
       if (0 == nLevels)
         {
@@ -5469,20 +5454,20 @@ static PyObject * plf(PyObject * self, PyObject * args, PyObject * kd)
    *  (3,M-1,N-1), giving an (r,g,b) for each true color value.
    */
 
-  if (isARRAY(zop) && (A_TYPE(zop) == PyArray_UBYTE))
+  if (isARRAY(zop) && (PyArray_TYPE((PyArrayObject *)zop) == NPY_UBYTE))
     {
 
-      if (A_NDIM(zop) == 2)
+      if (PyArray_NDIM((PyArrayObject *)zop) == 2)
         {
           /*  NXxNY */
           GET_ARR(zap, zop, Py_GpColor, 2, PyObject *);
-          zc = (GpColor *) A_DATA(zap);
+          zc = (GpColor *) PyArray_DATA(zap);
         }
 
-      else if (A_NDIM(zop) == 3)
+      else if (PyArray_NDIM((PyArrayObject *)zop) == 3)
         {
           /*  3xNXxNY */
-          if (A_DIM(zop, 0) != 3)
+          if (PyArray_DIM((PyArrayObject *)zop, 0) != 3)
             {
               return
                 ERRSS
@@ -5490,7 +5475,7 @@ static PyObject * plf(PyObject * self, PyObject * args, PyObject * kd)
             }
 
           GET_ARR(zap, zop, Py_GpColor, 3, PyObject *);
-          zc = (GpColor *) A_DATA(zap);
+          zc = (GpColor *) PyArray_DATA(zap);
           rgb = 1;
         }
 
@@ -5506,11 +5491,11 @@ static PyObject * plf(PyObject * self, PyObject * args, PyObject * kd)
   else
     {
       if (isARRAY(zop)
-          && ((A_TYPE(zop) == PyArray_DOUBLE)
-              || (A_TYPE(zop) == PyArray_FLOAT)))
+          && ((PyArray_TYPE((PyArrayObject *)zop) == NPY_DOUBLE)
+              || (PyArray_TYPE((PyArrayObject *)zop) == NPY_FLOAT)))
         {
-          GET_ARR(zap, zop, PyArray_DOUBLE, 2, PyObject *);
-          z = (double *)A_DATA(zap);
+          GET_ARR(zap, zop, NPY_DOUBLE, 2, PyObject *);
+          z = (double *)PyArray_DATA(zap);
         }
 
       else
@@ -5523,8 +5508,8 @@ static PyObject * plf(PyObject * self, PyObject * args, PyObject * kd)
 
   if (zap)
     {
-      jMax = A_DIM(zap, 0);
-      iMax = A_DIM(zap, 1);
+      jMax = PyArray_DIM((PyArrayObject *)zap, 0);
+      iMax = PyArray_DIM((PyArrayObject *)zap, 1);
     }
 
   else
@@ -5680,20 +5665,20 @@ static PyObject * plfp(PyObject * self, PyObject * args, PyObject * kd)
    *  true color value.
    */
 
-  if (isARRAY(zop) && (A_TYPE(zop) == PyArray_UBYTE))
+  if (isARRAY(zop) && (PyArray_TYPE((PyArrayObject *)zop) == NPY_UBYTE))
     {
 
-      if (A_NDIM(zop) == 1)
+      if (PyArray_NDIM((PyArrayObject *)zop) == 1)
         {
           /*  N */
           GET_ARR(zap, zop, Py_GpColor, 1, PyObject *);
-          zc = (GpColor *) A_DATA(zap);
+          zc = (GpColor *) PyArray_DATA(zap);
         }
 
-      else if (A_NDIM(zop) == 2)
+      else if (PyArray_NDIM((PyArrayObject *)zop) == 2)
         {
           /*  3xN */
-          if (A_DIM(zop, 0) != 3)
+          if (PyArray_DIM((PyArrayObject *)zop, 0) != 3)
             {
               return
                 ERRSS
@@ -5701,7 +5686,7 @@ static PyObject * plfp(PyObject * self, PyObject * args, PyObject * kd)
             }
 
           GET_ARR(zap, zop, Py_GpColor, 2, PyObject *);
-          zc = (GpColor *) A_DATA(zap);
+          zc = (GpColor *) PyArray_DATA(zap);
           rgb = 1;
         }
 
@@ -5715,11 +5700,11 @@ static PyObject * plfp(PyObject * self, PyObject * args, PyObject * kd)
     }
 
   else if (isARRAY(zop)
-           && ((A_TYPE(zop) == PyArray_DOUBLE)
-               || (A_TYPE(zop) == PyArray_FLOAT)))
+           && ((PyArray_TYPE((PyArrayObject *)zop) == NPY_DOUBLE)
+               || (PyArray_TYPE((PyArrayObject *)zop) == NPY_FLOAT)))
     {
-      GET_ARR(zap, zop, PyArray_DOUBLE, 1, PyObject *);
-      z = (double *)A_DATA(zap);
+      GET_ARR(zap, zop, NPY_DOUBLE, 1, PyObject *);
+      z = (double *)PyArray_DATA(zap);
     }
 
   else
@@ -5729,16 +5714,16 @@ static PyObject * plfp(PyObject * self, PyObject * args, PyObject * kd)
         ("z array must be of type uint8, float or double");
     }
 
-  GET_ARR(yap, yop, PyArray_DOUBLE, 1, PyObject *);
-  GET_ARR(xap, xop, PyArray_DOUBLE, 1, PyObject *);
-  GET_ARR(nap, nop, PyArray_LONG, 1, PyObject *);
-  nn = A_SIZE(nap);
-  nx = A_SIZE(xap);
-  ny = A_SIZE(yap);
-  nz = (zap) ? A_SIZE(zap) : nn;
-  y = (double *)A_DATA(yap);
-  x = (double *)A_DATA(xap);
-  pn = (long *)A_DATA(nap);
+  GET_ARR(yap, yop, NPY_DOUBLE, 1, PyObject *);
+  GET_ARR(xap, xop, NPY_DOUBLE, 1, PyObject *);
+  GET_ARR(nap, nop, NPY_LONG, 1, PyObject *);
+  nn = PyArray_SIZE(nap);
+  nx = PyArray_SIZE(xap);
+  ny = PyArray_SIZE(yap);
+  nz = (zap) ? PyArray_SIZE(zap) : nn;
+  y = (double *)PyArray_DATA(yap);
+  x = (double *)PyArray_DATA(xap);
+  pn = (long *)PyArray_DATA(nap);
 
   /* Error checking is complicated by required DECREF's on failure. */
   {
@@ -5881,9 +5866,9 @@ static PyObject * plg(PyObject * self, PyObject * args, PyObject * kd)
       return ERRSS(errstr);
     }
 
-  GET_ARR(yap, yop, PyArray_DOUBLE, 1, PyObject *);
-  length = A_SIZE(yap);
-  y = (double *)A_DATA(yap);
+  GET_ARR(yap, yop, NPY_DOUBLE, 1, PyObject *);
+  length = PyArray_SIZE(yap);
+  y = (double *)PyArray_DATA(yap);
 
   TRYS(CheckDefaultWindow())GhGetLines();	/* Properties start from defaults for decorated polylines. */
   BUILD_KWT(kd, plgKeys, kwt);
@@ -5909,15 +5894,15 @@ static PyObject * plg(PyObject * self, PyObject * args, PyObject * kd)
 
   if (xop)
     {
-      GET_ARR(xap, xop, PyArray_DOUBLE, 1, PyObject *);
+      GET_ARR(xap, xop, NPY_DOUBLE, 1, PyObject *);
 
-      if (A_SIZE(xap) != length)
+      if (PyArray_SIZE(xap) != length)
         {
           clearArrayList();
           return ERRSS(errstr);
         }
 
-      x = (double *)A_DATA(xap);
+      x = (double *)PyArray_DATA(xap);
     }
 
   else
@@ -6110,23 +6095,23 @@ static PyObject * pli(PyObject * self, PyObject * args, PyObject * kd)
    *  (M-1,N-1,3), giving an (r,g,b) for each true color value.
    */
 
-  if (isARRAY(zop) && (A_TYPE(zop) == PyArray_UBYTE))
+  if (isARRAY(zop) && (PyArray_TYPE((PyArrayObject *)zop) == NPY_UBYTE))
     {
 
       TO_STDERR("!!! pli(ubyte) may give unexpected results with\n"
                 "!!! .Xresources Gist*foreground|background\n");
 
-      if (A_NDIM(zop) == 2)
+      if (PyArray_NDIM((PyArrayObject *)zop) == 2)
         {
           /*  NXxNY */
           GET_ARR(zap, zop, Py_GpColor, 2, PyObject *);
-          zc = (GpColor *) A_DATA(zap);
+          zc = (GpColor *) PyArray_DATA(zap);
         }
 
-      else if (A_NDIM(zop) == 3)
+      else if (PyArray_NDIM((PyArrayObject *)zop) == 3)
         {
           /*  NXxNYx3 */
-          if (A_DIM(zop, 2) != 3)
+          if (PyArray_DIM((PyArrayObject *)zop, 2) != 3)
             {
               return
                 ERRSS
@@ -6134,7 +6119,7 @@ static PyObject * pli(PyObject * self, PyObject * args, PyObject * kd)
             }
 
           GET_ARR(zap, zop, Py_GpColor, 3, PyObject *);
-          zc = (GpColor *) A_DATA(zap);
+          zc = (GpColor *) PyArray_DATA(zap);
           rgb = 1;
         }
 
@@ -6149,12 +6134,12 @@ static PyObject * pli(PyObject * self, PyObject * args, PyObject * kd)
 
   else
     {
-      GET_ARR(zap, zop, PyArray_DOUBLE, 2, PyObject *);
-      z = (double *)A_DATA(zap);
+      GET_ARR(zap, zop, NPY_DOUBLE, 2, PyObject *);
+      z = (double *)PyArray_DATA(zap);
     }
 
-  iMax = A_DIM(zap, 1);
-  jMax = A_DIM(zap, 0);
+  iMax = PyArray_DIM((PyArrayObject *)zap, 1);
+  jMax = PyArray_DIM((PyArrayObject *)zap, 0);
 
   if (1 == nargs)
     {
@@ -7176,12 +7161,12 @@ static PyObject * plv(PyObject * self, PyObject * args, PyObject * kd)
       return ERRSS("No current mesh - set (y, x) first");
     }
 
-  GET_ARR(vap, vop, PyArray_DOUBLE, 2, PyObject *);
-  GET_ARR(uap, uop, PyArray_DOUBLE, 2, PyObject *);
-  jMax = (A_DIM(vap, 0) == A_DIM(uap, 0)) ? A_DIM(vap, 0) : 0;
-  iMax = (A_DIM(vap, 1) == A_DIM(uap, 1)) ? A_DIM(vap, 1) : 0;
+  GET_ARR(vap, vop, NPY_DOUBLE, 2, PyObject *);
+  GET_ARR(uap, uop, NPY_DOUBLE, 2, PyObject *);
+  jMax = (PyArray_DIM((PyArrayObject *)vap, 0) == PyArray_DIM((PyArrayObject *)uap, 0)) ? PyArray_DIM((PyArrayObject *)vap, 0) : 0;
+  iMax = (PyArray_DIM((PyArrayObject *)vap, 1) == PyArray_DIM((PyArrayObject *)uap, 1)) ? PyArray_DIM((PyArrayObject *)vap, 1) : 0;
 
-  if (A_DIM(pyMsh.y, 0) != jMax || A_DIM(pyMsh.y, 1) != iMax)
+  if (PyArray_DIM((PyArrayObject *)pyMsh.y, 0) != jMax || PyArray_DIM((PyArrayObject *)pyMsh.y, 1) != iMax)
     {
       clearArrayList();
       return
@@ -7189,8 +7174,8 @@ static PyObject * plv(PyObject * self, PyObject * args, PyObject * kd)
         ("(v, u) arrays must match (y, x) mesh arrays in shape");
     }
 
-  v = (double *)A_DATA(vap);
-  u = (double *)A_DATA(uap);
+  v = (double *)PyArray_DATA(vap);
+  u = (double *)PyArray_DATA(uap);
   get_mesh(&mesh);
 
   if (mesh.iMax != iMax || mesh.jMax != jMax)
@@ -7454,8 +7439,8 @@ static int set_def_reg(int nr, int nc)
   ne = nr * nc;
   newlen = ne + nc + 1;
   TRY(ra1 =
-        (PyArrayObject *) PyArray_SimpleNew(1, &newlen, PyArray_LONG), 0);
-  p1 = (int *)A_DATA(ra1);
+        (PyArrayObject *) PyArray_SimpleNew(1, &newlen, NPY_LONG), 0);
+  p1 = (int *)PyArray_DATA(ra1);
 
   /* Fill in the data part of the new region array. */
   for (i = 0; i <= nc; i++)
@@ -7542,7 +7527,7 @@ static long set_pyMsh(PyObject * args, char * errstr, PyObject * tri)
 
     case 2:		/* Arguments were (y, x). */
       TRY(set_yx(op1, op2), 0);
-      TRY(set_def_reg(A_DIM(op1, 0), A_DIM(op1, 1)), 0);	/* Default region array. */
+      TRY(set_def_reg(PyArray_DIM((PyArrayObject *)op1, 0), PyArray_DIM((PyArrayObject *)op1, 1)), 0);	/* Default region array. */
       break;
 
     case 1:		/* Arguments were (ireg). */
@@ -7573,8 +7558,8 @@ static long set_reg(PyObject * op)
   PyArrayObject * ra2, *ra1;
   npy_intp newlen;
 
-  ok = (isARRAY(op) && (A_NDIM(op) == 2)
-        && (A_TYPE(op) == PyArray_LONG || A_TYPE(op) == PyArray_INT));
+  ok = (isARRAY(op) && (PyArray_NDIM((PyArrayObject *)op) == 2)
+        && (PyArray_TYPE((PyArrayObject *)op) == NPY_LONG || PyArray_TYPE((PyArrayObject *)op) == NPY_INT));
 
   if (!ok)
     {
@@ -7587,20 +7572,20 @@ static long set_reg(PyObject * op)
              ERRSS("No current mesh - ireg not set - set (y, x) first");
     }
 
-  nr = A_DIM(op, 0);
-  nc = A_DIM(op, 1);
+  nr = PyArray_DIM((PyArrayObject *)op, 0);
+  nc = PyArray_DIM((PyArrayObject *)op, 1);
 
-  if (A_DIM(pyMsh.y, 0) != nr || A_DIM(pyMsh.y, 1) != nc)
+  if (PyArray_DIM((PyArrayObject *)pyMsh.y, 0) != nr || PyArray_DIM((PyArrayObject *)pyMsh.y, 1) != nc)
     {
       return (long)ERRSS("(ireg) must match (y, x) in shape");
     }
 
   ne = nr * nc;
   newlen = ne + nc + 1;
-  NEW_ARR(ra1, 1, &newlen, PyArray_INT, long);
-  p1 = (int *)A_DATA(ra1);
-  GET_ARR(ra2, op, PyArray_LONG, 2, long);
-  p2 = (long *)A_DATA(ra2);
+  NEW_ARR(ra1, 1, &newlen, NPY_INT, long);
+  p1 = (int *)PyArray_DATA(ra1);
+  GET_ARR(ra2, op, NPY_LONG, 2, long);
+  p2 = (long *)PyArray_DATA(ra2);
 
   /* Fill in the data part of the new region array. */
   for (i = 0; i <= nc; i++)
@@ -7638,13 +7623,13 @@ static long set_tri(PyObject * top)
              ("No current mesh - triangle not set - set (y, x) first");
     }
 
-  nr = A_DIM(pyMsh.y, 0);
-  nc = A_DIM(pyMsh.y, 1);
+  nr = PyArray_DIM((PyArrayObject *)pyMsh.y, 0);
+  nc = PyArray_DIM((PyArrayObject *)pyMsh.y, 1);
 
   Py_XDECREF(pyMsh.triangle);
-  GET_ARR(pyMsh.triangle, top, PyArray_SHORT, 2, long);
+  GET_ARR(pyMsh.triangle, top, NPY_SHORT, 2, long);
 
-  if (A_DIM(pyMsh.triangle, 0) != nr || A_DIM(pyMsh.triangle, 1) != nc)
+  if (PyArray_DIM((PyArrayObject *)pyMsh.triangle, 0) != nr || PyArray_DIM((PyArrayObject *)pyMsh.triangle, 1) != nc)
     {
       removeFromArrayList((PyObject *) pyMsh.triangle);
       return (long)
@@ -7663,7 +7648,7 @@ static long set_yx(PyObject * yop, PyObject * xop)
 
   pyMsh.y =
     (PyArrayObject *) PyArray_ContiguousFromObject(yop,
-        PyArray_DOUBLE,
+        NPY_DOUBLE,
         2, 2);
 
   if (!pyMsh.y)
@@ -7674,8 +7659,8 @@ static long set_yx(PyObject * yop, PyObject * xop)
       return 0;
     }
 
-  nr = A_DIM(pyMsh.y, 0);
-  nc = A_DIM(pyMsh.y, 1);
+  nr = PyArray_DIM((PyArrayObject *)pyMsh.y, 0);
+  nc = PyArray_DIM((PyArrayObject *)pyMsh.y, 1);
 
   if (nr < 2 || nc < 2)
     {
@@ -7687,7 +7672,7 @@ static long set_yx(PyObject * yop, PyObject * xop)
 
   pyMsh.x =
     (PyArrayObject *) PyArray_ContiguousFromObject(xop,
-        PyArray_DOUBLE,
+        NPY_DOUBLE,
         2, 2);
 
   if (!pyMsh.x)
@@ -7701,7 +7686,7 @@ static long set_yx(PyObject * yop, PyObject * xop)
       return 0;
     }
 
-  if (A_DIM(pyMsh.x, 0) != nr || A_DIM(pyMsh.x, 1) != nc)
+  if (PyArray_DIM((PyArrayObject *)pyMsh.x, 0) != nr || PyArray_DIM((PyArrayObject *)pyMsh.x, 1) != nc)
     {
       Py_DECREF(pyMsh.y);
       Py_DECREF(pyMsh.x);
@@ -7930,6 +7915,22 @@ static long setkw_integer(PyObject * v, int * t, char * kw)
   return (long)ERRSS(buf);
 }
 
+static long setkw_long(PyObject * v, long * t, char * kw)
+{
+  char buf[256];
+  char * format = "%s keyword requires long argument";
+
+  if (PyLong_Check(v))
+    {
+      *t = PyLong_AsLong(v);
+      return 1;
+    }
+
+  sprintf(buf, format, kw);
+  return (long)ERRSS(buf);
+}
+
+
 static long setkw_justify(PyObject * v, int * t, char * kw)
 {
   char * s;
@@ -8147,6 +8148,8 @@ static long setkw_xinteger(PyObject * v, int * t, char * kw)
     }
 
   sprintf(buf, format, kw);
+
+
   return (long)ERRSS(buf);
 }
 
@@ -8449,28 +8452,28 @@ static PyObject * slice2(PyObject * self, PyObject * args)
 
   else
     {
-      GET_ARR(aplane, oplane, PyArray_DOUBLE, 1, PyObject *);
+      GET_ARR(aplane, oplane, NPY_DOUBLE, 1, PyObject *);
     }
 
   /* convert arguments to arrays */
-  GET_ARR(anverts, onverts, PyArray_INT32, 1, PyObject *);
-  GET_ARR(axyzverts, oxyzverts, PyArray_DOUBLE, 2, PyObject *);
+  GET_ARR(anverts, onverts, NPY_INT32, 1, PyObject *);
+  GET_ARR(axyzverts, oxyzverts, NPY_DOUBLE, 2, PyObject *);
 
   if (isARRAY(ovalues))
     {
-      if (A_TYPE(ovalues) == PyArray_DOUBLE
-          || A_TYPE(ovalues) == PyArray_FLOAT)
+      if (PyArray_TYPE((PyArrayObject *)ovalues) == NPY_DOUBLE
+          || PyArray_TYPE((PyArrayObject *)ovalues) == NPY_FLOAT)
         {
-          GET_ARR(avalues, ovalues, PyArray_DOUBLE, 1,
+          GET_ARR(avalues, ovalues, NPY_DOUBLE, 1,
                   PyObject *);
-          valuesd = (double *)A_DATA(avalues);
+          valuesd = (double *)PyArray_DATA(avalues);
           atype = 'd';
         }
 
-      else if (A_TYPE(ovalues) == PyArray_UBYTE)
+      else if (PyArray_TYPE((PyArrayObject *)ovalues) == NPY_UBYTE)
         {
           GET_ARR(avalues, ovalues, Py_GpColor, 1, PyObject *);
-          valuesc = (Uchar *) A_DATA(avalues);
+          valuesc = (Uchar *) PyArray_DATA(avalues);
           atype = 'b';
         }
 
@@ -8485,21 +8488,21 @@ static PyObject * slice2(PyObject * self, PyObject * args)
   /* convert to our type of array for ease of handling */
   if (!plane_is_scalar)
     {
-      planed = (double *)A_DATA(aplane);
+      planed = (double *)PyArray_DATA(aplane);
     }
 
-  nvertsd = (int *)A_DATA(anverts);
-  xyzvertsd = (double *)A_DATA(axyzverts);
+  nvertsd = (int *)PyArray_DATA(anverts);
+  xyzvertsd = (double *)PyArray_DATA(axyzverts);
 
-  for (isum = 0, i = 0; i < A_SIZE(anverts); i++)
+  for (isum = 0, i = 0; i < PyArray_SIZE(anverts); i++)
     { isum += nvertsd[i]; }
 
   if (avalues)
     {
-      if (A_SIZE(avalues) == A_SIZE(anverts))
+      if (PyArray_SIZE(avalues) == PyArray_SIZE(anverts))
         { node = 0; }
 
-      else if (A_SIZE(avalues) == isum)
+      else if (PyArray_SIZE(avalues) == isum)
         { node = 1; }
 
       else
@@ -8516,7 +8519,7 @@ static PyObject * slice2(PyObject * self, PyObject * args)
 
   if (!plane_is_scalar)
     {
-      TRY(dp = allocateArray(A_SIZE(axyzverts) / 3, 'd', 0),
+      TRY(dp = allocateArray(PyArray_SIZE(axyzverts) / 3, 'd', 0),
           PyErr_NoMemory());
       dpd = (double *)(dp->data);
 
@@ -8534,7 +8537,7 @@ static PyObject * slice2(PyObject * self, PyObject * args)
   else if (plane_is_scalar && avalues && node == 1)
     {
       TRY(dp =
-            allocateArray(A_SIZE(avalues), 'd', 0), PyErr_NoMemory());
+            allocateArray(PyArray_SIZE(avalues), 'd', 0), PyErr_NoMemory());
       dpd = (double *)(dp->data);
 
       if (atype == 'd')
@@ -8559,7 +8562,7 @@ static PyObject * slice2(PyObject * self, PyObject * args)
   /* nkeep is an integer array whose ith entry tells you the number */
   /* of vertices for polygon i which are "above" the isosurface or  */
   /* plane doing the slicing.                                       */
-  TRY(nkeep = allocateArray(A_SIZE(anverts), 'i', 0), PyErr_NoMemory());
+  TRY(nkeep = allocateArray(PyArray_SIZE(anverts), 'i', 0), PyErr_NoMemory());
   nkeepd = (int *)(nkeep->data);
   k = 0;
 
@@ -8726,11 +8729,11 @@ static PyObject * slice2(PyObject * self, PyObject * args)
       else
         {
           TRY(nkeep2 =
-                allocateArray(A_SIZE(anverts), 'i', 0),
+                allocateArray(PyArray_SIZE(anverts), 'i', 0),
               PyErr_NoMemory());
           nkeep2d = (int *)(nkeep->data);
           TRY(mask2 =
-                allocateArray(A_SIZE(anverts), 'b', 0),
+                allocateArray(PyArray_SIZE(anverts), 'b', 0),
               PyErr_NoMemory());
           mask2d = (Uchar *)(mask2->data);
           k = 0;
@@ -8937,7 +8940,7 @@ static PyObject * slice2(PyObject * self, PyObject * args)
           rxyzvertbd = (double *)(rxyzvertb->data);
 
           for (i = 0, k = 0, sumv = 0, sumt = 0;
-               i < A_SIZE(anverts); i++)
+               i < PyArray_SIZE(anverts); i++)
             {
               if (mask2d[i] != 0)
                 {
@@ -9007,7 +9010,7 @@ static PyObject * slice2(PyObject * self, PyObject * args)
       listc0_length += (nkeepd[i] == nvertsd[i]) ? nvertsd[i] : 0;
     }
 
-  if (list0_length < A_SIZE(anverts))
+  if (list0_length < PyArray_SIZE(anverts))
     {
       if (list0_length == 0)
         {
@@ -9120,15 +9123,15 @@ static PyObject * slice2(PyObject * self, PyObject * args)
     {
       /* inputs unchanged. But copy them. */
       TRY(rnverts =
-            arrayFromPointer(A_SIZE(anverts), 'i',
-                             A_DATA(anverts), 0), PyErr_NoMemory());
+            arrayFromPointer(PyArray_SIZE(anverts), 'i',
+                             PyArray_DATA(anverts), 0), PyErr_NoMemory());
       rnvertsd = (int *)(rnverts->data);
       TRY(rxyzverts =
-            arrayFromPointer(A_SIZE(axyzverts), 'd',
-                             A_DATA(axyzverts), 0), PyErr_NoMemory());
+            arrayFromPointer(PyArray_SIZE(axyzverts), 'd',
+                             PyArray_DATA(axyzverts), 0), PyErr_NoMemory());
       rxyzvertsd = (double *)(rxyzverts->data);
       /* We've given the data pointers of these two or three arrays to others, so they
-         no longer own their data. Clear the NPY_OWNDATA flags, so that the
+         no longer own their data. Clear the NPY_ARRAY_OWNDATA flags, so that the
          DECREF applied when removed from the array list will not free their data. */
       UNSET_OWN(anverts);
       UNSET_OWN(axyzverts);
@@ -9139,8 +9142,8 @@ static PyObject * slice2(PyObject * self, PyObject * args)
       else
         {
           TRY(rvalues =
-                arrayFromPointer(A_SIZE(avalues), atype,
-                                 A_DATA(avalues), 0),
+                arrayFromPointer(PyArray_SIZE(avalues), atype,
+                                 PyArray_DATA(avalues), 0),
               PyErr_NoMemory());
 
           if (atype == 'd')
@@ -9166,7 +9169,7 @@ static PyObject * slice2(PyObject * self, PyObject * args)
       if (rnverts)
         {
           RET_ARR(ornverts, 1, &(rnverts->size),
-                  PyArray_INT32, (char *)rnvertsd, PyObject *);
+                  NPY_INT32, (char *)rnvertsd, PyObject *);
           SET_OWN(ornverts);
         }
 
@@ -9180,7 +9183,7 @@ static PyObject * slice2(PyObject * self, PyObject * args)
         {
           xdims[0] = rxyzverts->size / 3;
           xdims[1] = 3;
-          RET_ARR(orxyzverts, 2, xdims, PyArray_DOUBLE,
+          RET_ARR(orxyzverts, 2, xdims, NPY_DOUBLE,
                   (char *)rxyzvertsd, PyObject *);
           SET_OWN(orxyzverts);
         }
@@ -9281,11 +9284,11 @@ static PyObject * slice2(PyObject * self, PyObject * args)
         {
           /* Build the rest */
           RET_ARR(ornvertb, 1, &(rnvertb->size),
-                  PyArray_INT32, (char *)rnvertbd, PyObject *);
+                  NPY_INT32, (char *)rnvertbd, PyObject *);
           SET_OWN(ornvertb);
           xdims[0] = rxyzvertb->size / 3;
           xdims[1] = 3;
-          RET_ARR(orxyzvertb, 2, xdims, PyArray_DOUBLE,
+          RET_ARR(orxyzvertb, 2, xdims, NPY_DOUBLE,
                   (char *)rxyzvertbd, PyObject *);
           SET_OWN(orxyzvertb);
 
@@ -9638,12 +9641,12 @@ static PyObject * slice2(PyObject * self, PyObject * args)
   freeArray(keep, 0);
 
   /* All done, set up return values. */
-  RET_ARR(ornverts, 1, &(rnverts->size), PyArray_INT32,
+  RET_ARR(ornverts, 1, &(rnverts->size), NPY_INT32,
           (char *)rnvertsd, PyObject *);
   SET_OWN(ornverts);
   xdims[0] = rxyzverts->size / 3;
   xdims[1] = 3;
-  RET_ARR(orxyzverts, 2, xdims, PyArray_DOUBLE,
+  RET_ARR(orxyzverts, 2, xdims, NPY_DOUBLE,
           (char *)rxyzvertsd, PyObject *);
   SET_OWN(orxyzverts);
 
@@ -9703,12 +9706,12 @@ static PyObject * slice2(PyObject * self, PyObject * args)
   else
     {
       /* Build the rest */
-      RET_ARR(ornvertb, 1, &(rnvertb->size), PyArray_INT32,
+      RET_ARR(ornvertb, 1, &(rnvertb->size), NPY_INT32,
               (char *)rnvertbd, PyObject *);
       SET_OWN(ornvertb);
       xdims[0] = rxyzvertb->size / 3;
       xdims[1] = 3;
-      RET_ARR(orxyzvertb, 2, xdims, PyArray_DOUBLE,
+      RET_ARR(orxyzvertb, 2, xdims, NPY_DOUBLE,
               (char *)rxyzvertbd, PyObject *);
       SET_OWN(orxyzvertb);
 
@@ -9903,7 +9906,7 @@ static PyObject * window(PyObject * self, PyObject * args, PyObject * kd)
   int nColors = 0;
   int wait_for_expose = 0;
   int rgb = 0;
-  int parent = 0;
+  long parent = 0;
   int xpos = 0;
   int ypos = 0;
 
@@ -10057,7 +10060,7 @@ static PyObject * window(PyObject * self, PyObject * args, PyObject * kd)
         {
           extern unsigned long gx_parent;
           /* parent= keyword */
-          SETKW(kwt[11], parent, setkw_integer, windowKeys[11]);
+          SETKW(kwt[11], parent, setkw_long, windowKeys[11]);
           gx_parent = parent;
         }
 
@@ -10956,12 +10959,12 @@ static PyObject * get_axis_style(GaAxisStyle * axis)
   PyObject * textStyle = get_text_attributes(&(axis->textStyle));
   PyArrayObject * tickLen =
     (PyArrayObject *) PyArray_SimpleNew(1, dimensions,
-                                        PyArray_DOUBLE);
+                                        NPY_DOUBLE);
 
   if (tickLen)
     {
       int i;
-      double * data = (double *)A_DATA(tickLen);
+      double * data = (double *)PyArray_DATA(tickLen);
 
       for (i = 0; i < TICK_LEVELS; i++)
         { data[i] = axis->tickLen[i]; }
@@ -11012,12 +11015,12 @@ static PyObject * get_system(GfakeSystem * systems)
   npy_intp dimensions[] = { 4 };
   PyArrayObject * viewport =
     (PyArrayObject *) PyArray_SimpleNew(1, dimensions,
-                                        PyArray_DOUBLE);
+                                        NPY_DOUBLE);
 
   if (viewport)
     {
       int i;
-      double * data = (double *)A_DATA(viewport);
+      double * data = (double *)PyArray_DATA(viewport);
 
       for (i = 0; i < 4; i++)
         { data[i] = systems->viewport[i]; }
@@ -11874,25 +11877,25 @@ int set_axis_style(PyObject * dictionary, GaAxisStyle * axis)
       return 0;
     }
 
-  if (tickLen->nd != 1)
+  if (PyArray_NDIM(tickLen) != 1)
     {
       ERRMSG("tickLen should be one-dimensional");
       return 0;
     }
 
-  if (tickLen->descr->type_num != PyArray_DOUBLE)
+  if (PyArray_TYPE(tickLen) != NPY_DOUBLE)
     {
       ERRMSG("tickLen array should be of type float");
       return 0;
     }
 
-  if (tickLen->dimensions[0] != TICK_LEVELS)
+  if (PyArray_DIM(tickLen,0) != TICK_LEVELS)
     {
       ERRMSG("tickLen array has incorrect length");
       return 0;
     }
 
-  data = (double *)A_DATA(tickLen);
+  data = (double *)PyArray_DATA(tickLen);
 
   for (i = 0; i < TICK_LEVELS; i++)
     { axis->tickLen[i] = data[i]; }
@@ -12024,25 +12027,25 @@ int set_system(PyObject * dictionary, GfakeSystem * system)
       return 0;
     }
 
-  if (viewport->nd != 1)
+  if (PyArray_NDIM(viewport) != 1)
     {
       ERRMSG("viewport should be one-dimensional");
       return 0;
     }
 
-  if (viewport->descr->type_num != PyArray_DOUBLE)
+  if (PyArray_TYPE(viewport) != NPY_DOUBLE)
     {
       ERRMSG("viewport array should be of type float");
       return 0;
     }
 
-  if (viewport->dimensions[0] != 4)
+  if (PyArray_DIM(viewport,0) != 4)
     {
       ERRMSG("viewport array should have length 4");
       return 0;
     }
 
-  data = (double *)A_DATA(viewport);
+  data = (double *)PyArray_DATA(viewport);
 
   for (i = 0; i < 4; i++)
     { system->viewport[i] = data[i]; }
@@ -12601,6 +12604,8 @@ PyMODINIT_FUNC initgistC(void)
   PyModule_AddStringConstant(m, "VERSION", PYGIST_VERSION); // __version__
   PyModule_AddStringConstant(m, "GISTPATH", GISTPATH);
 
+  // printf("_FORTIFY_SOURCE %d\n",_FORTIFY_SOURCE);
+
   GistError = PyErr_NewException("gist.error", NULL, NULL);
   PyModule_AddObject(m, "error", GistError);
 
@@ -12657,8 +12662,10 @@ PyMODINIT_FUNC initgistC(void)
   /* Call p_idler to set up the idle callback   */
   p_idler(pyg_on_idle);
 
+// manpage says: "The stack context will be invalidated if the function which called setjmp() returns."
   if (setjmp(pyg_jmpbuf))
     {
+      printf ("$#@!$ got pyg_jmpbuf !!!\n");
       p_pending_events();
     }
 

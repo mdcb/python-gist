@@ -1,6 +1,9 @@
 /* Copyright (c) 1996, 1997, The Regents of the University of California.
  * All rights reserved.  See Legal.htm for full text and disclaimer. */
+
 #include "Python.h"
+
+#define NPY_NO_DEPRECATED_API 7 // deprecated clean against numpy 1.7
 #include "numpy/arrayobject.h"
 
 #include <stdio.h>
@@ -39,12 +42,7 @@ static char * errstr = NULL;
 					   PyErr_SetString((ERROBJ), (MESS)); \
 					   return NULL;} \
 				       }
-#define A_DATA(a) (((PyArrayObject *)a)->data)
-#define A_SIZE(a) PyArray_Size((PyObject *) a)
-#define A_TYPE(a) (int)(((PyArrayObject *)a)->descr->type_num)
 #define isARRAY(a) ((a) && PyArray_Check((PyArrayObject *)a))
-#define A_NDIM(a) (((PyArrayObject *)a)->nd)
-#define A_DIM(a,i) (((PyArrayObject *)a)->dimensions[i])
 #define GET_ARR(ap,op,type,dim) \
   Py_Try(ap=(PyArrayObject *)PyArray_ContiguousFromObject(op,type,dim,dim))
 #define GET_ARR2(ap,op,type,min,max) \
@@ -122,7 +120,7 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
   Py_Try(PyArg_ParseTuple(args, "OOO", &tararg, &subsarg, &srcarg));
   d1 = 1;
-  nd = A_NDIM(tararg);
+  nd = PyArray_NDIM((PyArrayObject *)tararg);
 
   if (PyFloat_Check(srcarg))
     {
@@ -147,9 +145,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
   else if (nd == 2)
     {
-      d1 = A_DIM(tararg, 1);
+      d1 = PyArray_DIM((PyArrayObject *)tararg, 1);
 
-      if (A_NDIM(srcarg) != 2 || A_DIM(srcarg, 1) != d1)
+      if (PyArray_NDIM((PyArrayObject *)srcarg) != 2 || PyArray_DIM((PyArrayObject *)srcarg, 1) != d1)
         {
           SETERR
           ("array_set: dimension mismatch between source and target.");
@@ -163,9 +161,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
       return NULL;
     }
 
-  GET_ARR(subsarr, subsarg, PyArray_INT, 1);
-  isubs = (int *)A_DATA(subsarr);
-  len = A_SIZE(subsarr);
+  GET_ARR(subsarr, subsarg, NPY_INT, 1);
+  isubs = (int *)PyArray_DATA(subsarr);
+  len = PyArray_SIZE(subsarr);
   mn = mnx(isubs, len);
 
   if (isubs[mn] < 0)
@@ -177,12 +175,12 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
   mx = mxx(isubs, len);
 
-  switch (A_TYPE(tararg))
+  switch (PyArray_TYPE((PyArrayObject *)tararg))
     {
-    case PyArray_UBYTE:
-      GET_ARR(tararr, tararg, PyArray_UBYTE, nd);
+    case NPY_UBYTE:
+      GET_ARR(tararr, tararg, NPY_UBYTE, nd);
 
-      if (d1 * isubs[mx] > A_SIZE(tararr))
+      if (d1 * isubs[mx] > PyArray_SIZE(tararr))
         {
           SETERR("array_set: a subscript is out of range.");
           Py_DECREF(subsarr);
@@ -192,9 +190,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       if (!scalar_source)
         {
-          GET_ARR(srcarr, srcarg, PyArray_UBYTE, 1);
+          GET_ARR(srcarr, srcarg, NPY_UBYTE, 1);
 
-          if (A_SIZE(srcarr) < d1 * len)
+          if (PyArray_SIZE(srcarr) < d1 * len)
             {
               SETERR
               ("array_set: source is too short for number of subscripts.");
@@ -204,8 +202,8 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               return NULL;
             }
 
-          utar = (unsigned char *)A_DATA(tararr);
-          usrc = (unsigned char *)A_DATA(srcarr);
+          utar = (unsigned char *)PyArray_DATA(tararr);
+          usrc = (unsigned char *)PyArray_DATA(srcarr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -230,7 +228,7 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               break;
             }
 
-          utar = (unsigned char *)A_DATA(tararr);
+          utar = (unsigned char *)PyArray_DATA(tararr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -239,10 +237,10 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       break;
 
-    case PyArray_CHAR:
-      GET_ARR(tararr, tararg, PyArray_CHAR, nd);
+    case NPY_CHAR:
+      GET_ARR(tararr, tararg, NPY_CHAR, nd);
 
-      if (d1 * isubs[mx] > A_SIZE(tararr))
+      if (d1 * isubs[mx] > PyArray_SIZE(tararr))
         {
           SETERR("array_set: a subscript is out of range.");
           Py_DECREF(subsarr);
@@ -252,9 +250,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       if (!scalar_source)
         {
-          GET_ARR(srcarr, srcarg, PyArray_CHAR, nd);
+          GET_ARR(srcarr, srcarg, NPY_CHAR, nd);
 
-          if (A_SIZE(srcarr) < d1 * len)
+          if (PyArray_SIZE(srcarr) < d1 * len)
             {
               SETERR
               ("array_set: source is too short for number of subscripts.");
@@ -264,8 +262,8 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               return NULL;
             }
 
-          ctar = (char *)A_DATA(tararr);
-          csrc = (char *)A_DATA(srcarr);
+          ctar = (char *)PyArray_DATA(tararr);
+          csrc = (char *)PyArray_DATA(srcarr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -289,7 +287,7 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               break;
             }
 
-          ctar = (char *)A_DATA(tararr);
+          ctar = (char *)PyArray_DATA(tararr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -298,10 +296,10 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       break;
 
-    case PyArray_INT:
-      GET_ARR(tararr, tararg, PyArray_INT, nd);
+    case NPY_INT:
+      GET_ARR(tararr, tararg, NPY_INT, nd);
 
-      if (isubs[mx] * d1 > A_SIZE(tararr))
+      if (isubs[mx] * d1 > PyArray_SIZE(tararr))
         {
           SETERR("array_set: a subscript is out of range.");
           Py_DECREF(subsarr);
@@ -311,9 +309,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       if (!scalar_source)
         {
-          GET_ARR(srcarr, srcarg, PyArray_INT, nd);
+          GET_ARR(srcarr, srcarg, NPY_INT, nd);
 
-          if (A_SIZE(srcarr) < len * d1)
+          if (PyArray_SIZE(srcarr) < len * d1)
             {
               SETERR
               ("array_set: source is too short for number of subscripts.");
@@ -323,8 +321,8 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               return NULL;
             }
 
-          itar = (int *)A_DATA(tararr);
-          isrc = (int *)A_DATA(srcarr);
+          itar = (int *)PyArray_DATA(tararr);
+          isrc = (int *)PyArray_DATA(srcarr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -348,7 +346,7 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               break;
             }
 
-          itar = (int *)A_DATA(tararr);
+          itar = (int *)PyArray_DATA(tararr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -357,10 +355,10 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       break;
 
-    case PyArray_LONG:
-      GET_ARR(tararr, tararg, PyArray_LONG, nd);
+    case NPY_LONG:
+      GET_ARR(tararr, tararg, NPY_LONG, nd);
 
-      if (isubs[mx] * d1 > A_SIZE(tararr))
+      if (isubs[mx] * d1 > PyArray_SIZE(tararr))
         {
           SETERR("array_set: a subscript is out of range.");
           Py_DECREF(subsarr);
@@ -370,9 +368,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       if (!scalar_source)
         {
-          GET_ARR(srcarr, srcarg, PyArray_LONG, nd);
+          GET_ARR(srcarr, srcarg, NPY_LONG, nd);
 
-          if (A_SIZE(srcarr) < len * d1)
+          if (PyArray_SIZE(srcarr) < len * d1)
             {
               SETERR
               ("array_set: source is too short for number of subscripts.");
@@ -382,8 +380,8 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               return NULL;
             }
 
-          ltar = (long *)A_DATA(tararr);
-          lsrc = (long *)A_DATA(srcarr);
+          ltar = (long *)PyArray_DATA(tararr);
+          lsrc = (long *)PyArray_DATA(srcarr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -407,7 +405,7 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               break;
             }
 
-          ltar = (long *)A_DATA(tararr);
+          ltar = (long *)PyArray_DATA(tararr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -416,10 +414,10 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       break;
 
-    case PyArray_FLOAT:
-      GET_ARR(tararr, tararg, PyArray_FLOAT, nd);
+    case NPY_FLOAT:
+      GET_ARR(tararr, tararg, NPY_FLOAT, nd);
 
-      if (isubs[mx] * d1 > A_SIZE(tararr))
+      if (isubs[mx] * d1 > PyArray_SIZE(tararr))
         {
           SETERR("array_set: a subscript is out of range.");
           Py_DECREF(subsarr);
@@ -429,9 +427,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       if (!scalar_source)
         {
-          GET_ARR(srcarr, srcarg, PyArray_FLOAT, nd);
+          GET_ARR(srcarr, srcarg, NPY_FLOAT, nd);
 
-          if (A_SIZE(srcarr) < len * d1)
+          if (PyArray_SIZE(srcarr) < len * d1)
             {
               SETERR
               ("array_set: source is too short for number of subscripts.");
@@ -441,8 +439,8 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               return NULL;
             }
 
-          ftar = (float *)A_DATA(tararr);
-          fsrc = (float *)A_DATA(srcarr);
+          ftar = (float *)PyArray_DATA(tararr);
+          fsrc = (float *)PyArray_DATA(srcarr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -467,7 +465,7 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               break;
             }
 
-          ftar = (float *)A_DATA(tararr);
+          ftar = (float *)PyArray_DATA(tararr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -476,10 +474,10 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       break;
 
-    case PyArray_DOUBLE:
-      GET_ARR(tararr, tararg, PyArray_DOUBLE, nd);
+    case NPY_DOUBLE:
+      GET_ARR(tararr, tararg, NPY_DOUBLE, nd);
 
-      if (isubs[mx] * d1 > A_SIZE(tararr))
+      if (isubs[mx] * d1 > PyArray_SIZE(tararr))
         {
           SETERR("array_set: a subscript is out of range.");
           Py_DECREF(subsarr);
@@ -489,9 +487,9 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
 
       if (!scalar_source)
         {
-          GET_ARR(srcarr, srcarg, PyArray_DOUBLE, nd);
+          GET_ARR(srcarr, srcarg, NPY_DOUBLE, nd);
 
-          if (A_SIZE(srcarr) < len * d1)
+          if (PyArray_SIZE(srcarr) < len * d1)
             {
               SETERR
               ("array_set: source is too short for number of subscripts.");
@@ -501,8 +499,8 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               return NULL;
             }
 
-          dtar = (double *)A_DATA(tararr);
-          dsrc = (double *)A_DATA(srcarr);
+          dtar = (double *)PyArray_DATA(tararr);
+          dsrc = (double *)PyArray_DATA(srcarr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -526,7 +524,7 @@ static PyObject * arr_array_set(PyObject * self, PyObject * args)
               break;
             }
 
-          dtar = (double *)A_DATA(tararr);
+          dtar = (double *)PyArray_DATA(tararr);
 
           for (i = 0; i < len; i++)
             for (j = 0; j < d1; j++)
@@ -602,16 +600,16 @@ static PyObject * arr_index_sort(PyObject * self, PyObject * args)
   npy_intp len;
 
   Py_Try(PyArg_ParseTuple(args, "O", &list));
-  GET_ARR(alist, list, PyArray_DOUBLE, 1);
-  len = A_SIZE(alist);
+  GET_ARR(alist, list, NPY_DOUBLE, 1);
+  len = PyArray_SIZE(alist);
   Py_Try(ilist =
-           (PyArrayObject *) PyArray_SimpleNew(1, &len, PyArray_INT));
-  isubs = (int *)A_DATA(ilist);
+           (PyArrayObject *) PyArray_SimpleNew(1, &len, NPY_INT));
+  isubs = (int *)PyArray_DATA(ilist);
 
   for (i = 0; i < len; i++)
     { isubs[i] = i; }
 
-  data = (double *)A_DATA(alist);
+  data = (double *)PyArray_DATA(alist);
 
   /* now do heap sort on subscripts */
   for (i = len / 2; i >= 0; i--)
@@ -733,10 +731,10 @@ static PyObject * arr_interpf(PyObject * self, PyObject * args)
   PyObject * tpo = Py_None;	/* unused argument, we've already parsed it */
 
   Py_Try(PyArg_ParseTuple(args, "OOO|O", &oy, &ox, &oz, &tpo));
-  GET_ARR(ay, oy, PyArray_FLOAT, 1);
-  GET_ARR(ax, ox, PyArray_FLOAT, 1);
+  GET_ARR(ay, oy, NPY_FLOAT, 1);
+  GET_ARR(ax, ox, NPY_FLOAT, 1);
 
-  if ((leny = A_SIZE(ay)) != A_SIZE(ax))
+  if ((leny = PyArray_SIZE(ay)) != PyArray_SIZE(ax))
     {
       SETERR("interp: x and y are not the same length.");
       Py_DECREF(ay);
@@ -744,15 +742,15 @@ static PyObject * arr_interpf(PyObject * self, PyObject * args)
       return NULL;
     }
 
-  GET_ARR2(az, oz, PyArray_FLOAT, 1, MAX_INTERP_DIMS);
-  lenz = A_SIZE(az);
-  dy = (float *)A_DATA(ay);
-  dx = (float *)A_DATA(ax);
-  dz = (float *)A_DATA(az);
+  GET_ARR2(az, oz, NPY_FLOAT, 1, MAX_INTERP_DIMS);
+  lenz = PyArray_SIZE(az);
+  dy = (float *)PyArray_DATA(ay);
+  dx = (float *)PyArray_DATA(ax);
+  dz = (float *)PyArray_DATA(az);
   /* create output array with same size as 'Z' input array */
   Py_Try(_interp = (PyArrayObject *) PyArray_SimpleNew
-                   (A_NDIM(az), az->dimensions, PyArray_FLOAT));
-  dres = (float *)A_DATA(_interp);
+                   (PyArray_NDIM((PyArrayObject *)az), PyArray_DIMS(az), NPY_FLOAT));
+  dres = (float *)PyArray_DATA(_interp);
   slopes = (float *)malloc((leny - 1) * sizeof(float));
 
   for (i = 0; i < leny - 1; i++)
@@ -823,10 +821,10 @@ static PyObject * arr_interp(PyObject * self, PyObject * args)
       return NULL;
     }
 
-  GET_ARR(ay, oy, PyArray_DOUBLE, 1);
-  GET_ARR(ax, ox, PyArray_DOUBLE, 1);
+  GET_ARR(ay, oy, NPY_DOUBLE, 1);
+  GET_ARR(ax, ox, NPY_DOUBLE, 1);
 
-  if ((leny = A_SIZE(ay)) != A_SIZE(ax))
+  if ((leny = PyArray_SIZE(ay)) != PyArray_SIZE(ax))
     {
       SETERR("interp: x and y are not the same length.");
       Py_DECREF(ay);
@@ -834,15 +832,15 @@ static PyObject * arr_interp(PyObject * self, PyObject * args)
       return NULL;
     }
 
-  GET_ARR2(az, oz, PyArray_DOUBLE, 1, MAX_INTERP_DIMS);
-  lenz = A_SIZE(az);
-  dy = (double *)A_DATA(ay);
-  dx = (double *)A_DATA(ax);
-  dz = (double *)A_DATA(az);
+  GET_ARR2(az, oz, NPY_DOUBLE, 1, MAX_INTERP_DIMS);
+  lenz = PyArray_SIZE(az);
+  dy = (double *)PyArray_DATA(ay);
+  dx = (double *)PyArray_DATA(ax);
+  dz = (double *)PyArray_DATA(az);
   /* create output array with same size as 'Z' input array */
   Py_Try(_interp = (PyArrayObject *) PyArray_SimpleNew
-                   (A_NDIM(az), az->dimensions, PyArray_DOUBLE));
-  dres = (double *)A_DATA(_interp);
+                   (PyArray_NDIM((PyArrayObject *)az), PyArray_DIMS(az), NPY_DOUBLE));
+  dres = (double *)PyArray_DATA(_interp);
   slopes = (double *)malloc((leny - 1) * sizeof(double));
 
   for (i = 0; i < leny - 1; i++)
@@ -890,20 +888,20 @@ static PyObject * arr_zmin_zmax(PyObject * self, PyObject * args)
   int i, j, k, n, m;
 
   Py_Try(PyArg_ParseTuple(args, "OO", &zobj, &iregobj));
-  GET_ARR(zarr, zobj, PyArray_DOUBLE, 2);
+  GET_ARR(zarr, zobj, NPY_DOUBLE, 2);
 
   if (!(iregarr = (PyArrayObject *) PyArray_ContiguousFromObject(iregobj,
-                  PyArray_INT,
+                  NPY_INT,
                   2, 2)))
     {
       Py_DECREF(zarr);
       return NULL;
     }
 
-  n = A_DIM(iregarr, 0);
-  m = A_DIM(iregarr, 1);
+  n = PyArray_DIM((PyArrayObject *)iregarr, 0);
+  m = PyArray_DIM((PyArrayObject *)iregarr, 1);
 
-  if (n != A_DIM(zarr, 0) || m != A_DIM(zarr, 1))
+  if (n != PyArray_DIM((PyArrayObject *)zarr, 0) || m != PyArray_DIM((PyArrayObject *)zarr, 1))
     {
       SETERR("zmin_zmax: z and ireg do not have the same shape.");
       Py_DECREF(iregarr);
@@ -911,8 +909,8 @@ static PyObject * arr_zmin_zmax(PyObject * self, PyObject * args)
       return NULL;
     }
 
-  ireg = (int *)A_DATA(iregarr);
-  z = (double *)A_DATA(zarr);
+  ireg = (int *)PyArray_DATA(iregarr);
+  z = (double *)PyArray_DATA(zarr);
   k = 0;			/* k is i * m + j */
 
   for (i = 0; i < n; i++)
@@ -978,13 +976,13 @@ static PyObject * arr_reverse(PyObject * self, PyObject * args)
       return NULL;
     }
 
-  GET_ARR(ax, ox, PyArray_DOUBLE, 2);
-  dx = (double *)A_DATA(ax);
-  d0 = dims[0] = A_DIM(ax, 0);
-  d1 = dims[1] = A_DIM(ax, 1);
+  GET_ARR(ax, ox, NPY_DOUBLE, 2);
+  dx = (double *)PyArray_DATA(ax);
+  d0 = dims[0] = PyArray_DIM((PyArrayObject *)ax, 0);
+  d1 = dims[1] = PyArray_DIM((PyArrayObject *)ax, 1);
   Py_Try(ares =
-           (PyArrayObject *) PyArray_SimpleNew(2, dims, PyArray_DOUBLE));
-  dres = (double *)A_DATA(ares);
+           (PyArrayObject *) PyArray_SimpleNew(2, dims, NPY_DOUBLE));
+  dres = (double *)PyArray_DATA(ares);
 
   if (n == 0)		/* reverse the columns */
     for (i = 0; i < d1; i++)
@@ -1044,14 +1042,14 @@ static PyObject * arr_find_mask(PyObject * self, PyObject * args)
   npy_intp ans_size;
 
   Py_Try(PyArg_ParseTuple(args, "OO", &fso, &node_edgeso));
-  GET_ARR(fsa, fso, PyArray_INT, 2);
-  GET_ARR(node_edgesa, node_edgeso, PyArray_INT, 2);
-  fs = (int *)A_DATA(fsa);
-  node_edges = (int *)A_DATA(node_edgesa);
-  ntotal = A_DIM(fsa, 0);
-  nv = A_DIM(fsa, 1);
+  GET_ARR(fsa, fso, NPY_INT, 2);
+  GET_ARR(node_edgesa, node_edgeso, NPY_INT, 2);
+  fs = (int *)PyArray_DATA(fsa);
+  node_edges = (int *)PyArray_DATA(node_edgesa);
+  ntotal = PyArray_DIM((PyArrayObject *)fsa, 0);
+  nv = PyArray_DIM((PyArrayObject *)fsa, 1);
 
-  if (nv != A_DIM(node_edgesa, 0))
+  if (nv != PyArray_DIM((PyArrayObject *)node_edgesa, 0))
     {
       SETERR
       ("2nd dimension of 1st arg and 1st dimension of 2nd not equal.");
@@ -1060,11 +1058,11 @@ static PyObject * arr_find_mask(PyObject * self, PyObject * args)
       return (NULL);
     }
 
-  ne = A_DIM(node_edgesa, 1);
+  ne = PyArray_DIM((PyArrayObject *)node_edgesa, 1);
   ans_size = ntotal * ne;
   Py_Try(maska = (PyArrayObject *) PyArray_SimpleNew
-                 (1, &ans_size, PyArray_INT));
-  mask = (int *)A_DATA(maska);
+                 (1, &ans_size, NPY_INT));
+  mask = (int *)PyArray_DATA(maska);
 
   for (i = 0, ifs = 0, imask = 0; i < ntotal; i++, imask += ne, ifs += nv)
     {
@@ -1275,11 +1273,11 @@ static PyObject * arr_construct3(PyObject * self, PyObject * args)
 
   /*    dbg = fopen ("dbg","w"); */
   Py_Try(PyArg_ParseTuple(args, "Oi", &masko, &itype));
-  GET_ARR(maska, masko, PyArray_INT, 1);
-  mask = (int *)A_DATA(maska);
+  GET_ARR(maska, masko, NPY_INT, 1);
+  mask = (int *)PyArray_DATA(maska);
   permute_dims[0] = ne = no_edges[itype];
   permute_dims[1] = pt = powers[itype];
-  nm = A_DIM(maska, 0);
+  nm = PyArray_DIM((PyArrayObject *)maska, 0);
 
   if (ne * pt != nm)
     {
@@ -1290,8 +1288,8 @@ static PyObject * arr_construct3(PyObject * self, PyObject * args)
 
   Py_Try(permutea =
            (PyArrayObject *) PyArray_SimpleNew(2, permute_dims,
-               PyArray_INT));
-  permute = (int *)A_DATA(permutea);
+               NPY_INT));
+  permute = (int *)PyArray_DATA(permutea);
 
   for (i = 0; i < pt; i++, permute++, mask += ne)
     {
@@ -1316,12 +1314,12 @@ static PyObject * arr_to_corners(PyObject * self, PyObject * args)
   double * arr, *res;
 
   Py_Try(PyArg_ParseTuple(args, "OOi", &oarr, &onv, &sum_nv));
-  GET_ARR(aarr, oarr, PyArray_DOUBLE, 1);
+  GET_ARR(aarr, oarr, NPY_DOUBLE, 1);
 
   if isARRAY
   (onv)
     {
-      GET_ARR(anv, onv, PyArray_INT, 1);
+      GET_ARR(anv, onv, NPY_INT, 1);
     }
 
   else
@@ -1331,9 +1329,9 @@ static PyObject * arr_to_corners(PyObject * self, PyObject * args)
       return (NULL);
     }
 
-  snv = A_SIZE(anv);
+  snv = PyArray_SIZE(anv);
 
-  if (snv != A_SIZE(aarr))
+  if (snv != PyArray_SIZE(aarr))
     {
       ERRSS("The first and second arguments must be the same size.");
       Py_DECREF(aarr);
@@ -1342,7 +1340,7 @@ static PyObject * arr_to_corners(PyObject * self, PyObject * args)
     }
 
   if (!(ares = (PyArrayObject *)
-               PyArray_SimpleNew(1, &sum_nv, PyArray_DOUBLE)))
+               PyArray_SimpleNew(1, &sum_nv, NPY_DOUBLE)))
     {
       ERRSS("Unable to create result array.");
       Py_DECREF(aarr);
@@ -1350,9 +1348,9 @@ static PyObject * arr_to_corners(PyObject * self, PyObject * args)
       return NULL;
     }
 
-  res = (double *)A_DATA(ares);
-  arr = (double *)A_DATA(aarr);
-  nv = (int *)A_DATA(anv);
+  res = (double *)PyArray_DATA(ares);
+  arr = (double *)PyArray_DATA(aarr);
+  nv = (int *)PyArray_DATA(anv);
   jtot = 0;
 
   for (i = 0; i < snv; i++)

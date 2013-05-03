@@ -43,7 +43,8 @@ def grtest():
   plg([0, 1])
   print('A small (75 dpi) window with line marked A from (1,0) to (2,1).')
   paws()
-  winkill(0)
+  #winkill(0)
+  unzoom()
 
   print('Test 2:  Commands: plg([0,1])')
   plg([0,1])
