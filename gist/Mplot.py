@@ -212,7 +212,7 @@ def legend(text,linetypes=None,lleft=None,color='fg',tfont='helvetica',fontsize=
     pass
   else:
     gist.plsys(0)
-    maxlen = numpy.max(map(len,text))
+    maxlen = numpy.max(list(map(len,text)))
     c1 = (llx-deltax,lly-deltay)
     c2 = (llx + width + deltax + fontsize*points* maxlen/1.8 + deltax,
           lly + len(text)*dy)
@@ -450,7 +450,7 @@ def palette_list(verbose=False):
       palettes[name]='; '.join(desc)
       fid.close()
   if verbose: return palettes
-  else: return palettes.keys()
+  else: return list(palettes.keys())
 
 def _change_palette(pal):
   if pal is None: return
@@ -1115,7 +1115,7 @@ def crosshair(x,y,szx=None,szy=None,*arg,**kwd):
 
      SEE ALSO: pldj
   '''
-  x,y = [numpy.array([o]) for o in x,y]
+  x,y = [numpy.array([o]) for o in (x,y)]
   if szx==None:
     _szx=(x.max()-x.min())/ 100.
   else:
@@ -1201,7 +1201,7 @@ def box(x,y,u,v=None,color='fg',width=1,ltype='-',center=False,*args,**kwd):
   linetype = _types[ltype]
   if center:
     if v is None: v=u
-    cx,cy,w,h=[numpy.array(o) for o in x,y,u,v]
+    cx,cy,w,h=[numpy.array(o) for o in (x,y,u,v)]
     w2=w/2.
     h2=h/2.
     x0=(cx+w2,cx-w2,cx-w2,cx+w2)

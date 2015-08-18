@@ -1990,10 +1990,10 @@ def pl3surf(nverts, xyzverts = None, values = None, cmin = None, cmax = None,
 
     if numpy.shape(xyzverts) [0] != numpy.sum(nverts,axis=0) or numpy.sum(numpy.less(nverts, 3),axis=0) or \
        nverts.dtype != numpy.int32 :
-        print nverts.dtype != numpy.int32
-        print numpy.sum (numpy.less (nverts, 3),axis=0)
-        print numpy.shape (xyzverts) [0]
-        print numpy.sum (nverts,axis=0)
+        print(nverts.dtype != numpy.int32)
+        print(numpy.sum (numpy.less (nverts, 3),axis=0))
+        print(numpy.shape (xyzverts) [0])
+        print(numpy.sum (nverts,axis=0))
         raise _Pl3surfError('illegal or inconsistent polygon list')
     if values != None and len (values) != len (nverts) :
         raise _Pl3surfError('illegal or inconsistent polygon color values')

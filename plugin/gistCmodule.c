@@ -124,7 +124,7 @@
 #define PyInt_AS_LONG PyLong_AS_LONG
 #endif
 
-static int dummy = 0;
+// static int dummy = 0;
 
 /* Mouse() related stuff */
 static int MouseCallBack(Engine * engine, int system,
@@ -238,7 +238,7 @@ static int pyg_puts(const char * s)
 
       if (len > 0)
         {
-          TO_STDOUT(s);
+          TO_STDOUT("%s",s);
 
           if (s[len - 1] == '\n')
             { return 0; }
@@ -702,7 +702,6 @@ static PyObject * gridxy(PyObject * self, PyObject * args, PyObject * kd);
 static PyObject * limits(PyObject * self, PyObject * args, PyObject * kd);
 static PyObject * logxy(PyObject * self, PyObject * args);
 static PyObject * mesh_loc(PyObject * self, PyObject * args);
-static PyObject * mfit(PyObject * self, PyObject * args);
 static PyObject * mouse(PyObject * self, PyObject * args);
 static PyObject * palette(PyObject * self, PyObject * args, PyObject * kd);
 static PyObject * plc(PyObject * self, PyObject * args, PyObject * kd);
@@ -3052,7 +3051,7 @@ static long build_kwt(PyObject * kd, char * kwlist[], PyObject * kwt[])
       if (!verify_kw(kword, kwlist))
         {
           sprintf(errstr, "Unrecognized keyword: %s", kword);
-          (long)ERRSS(errstr);
+          ERRSS(errstr);
           return -1;
         }
     }
@@ -3895,7 +3894,7 @@ static char mesh_loc__doc__[] =
   "   Thus, eg- ireg(mesh_loc(x0, y0, y, x, ireg)) is the region number of\n"
   "   the region containing (x0,y0).  If no mesh specified, uses default.\n"
   "   X0 and Y0 may be arrays as long as they are conformable.\n"
-  "\n" "   SEE ALSO: plmesh, moush, mouse\n";
+  "\n" "   SEE ALSO: plmesh, mouse\n";
 
 static PyObject * mesh_loc(PyObject * self, PyObject * args)
 {
@@ -3983,78 +3982,6 @@ static PyObject * mesh_loc(PyObject * self, PyObject * args)
 }
 
 /*  -------------------------------------------------------------------- */
-/*  mfit */
-
-static char mfit__doc__[] =
-  "Computes multiquadric fit to data; used for contour plotting\n"
-  "of random data. Calling sequence from Python:\n"
-  "   zcplot = mfit (alpha, x, xcplot, y, ycplot, rsqmqd)\n"
-  "where alpha are the interpolation coefficients, x and y\n"
-  "are the original randomly distributed coordinates\n"
-  "(alpha, x, and y are all the same length, say nzcplot).\n"
-  "xcplot (nxcplot long) and ycplot (nycplot long) specify\n"
-  "an overlying rectangular mesh. rsqmod is a scalar peculiar\n"
-  "to the problem.\n";
-
-static PyObject * mfit(PyObject * self, PyObject * args)
-{
-  int nxcplot, nycplot, nzcplot;
-  double * x, *y, *alpha, *xcplot, *ycplot, *zcplot, rsqmqd;
-  PyObject * oalpha, *ox, *oy, *oxcplot, *oycplot;
-  PyArrayObject * aalpha, *ax, *ay, *axcplot, *aycplot, *azcplot;
-  int i, j, k, l;
-  npy_intp dims[2];
-  double sum;
-
-  TRY(PyArg_ParseTuple
-      (args, "OOOOOd", &oalpha, &ox, &oxcplot, &oy, &oycplot,
-       &rsqmqd), ERRSS("mfit: unable to parse arguments."));
-  GET_ARR(aalpha, oalpha, NPY_DOUBLE, 1, PyObject *);
-  GET_ARR(ax, ox, NPY_DOUBLE, 1, PyObject *);
-  GET_ARR(axcplot, oxcplot, NPY_DOUBLE, 1, PyObject *);
-  GET_ARR(ay, oy, NPY_DOUBLE, 1, PyObject *);
-  GET_ARR(aycplot, oycplot, NPY_DOUBLE, 1, PyObject *);
-  /* There is no other error checking, really. It is intended that
-   * this routine be called only from Python code, not by the user. */
-  nzcplot = PyArray_DIM((PyArrayObject *)aalpha, 0);
-  nxcplot = PyArray_DIM((PyArrayObject *)axcplot, 0);
-  dims[0] = nxcplot;
-  nycplot = PyArray_DIM((PyArrayObject *)aycplot, 0);
-  dims[1] = nycplot;
-  x = (double *)PyArray_DATA(ax);
-  y = (double *)PyArray_DATA(ay);
-  xcplot = (double *)PyArray_DATA(axcplot);
-  ycplot = (double *)PyArray_DATA(aycplot);
-  alpha = (double *)PyArray_DATA(aalpha);
-  TRY(azcplot =
-        (PyArrayObject *) PyArray_SimpleNew(2, dims,
-            NPY_DOUBLE),
-      ERRSS("mfit: unable to create return array."));
-  zcplot = (double *)PyArray_DATA(azcplot);
-  l = 0;
-
-  for (i = 0; i < nxcplot; i++)
-    for (j = 0; j < nycplot; j++)
-      {
-        sum = 0.0;
-
-        for (k = 0; k < nzcplot; k++)
-          sum += alpha[k] *
-                 sqrt((x[k] - xcplot[i]) * (x[k] -
-                                            xcplot
-                                            [i]) +
-                      (y[k] - ycplot[j]) * (y[k] -
-                                            ycplot
-                                            [j]) + rsqmqd);
-
-        zcplot[l++] = sum;
-      }
-
-  clearArrayList();
-  return PyArray_Return(azcplot);
-}
-
-/*  -------------------------------------------------------------------- */
 /*  mouse */
 
 static char mouse__doc__[] =
@@ -4098,7 +4025,7 @@ static char mouse__doc__[] =
   "     result[10] is a mask representing the modifier keys which\n"
   "     were pressed during the operation: 1 for shift, 2 for shift lock,\n"
   "     4 for control, 8 for mod1 (alt or meta), 16 for mod2, 32 for mod3,\n"
-  "     64 for mod4, and 128 for mod5.\n" "\n" "   SEE ALSO: moush\n";
+  "     64 for mod4, and 128 for mod5.\n";
 
 static PyObject * mouse(PyObject * self, PyObject * args)
 {
@@ -4485,7 +4412,7 @@ static char plc__doc__[] =
   "   KEYWORDS: legend, hide\n"
   "             type, width, color, smooth\n"
   "             marks, marker, mspace, mphase\n"
-  "             smooth, triangle, region\n"
+  "             triangle, region\n"
   "\n"
   "   SEE ALSO: plg, plm, plc, plv, plf, pli, plt, pldj, plfp, plmesh\n"
   "             limits, logxy, ylimits, fma, hcp\n";
@@ -5980,7 +5907,7 @@ static char pli__doc__[] =
 // 0x00],[0x00,0x00,0x00],[0x00,0x00,0x00],[0x00,0x00,0x00]],[[0x00,0x00,0x00],
 // [0x00,0x00,0x00],[0x00,0x00,0x00],[0x00,0x00,0x00]],[[0x00,0x00,0x00],[0x00,
 // 0x00,0x00],[0x00,0x00,0x00],[0x00,0x00,0x00]]]
-// without strides, the raw data circultes over rgb, then col, the row
+// without strides, the raw data circultes over rgb, then col, then row
 //
 // in python
 //
@@ -12515,7 +12442,6 @@ static struct PyMethodDef gist_methods[] =
   {"limits", PYCFWK limits, KWFLG, limits__doc__},
   {"logxy", PYCF logxy, METH_VARARGS, logxy__doc__},
   {"mesh_loc", PYCF mesh_loc, METH_VARARGS, mesh_loc__doc__},
-  {"mfit", PYCF mfit, METH_VARARGS, mfit__doc__},
   {"mouse", PYCF mouse, METH_VARARGS, mouse__doc__},
   {"palette", PYCFWK palette, KWFLG, palette__doc__},
   {"pause", PYCF pyg_pause, METH_VARARGS, pause__doc__},

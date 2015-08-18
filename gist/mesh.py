@@ -21,7 +21,7 @@
 #  -----------------------------------------------------------------
 
 import numpy
-import gist
+from . import gist
 from .gistC import *
 import unittest
 

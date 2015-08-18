@@ -55,7 +55,10 @@ anysource.extend(glob.glob('yorick/matrix/*.c'))
 anysource.extend(glob.glob('yorick/fft/*.c'))
 
 define_macros=[]
-extra_compile_args=[]
+extra_compile_args=[
+  '-Wno-unused-value',
+  '-O2',
+]
 
 # version
 version=open('yorick/play/yversion.h').readline()
@@ -75,8 +78,6 @@ define_macros.append(('YCBLAS_NOALIAS',  None                ))
 gist_data=glob.glob('gistdata/*.g[sp]')
 gist_data.extend(glob.glob('yorick/g/*.g[sp]'))
 data_files = [(gistdata_path, gist_data),]
-
-extra_compile_args.append('-O2')
 
 x11_info = numpy.distutils.system_info.get_info('x11')
 
@@ -151,7 +152,7 @@ class mkconfig_cmd(Command):
     #include_dirs=[]
     for line in open(os.path.join(patch_work_dir,'yorick/Make.cfg')):
       if line.startswith('#'): continue
-      key,val=line.strip().split('=')
+      key,val=line.strip().split('=',1) # split first '='
       if val != '':
         if key == 'MATHLIB':
           libraries.append(val.lstrip('-l'))

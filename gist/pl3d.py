@@ -1180,7 +1180,7 @@ def spin3 (nframes = 30, axis = numpy.array ([-1, 1, 0],  numpy.float32),
     SEE ALSO: rot3
     '''
 
-    from Mplot import movie
+    from .Mplot import movie
 
     # Note on global variables (ZCM 2/21/97):
     # I see no better way of sharing these between spin3 and _spin3

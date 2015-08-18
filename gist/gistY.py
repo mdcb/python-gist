@@ -82,7 +82,7 @@ def hcp(filename,bw=None):
    elif bw is 'average':
       rgb = rgb.mean(axis=2)
    elif bw is not None:
-      raise Exception, "bw should be one of 'ntsc', 'atsc', 'hdtv', 'lightness', 'average'"
+      raise Exception("bw should be one of 'ntsc', 'atsc', 'hdtv', 'lightness', 'average'")
 
    scipy.misc.imsave(filename,rgb)
 
@@ -548,6 +548,9 @@ def repl ():
    '''
    try: import os; execfile(os.environ['PYTHONSTARTUP'])
    except: import os; exec(compile(open(os.environ['PYTHONSTARTUP']).read(), 'PYTHONSTARTUP', 'exec'))
-   import code
-   code.interact(local=locals(),banner='')
+   import code, inspect
+   # uplevel hack
+   frame_obj, file_name, line_num, func_name, lines_of_context, index_in_current_line = inspect.stack()[1]
+   lcls=frame_obj.f_locals
+   code.interact(local=lcls,banner='welcome back!')
 
