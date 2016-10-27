@@ -11,7 +11,8 @@ from distutils.core import setup, Extension
 from distutils.core import Distribution, Command
 from distutils.command.build import build
 from distutils import log
-import numpy.distutils.system_info # pkg_config
+import numpy 
+import numpy.distutils.system_info
 
 gistsource = glob.glob('yorick/gist/*.c')
 gistsource.pop(gistsource.index('yorick/gist/browser.c'))
@@ -25,6 +26,7 @@ unixsource = [
   'yorick/play/unix/handler.c',
   'yorick/play/unix/pathnm.c',
   #'yorick/play/unix/pmain.c',
+  'yorick/play/unix/usock.c',
   'yorick/play/unix/slinks.c',
   'yorick/play/unix/stdinit.c',
   'yorick/play/unix/timeu.c',
@@ -91,9 +93,7 @@ include_dirs.extend(x11_info.get('include_dirs',[]))
 
 libraries = x11_info.get('libraries',['X11'])
 
-if sys.platform == 'darwin':
-  import numpy
-  include_dirs.extend([numpy.get_include()])
+include_dirs.extend([numpy.get_include()])
 
 # sources
 sources = unixsource + x11source + anysource + gistsource

@@ -10,8 +10,16 @@ git clone git://github.com/dhmunro/yorick.git
 sudo python setup.py install
 
 - rpm style:
-python setup.py bdist_rpm
-sudo yum install -y dist/python-gist-*.`uname -m`.rpm
+
+sudo dnf install \
+  python3-devel \
+  python3-numpy \
+  python3-numpy-f2py \
+  libX11-devel \
+  libXft-devel
+
+python3 setup.py bdist_rpm
+sudo yum install -y dist/python-gist3-*.`uname -m`.rpm
 
 OSX
 ---

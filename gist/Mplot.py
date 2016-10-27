@@ -48,7 +48,7 @@ gist.pldefault(dpi=_dpi,maxcolors=_maxcolors)
 # directory for storing temporary *.gp and *.gs files
 _user_path = os.path.join(os.environ['HOME'],'.gist')
 
-def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor='fg'):
+def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor='fg',rval=False):
   '''Plot a histogram.
 
      Returns an array (nbins,2) of bin values,count.
@@ -83,10 +83,16 @@ def histogram(data,nbins=80,range=None,ntype=0,bar=1,bwidth=0.8,bcolor='fg'):
     barplot(arr[:,0],arr[:,1],width=bwidth,color=bcolor)
   else:
     plot(arr[:,0],arr[:,1])
-  return arr
+  if rval: return arr
 
 def barplot(x,y,width=0.8,color='fg', horiz=False):
   '''Plot a barplot.
+           
+         X   X
+         X   X X
+       X X X X X X X
+
+     SEE ALSO: stem, stairplot
 
         x --      Centers of bars
         x --      Heights of bars
@@ -768,8 +774,10 @@ def stem(y, x=None, linetype='b-', mtype='mo', shift=0.013):
      y,x --      data points
      linetype -- type,color,marker,mark for lines
      mtype --    type,color,marker,mark for marker
+  
+     EXAMPLE: stem(np.random.rand(10))
 
-     SEE ALSO: stairplot
+     SEE ALSO: stairplot, barplot
   '''
   y0 = numpy.zeros(len(y),y.dtype.char)
   y1 = y
@@ -894,7 +902,7 @@ def twoplane(DATA,slice1,slice2,dx=[1,1,1],cmin=None,cmax=None,xb=None,xe=None,
     xwidth = rescale * xwidth
     height1 = rescale * height1
     totalheight = totalheight * rescale
-    print((xwidth, height1))
+    print(xwidth, height1)
   else:
     print(xwidth)
   ystart = 0.5 - totalheight / 2
@@ -1084,7 +1092,7 @@ def stairplot(a,*arg,**kwd):
       | |_|   |_
      _|         |_
 
-     SEE ALSO: stem
+     SEE ALSO: stem, barplot
   '''
   if type(a)==numpy.ndarray and len(a.shape)==2:
     xs=a[:,0]
@@ -1352,3 +1360,5 @@ def colorbar (minz, maxz, ncol = 255, ymax=0.85, ymin=0.44, xmin0=0.62, xmax0=0.
     if zlabel:
         ymidpt = (ymax+ymin)/2.0
         plt(zlabel, xmin0, ymidpt, color=color,font=font, justify='CB', height=fontsize, orient=1)
+
+
